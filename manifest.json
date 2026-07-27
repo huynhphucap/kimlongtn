@@ -1,7 +1,7 @@
 {
   "name": "Kim Long - Sản phẩm giá sốc",
   "short_name": "Kim Long",
-  "description": "Cửa Hàng Kim Long - Chuyên khóa cửa thông minh và thiết bị an ninh chính hãng",
+  "description": "Cửa Hàng Kim Long - Đồ điện gia dụng chính hãng: nồi cơm điện, quạt điện, bóng đèn và hơn nữa",
   "start_url": "./index.html",
   "display": "standalone",
   "background_color": "#f9fafb",
