@@ -113,44 +113,30 @@
     </div>
   </div>
 
-  <!-- Header -->
+  <!-- ============ NAVBAR (giống index.html) ============ -->
   <header class="sticky top-0 z-50 bg-white/95 backdrop-blur border-b border-slate-200">
-    <div class="max-w-7xl mx-auto flex flex-wrap items-center gap-4 px-4 py-4">
-      <a href="index.html"
-         class="focus-ring flex items-center gap-2 shrink-0 bg-ember hover:bg-ember-dark text-white font-display font-700 text-sm sm:text-base px-4 py-2.5 rounded-xl shadow-[0_10px_20px_-8px_rgba(249,115,22,0.5)] transition-colors">
-        <span aria-hidden="true" class="text-lg leading-none">←</span> Quay Về Trang Chủ
+    <nav class="max-w-6xl mx-auto flex items-center justify-between px-5 py-4">
+
+      <!-- Logo -->
+      <a href="index.html" class="flex items-center gap-2 shrink-0">
+        <span class="w-9 h-9 rounded-lg bg-brand flex items-center justify-center text-white font-display font-800 text-sm">KL</span>
+        <span class="font-display font-800 text-lg tracking-tight">Kim Long</span>
       </a>
 
-      <div class="flex-1 min-w-[200px]">
-        <div class="flex items-center border-2 border-brand rounded-full overflow-hidden">
-          <input type="text" placeholder="Bạn cần tìm gì?" class="flex-1 px-4 py-2 outline-none text-sm font-body">
-          <button class="focus-ring bg-brand text-white px-4 py-2">🔍</button>
-        </div>
-      </div>
+      <!-- 3 menu items -->
+      <ul class="hidden sm:flex items-center gap-8 font-body font-medium text-sm text-navy-900/80">
+        <li><a href="san-pham.html" class="hover:text-brand transition-colors focus-ring rounded">Sản Phẩm</a></li>
+        <li><a href="san-pham.html#khuyen-mai" class="hover:text-brand transition-colors focus-ring rounded">Khuyến Mãi</a></li>
+        <li><a href="index.html#lien-he" class="hover:text-brand transition-colors focus-ring rounded">Liên Hệ</a></li>
+      </ul>
 
-      <div class="flex items-center gap-6 text-sm font-body text-navy-900/80 shrink-0">
-        <div class="hidden lg:flex items-center gap-2">
-          📞
-          <div class="leading-tight">
-            <div>0364.878.771</div>
-          </div>
-        </div>
-        <div class="flex items-center gap-1">👤 <span class="hidden sm:inline">Tài khoản</span></div>
-        <div class="flex items-center gap-1 relative">
-          🛒 <span class="hidden sm:inline">Giỏ hàng</span>
-          <span class="absolute -top-2 -right-3 bg-ember text-white text-[10px] rounded-full w-4 h-4 flex items-center justify-center">0</span>
-        </div>
-      </div>
-    </div>
-
-    <!-- Nav bar -->
-    <div class="max-w-7xl mx-auto flex flex-wrap gap-2 px-4 pb-4 text-sm font-body font-medium">
-      <button class="focus-ring bg-brand text-white rounded-xl px-4 py-2 flex items-center gap-2">☰ DANH MỤC SẢN PHẨM</button>
-      <button class="focus-ring border border-slate-200 rounded-xl px-4 py-2 flex items-center gap-2 hover:bg-slate-150 transition-colors">🧾 GIAO LẮP CHUYÊN NGHIỆP</button>
-      <button class="focus-ring border border-slate-200 rounded-xl px-4 py-2 flex items-center gap-2 hover:bg-slate-150 transition-colors">🔄 CHÍNH SÁCH ĐỔI TRẢ</button>
-      <button class="focus-ring border border-slate-200 rounded-xl px-4 py-2 flex items-center gap-2 hover:bg-slate-150 transition-colors">🚚 CHÍNH SÁCH GIAO HÀNG</button>
-      <button class="focus-ring border border-slate-200 rounded-xl px-4 py-2 flex items-center gap-2 hover:bg-slate-150 transition-colors">📍 SẢN PHẨM ĐÃ XEM</button>
-    </div>
+      <!-- Mobile: compact menu row -->
+      <ul class="flex sm:hidden items-center gap-4 font-body text-xs font-medium text-navy-900/80">
+        <li><a href="san-pham.html" class="focus-ring rounded">Sản Phẩm</a></li>
+        <li><a href="san-pham.html#khuyen-mai" class="focus-ring rounded">Khuyến Mãi</a></li>
+        <li><a href="index.html#lien-he" class="focus-ring rounded">Liên Hệ</a></li>
+      </ul>
+    </nav>
   </header>
 
   <!-- Breadcrumb -->
