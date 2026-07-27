@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Kim Long - Sản phẩm giá sốc</title>
+<title>Cửa Hàng Kim Long - Đồ Điện Gia Dụng Giá Sốc</title>
 
 <!-- PWA setup -->
 <link rel="manifest" href="manifest.json">
@@ -15,18 +15,41 @@
 <meta name="apple-mobile-web-app-title" content="Kim Long">
 
 <script src="https://cdn.tailwindcss.com"></script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Sora:wght@400;600;700;800&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet">
+
+<script>
+  tailwind.config = {
+    theme: {
+      extend: {
+        colors: {
+          navy: { 950: '#0B1220', 900: '#0F1B33', 800: '#152A4D' },
+          brand: { DEFAULT: '#2563EB', light: '#5B8DFF' },
+          ember: { DEFAULT: '#F97316', dark: '#C2540A' },
+          slate: { 150: '#EEF1F6' }
+        },
+        fontFamily: {
+          display: ['Sora', 'sans-serif'],
+          body: ['Inter', 'sans-serif'],
+          mono: ['JetBrains Mono', 'monospace']
+        }
+      }
+    }
+  }
+</script>
+
 <style>
-  body { font-family: 'Segoe UI', Arial, sans-serif; }
+  body { font-family: 'Inter', sans-serif; }
   .price-strike { text-decoration: line-through; }
 
-  /* --- 3D promo ribbon --- */
+  /* --- 3D promo ribbon (ember palette to match brand) --- */
   .promo-ribbon {
     position: relative;
-    background: linear-gradient(180deg, #ff5a5a 0%, #dc2626 55%, #b91c1c 100%);
+    background: linear-gradient(180deg, #fb923c 0%, #f97316 55%, #c2540a 100%);
     box-shadow:
       inset 0 1px 0 rgba(255,255,255,.45),
       inset 0 -3px 4px rgba(0,0,0,.25),
-      0 3px 6px rgba(185,28,28,.45);
+      0 3px 6px rgba(194,84,10,.45);
     text-shadow: 0 1px 1px rgba(0,0,0,.35);
     letter-spacing: .02em;
   }
@@ -35,7 +58,7 @@
     position:absolute; left:0; bottom:-6px;
     border-style: solid;
     border-width: 0 6px 6px 0;
-    border-color: transparent #7f1d1d transparent transparent;
+    border-color: transparent #7c2d12 transparent transparent;
     filter: brightness(.7);
   }
   .promo-badge-3d {
@@ -55,29 +78,34 @@
     pointer-events: none;
   }
   .price-badge-3d {
-    background: linear-gradient(180deg, #ff6b6b 0%, #e11d1d 60%, #b91c1c 100%);
+    background: linear-gradient(180deg, #fb923c 0%, #ea580c 60%, #c2540a 100%);
     box-shadow:
       inset 0 1px 0 rgba(255,255,255,.5),
       inset 0 -2px 3px rgba(0,0,0,.3),
-      0 2px 4px rgba(185,28,28,.5);
+      0 2px 4px rgba(194,84,10,.5);
     text-shadow: 0 1px 1px rgba(0,0,0,.3);
+  }
+
+  .focus-ring:focus-visible {
+    outline: 2px solid #F97316;
+    outline-offset: 2px;
+  }
+
+  @media (prefers-reduced-motion: no-preference) {
+    .hover-lift { transition: transform .25s ease, box-shadow .25s ease; }
+    .hover-lift:hover { transform: translateY(-4px); box-shadow: 0 16px 30px -12px rgba(15,27,51,0.35); }
   }
 </style>
 </head>
-<body class="bg-gray-50 text-gray-800">
-
-  <!-- Top browser-like bar (decorative, mimics screenshot context) -->
-  <div class="bg-gray-900 text-gray-300 text-xs px-4 py-1 hidden md:flex items-center gap-3">
-    <span class="opacity-70">techonline.vn/collection/san-pham-gia-soc</span>
-  </div>
+<body class="bg-slate-150 text-navy-950">
 
   <!-- Promo strip -->
-  <div class="bg-blue-600 text-white text-sm">
-    <div class="max-w-7xl mx-auto flex flex-wrap items-center justify-between px-4 py-2 gap-2">
+  <div class="bg-navy-950 text-slate-200 text-sm">
+    <div class="max-w-7xl mx-auto flex flex-wrap items-center justify-between px-4 py-2 gap-2 font-body">
       <div class="flex flex-wrap items-center gap-3">
-        <span class="bg-blue-500/60 rounded-full px-3 py-1 flex items-center gap-1">📞 Hotline 0364.878.771</span>
+        <span class="bg-white/10 rounded-full px-3 py-1 flex items-center gap-1">📞 Hotline 0364.878.771</span>
       </div>
-      <div class="flex items-center gap-4 text-xs md:text-sm">
+      <div class="flex items-center gap-4 text-xs md:text-sm text-slate-300">
         <span class="flex items-center gap-1">✔️ Khuyến mãi hot</span>
         <span class="flex items-center gap-1">📍 Hệ thống cửa hàng</span>
         <span class="flex items-center gap-1">📰 Tin tức nổi bật</span>
@@ -86,21 +114,21 @@
   </div>
 
   <!-- Header -->
-  <header class="bg-white border-b">
+  <header class="sticky top-0 z-50 bg-white/95 backdrop-blur border-b border-slate-200">
     <div class="max-w-7xl mx-auto flex flex-wrap items-center gap-4 px-4 py-4">
       <a href="index.html"
-         class="flex items-center gap-2 shrink-0 bg-orange-500 hover:bg-orange-600 text-white font-bold text-sm sm:text-base px-4 py-2.5 rounded-lg shadow-md transition-colors">
+         class="focus-ring flex items-center gap-2 shrink-0 bg-ember hover:bg-ember-dark text-white font-display font-700 text-sm sm:text-base px-4 py-2.5 rounded-xl shadow-[0_10px_20px_-8px_rgba(249,115,22,0.5)] transition-colors">
         <span aria-hidden="true" class="text-lg leading-none">←</span> Quay Về Trang Chủ
       </a>
 
       <div class="flex-1 min-w-[200px]">
-        <div class="flex items-center border-2 border-blue-500 rounded-full overflow-hidden">
-          <input type="text" placeholder="Bạn cần tìm gì?" class="flex-1 px-4 py-2 outline-none text-sm">
-          <button class="bg-blue-500 text-white px-4 py-2">🔍</button>
+        <div class="flex items-center border-2 border-brand rounded-full overflow-hidden">
+          <input type="text" placeholder="Bạn cần tìm gì?" class="flex-1 px-4 py-2 outline-none text-sm font-body">
+          <button class="focus-ring bg-brand text-white px-4 py-2">🔍</button>
         </div>
       </div>
 
-      <div class="flex items-center gap-6 text-sm shrink-0">
+      <div class="flex items-center gap-6 text-sm font-body text-navy-900/80 shrink-0">
         <div class="hidden lg:flex items-center gap-2">
           📞
           <div class="leading-tight">
@@ -110,24 +138,24 @@
         <div class="flex items-center gap-1">👤 <span class="hidden sm:inline">Tài khoản</span></div>
         <div class="flex items-center gap-1 relative">
           🛒 <span class="hidden sm:inline">Giỏ hàng</span>
-          <span class="absolute -top-2 -right-3 bg-orange-500 text-white text-[10px] rounded-full w-4 h-4 flex items-center justify-center">0</span>
+          <span class="absolute -top-2 -right-3 bg-ember text-white text-[10px] rounded-full w-4 h-4 flex items-center justify-center">0</span>
         </div>
       </div>
     </div>
 
     <!-- Nav bar -->
-    <div class="max-w-7xl mx-auto flex flex-wrap gap-2 px-4 pb-4 text-sm font-medium">
-      <button class="bg-blue-500 text-white rounded px-4 py-2 flex items-center gap-2">☰ DANH MỤC SẢN PHẨM</button>
-      <button class="border rounded px-4 py-2 flex items-center gap-2 hover:bg-gray-50">🧾 GIAO LẮP CHUYÊN NGHIỆP</button>
-      <button class="border rounded px-4 py-2 flex items-center gap-2 hover:bg-gray-50">🔄 CHÍNH SÁCH ĐỔI TRẢ</button>
-      <button class="border rounded px-4 py-2 flex items-center gap-2 hover:bg-gray-50">🚚 CHÍNH SÁCH GIAO HÀNG</button>
-      <button class="border rounded px-4 py-2 flex items-center gap-2 hover:bg-gray-50">📍 SẢN PHẨM ĐÃ XEM</button>
+    <div class="max-w-7xl mx-auto flex flex-wrap gap-2 px-4 pb-4 text-sm font-body font-medium">
+      <button class="focus-ring bg-brand text-white rounded-xl px-4 py-2 flex items-center gap-2">☰ DANH MỤC SẢN PHẨM</button>
+      <button class="focus-ring border border-slate-200 rounded-xl px-4 py-2 flex items-center gap-2 hover:bg-slate-150 transition-colors">🧾 GIAO LẮP CHUYÊN NGHIỆP</button>
+      <button class="focus-ring border border-slate-200 rounded-xl px-4 py-2 flex items-center gap-2 hover:bg-slate-150 transition-colors">🔄 CHÍNH SÁCH ĐỔI TRẢ</button>
+      <button class="focus-ring border border-slate-200 rounded-xl px-4 py-2 flex items-center gap-2 hover:bg-slate-150 transition-colors">🚚 CHÍNH SÁCH GIAO HÀNG</button>
+      <button class="focus-ring border border-slate-200 rounded-xl px-4 py-2 flex items-center gap-2 hover:bg-slate-150 transition-colors">📍 SẢN PHẨM ĐÃ XEM</button>
     </div>
   </header>
 
   <!-- Breadcrumb -->
-  <div class="max-w-7xl mx-auto px-4 py-4 text-sm text-gray-500">
-    <a href="index.html" class="hover:text-blue-600">TRANG CHỦ</a> / <span class="text-gray-800 font-medium">SẢN PHẨM GIÁ SỐC</span>
+  <div class="max-w-7xl mx-auto px-4 py-4 text-sm font-body text-navy-900/50">
+    <a href="index.html" class="hover:text-brand transition-colors">TRANG CHỦ</a> / <span class="text-navy-950 font-medium">SẢN PHẨM GIÁ SỐC</span>
   </div>
 
   <!-- Product grid -->
@@ -135,75 +163,81 @@
     <div id="product-grid" class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-4"></div>
   </main>
 
+  <!-- Footer (matches index.html) -->
+  <footer class="border-t border-slate-200 bg-white">
+    <div class="max-w-7xl mx-auto px-5 py-8 text-center text-xs sm:text-sm text-navy-900/50 font-body">
+      © 2026 Cửa Hàng Kim Long · Hotline 0364.878.771
+    </div>
+  </footer>
+
   <!-- Floating contact buttons -->
   <div class="fixed right-4 bottom-24 flex flex-col gap-3 z-40">
-    <button class="w-12 h-12 rounded-full bg-blue-500 text-white flex items-center justify-center shadow-lg">💬</button>
-    <button class="w-12 h-12 rounded-full bg-sky-400 text-white flex items-center justify-center shadow-lg">Z</button>
-    <button class="w-12 h-12 rounded-full bg-red-500 text-white flex items-center justify-center shadow-lg">📞</button>
-    <button class="w-12 h-12 rounded-full bg-red-500 text-white flex items-center justify-center shadow-lg">📞</button>
+    <button class="focus-ring w-12 h-12 rounded-full bg-brand text-white flex items-center justify-center shadow-lg hover:bg-brand-light transition-colors">💬</button>
+    <button class="focus-ring w-12 h-12 rounded-full bg-sky-400 text-white flex items-center justify-center shadow-lg hover:bg-sky-500 transition-colors">Z</button>
+    <button class="focus-ring w-12 h-12 rounded-full bg-ember text-white flex items-center justify-center shadow-lg hover:bg-ember-dark transition-colors">📞</button>
   </div>
 
   <script>
     const products = [
       {
-        badge: "Mẫu mới", discount: "-57%",
-        name: "Khóa cửa vân tay điện tử Ezviz DL05",
-        oldPrice: "8.000.000 đ", newPrice: "3.550.000 đ",
-        tags: ["Cửa Gỗ", "App", "Mã Số"],
-        img: "https://images.unsplash.com/photo-1622037022824-0c71d511ad76?w=300&h=300&fit=crop"
+        badge: "Mẫu mới", discount: "-21%",
+        name: "Nồi Cơm Điện Kim Long 1.8L",
+        oldPrice: "750.000 đ", newPrice: "590.000 đ",
+        tags: ["Chống Dính", "1.8L", "Giữ Ấm 24h"],
+        img: "https://images.unsplash.com/photo-1599182345361-9542815e73f6?w=300&h=300&fit=crop"
       },
       {
-        badge: "Mẫu mới", discount: "-29%",
-        name: "Khóa cửa nhôm thông minh EZVIZ DL06",
-        oldPrice: "5.200.000 đ", newPrice: "3.700.000 đ",
-        tags: ["Cửa Nhôm", "App", "Mã Số"],
-        img: "https://images.unsplash.com/photo-1558002038-1055907df827?w=300&h=300&fit=crop"
+        badge: null, discount: "-24%",
+        name: "Quạt Điện Đứng Kim Long 3 Tốc Độ",
+        oldPrice: "590.000 đ", newPrice: "450.000 đ",
+        tags: ["3 Tốc Độ", "Cánh 40cm", "Tuốc Xoay"],
+        img: "https://images.unsplash.com/photo-1601084195907-44baaa49dabd?w=300&h=300&fit=crop"
       },
       {
-        badge: null, discount: "-20%",
-        name: "Khóa cửa vân tay Philips DDL603E-5HWS",
-        oldPrice: "7.900.000 đ", newPrice: "6.300.000 đ",
-        tags: ["Cửa Gỗ", "App", "Mã Số", "Thẻ Từ"],
-        img: "https://images.unsplash.com/photo-1600585152220-90363fe7e115?w=300&h=300&fit=crop"
+        badge: "Mẫu mới", discount: "-26%",
+        name: "Quạt Trần Kim Long Cánh Gỗ Có Đèn",
+        oldPrice: "1.200.000 đ", newPrice: "890.000 đ",
+        tags: ["3 Cánh Gỗ", "Có Đèn", "Remote"],
+        img: "https://images.unsplash.com/photo-1620348578890-740dd10e1fe5?w=300&h=300&fit=crop"
       },
       {
-        badge: null, discount: "-20%",
-        name: "Khóa cửa thông minh DDL609-5HS tích hợp Vân...",
-        oldPrice: "5.500.000 đ", newPrice: "4.400.000 đ",
-        tags: ["Cửa Gỗ", "App", "Mã Số"],
-        img: "https://images.unsplash.com/photo-1580983561371-7f4b242d8ec0?w=300&h=300&fit=crop"
+        badge: null, discount: "-36%",
+        name: "Bóng Đèn LED Kim Long Tiết Kiệm Điện",
+        oldPrice: "55.000 đ", newPrice: "35.000 đ",
+        tags: ["Ánh Sáng Trắng", "Đui E27", "Tiết Kiệm Điện"],
+        img: "https://images.unsplash.com/photo-1604322415766-3eccf7b56a0a?w=300&h=300&fit=crop"
       },
       {
-        badge: null, discount: "-20%",
-        name: "Khóa cửa thông minh Philips DDL610-5HBS, Tích hợp v...",
-        oldPrice: "9.200.000 đ", newPrice: "7.400.000 đ",
-        tags: ["Cửa Gỗ", "App", "Mã Số", "Thẻ Từ"],
-        img: "https://images.unsplash.com/photo-1558002038-bbf237a99816?w=300&h=300&fit=crop"
+        badge: null, discount: "-22%",
+        name: "Bếp Điện Từ Kim Long Đơn",
+        oldPrice: "890.000 đ", newPrice: "690.000 đ",
+        tags: ["Mâm Từ Đơn", "Hẹn Giờ", "Cảm Ứng"],
+        img: "https://images.unsplash.com/photo-1556819132-52350b2a7836?w=300&h=300&fit=crop"
       }
     ];
 
     const grid = document.getElementById('product-grid');
     grid.innerHTML = products.map(p => `
-      <div class="bg-white border rounded-lg overflow-hidden flex flex-col hover:shadow-lg transition-shadow relative">
-        ${p.badge ? `<span class="absolute top-2 left-2 bg-white text-pink-500 text-xs font-semibold px-2.5 py-1 rounded-full z-10 shadow-[0_2px_4px_rgba(0,0,0,.15)] border border-pink-100">${p.badge}</span>` : ''}
-        <div class="aspect-square bg-gray-100 flex items-center justify-center overflow-hidden">
+      <div class="hover-lift bg-white border border-slate-200 rounded-2xl overflow-hidden flex flex-col relative">
+        ${p.badge ? `<span class="absolute top-2 left-2 bg-white text-ember text-xs font-display font-700 px-2.5 py-1 rounded-full z-10 shadow-[0_2px_4px_rgba(0,0,0,.15)] border border-ember/20">${p.badge}</span>` : ''}
+        <div class="aspect-square bg-slate-100 flex items-center justify-center overflow-hidden">
           <img src="${p.img}" alt="${p.name}" class="object-cover w-full h-full">
         </div>
         <div class="relative h-5">
           <div class="absolute -top-4 left-0 right-0 flex items-stretch drop-shadow-md">
-            <span class="promo-ribbon text-white text-[11px] font-extrabold uppercase px-3 py-1.5 flex-1 flex items-center justify-center rounded-l-sm">Khuyến Mãi Đặc Biệt</span>
-            <span class="promo-badge-3d text-red-800 text-xs font-extrabold px-2.5 py-1.5 flex items-center rounded-r-sm">${p.discount}</span>
+            <span class="promo-ribbon text-white text-[11px] font-display font-800 uppercase px-3 py-1.5 flex-1 flex items-center justify-center rounded-l-sm">Khuyến Mãi Đặc Biệt</span>
+            <span class="promo-badge-3d text-amber-900 text-xs font-display font-800 px-2.5 py-1.5 flex items-center rounded-r-sm">${p.discount}</span>
           </div>
         </div>
-        <div class="p-3 pt-6 flex flex-col gap-1 flex-1">
-          <a href="#" class="text-sm font-medium text-gray-800 hover:text-blue-600 leading-snug line-clamp-2 min-h-[2.5em]">${p.name}</a>
-          <div class="price-strike text-gray-400 text-sm">${p.oldPrice}</div>
+        <div class="p-3 pt-6 flex flex-col gap-1 flex-1 font-body">
+          <a href="#" class="focus-ring text-sm font-display font-700 text-navy-950 hover:text-brand transition-colors leading-snug line-clamp-2 min-h-[2.5em]">${p.name}</a>
+          <div class="price-strike text-navy-900/40 text-sm">${p.oldPrice}</div>
           <div class="flex items-center gap-2">
-            <span class="text-red-600 font-extrabold text-lg" style="text-shadow:0 1px 0 rgba(0,0,0,.08)">${p.newPrice}</span>
-            <span class="price-badge-3d text-white text-xs font-bold px-1.5 py-0.5 rounded">${p.discount}</span>
+            <span class="text-ember-dark font-display font-800 text-lg">${p.newPrice}</span>
+            <span class="price-badge-3d text-white text-xs font-display font-700 px-1.5 py-0.5 rounded">${p.discount}</span>
           </div>
           <div class="flex flex-wrap gap-1 mt-1">
-            ${p.tags.map(t => `<span class="border rounded px-2 py-0.5 text-[11px] text-gray-500">${t}</span>`).join('')}
+            ${p.tags.map(t => `<span class="border border-slate-200 rounded px-2 py-0.5 text-[11px] text-navy-900/50">${t}</span>`).join('')}
           </div>
         </div>
       </div>
