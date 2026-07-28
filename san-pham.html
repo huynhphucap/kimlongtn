@@ -151,6 +151,9 @@
   <!-- Product grid -->
   <main class="max-w-7xl mx-auto px-4 pb-16">
     <div id="product-grid" class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-4"></div>
+
+    <!-- Phân trang -->
+    <div id="pagination" class="flex flex-wrap items-center justify-center gap-2 mt-8 font-body"></div>
   </main>
 
   <!-- Footer (matches index.html) -->
@@ -170,50 +173,85 @@
   <script>
     // ====== CẤU HÌNH SUPABASE ======
     // Xem hướng dẫn lấy 2 giá trị này trong file huong-dan-supabase.md
-    const SUPABASE_URL = "https://tvqiphlmvcbmpwexihby.supabase.co";
-    const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InR2cWlwaGxtdmNibXB3ZXhpaGJ5Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODUyMTc2NzIsImV4cCI6MjEwMDc5MzY3Mn0.oz5-F_1UCM0aXf9T9bFd7cpDgKAa0ReZfG1kfxp5ni0";
+    const SUPABASE_URL = "DÁN_PROJECT_URL_VÀO_ĐÂY";
+    const SUPABASE_ANON_KEY = "DÁN_ANON_KEY_VÀO_ĐÂY";
+
+    // Số sản phẩm hiển thị mỗi trang
+    const PAGE_SIZE = 5;
+    let currentPage = 1;
 
     // Dữ liệu dự phòng: hiển thị tạm nếu chưa cấu hình Supabase hoặc mất mạng
     const FALLBACK_PRODUCTS = [
-      {
-        badge: "Mẫu mới", discount: "-21%",
-        name: "Nồi Cơm Điện Kim Long 1.8L",
+      { badge: "Mẫu mới", discount: "-21%", name: "Nồi Cơm Điện Kim Long 1.8L",
         old_price: "750.000 đ", new_price: "590.000 đ",
         tags: ["Chống Dính", "1.8L", "Giữ Ấm 24h"],
-        img: "https://images.unsplash.com/photo-1599182345361-9542815e73f6?w=300&h=300&fit=crop"
-      },
-      {
-        badge: null, discount: "-24%",
-        name: "Quạt Điện Đứng Kim Long 3 Tốc Độ",
+        img: "https://images.unsplash.com/photo-1599182345361-9542815e73f6?w=300&h=300&fit=crop" },
+      { badge: null, discount: "-24%", name: "Quạt Điện Đứng Kim Long 3 Tốc Độ",
         old_price: "590.000 đ", new_price: "450.000 đ",
         tags: ["3 Tốc Độ", "Cánh 40cm", "Tuốc Xoay"],
-        img: "https://images.unsplash.com/photo-1601084195907-44baaa49dabd?w=300&h=300&fit=crop"
-      },
-      {
-        badge: "Mẫu mới", discount: "-26%",
-        name: "Quạt Trần Kim Long Cánh Gỗ Có Đèn",
+        img: "https://images.unsplash.com/photo-1601084195907-44baaa49dabd?w=300&h=300&fit=crop" },
+      { badge: "Mẫu mới", discount: "-26%", name: "Quạt Trần Kim Long Cánh Gỗ Có Đèn",
         old_price: "1.200.000 đ", new_price: "890.000 đ",
         tags: ["3 Cánh Gỗ", "Có Đèn", "Remote"],
-        img: "https://images.unsplash.com/photo-1620348578890-740dd10e1fe5?w=300&h=300&fit=crop"
-      },
-      {
-        badge: null, discount: "-36%",
-        name: "Bóng Đèn LED Kim Long Tiết Kiệm Điện",
+        img: "https://images.unsplash.com/photo-1620348578890-740dd10e1fe5?w=300&h=300&fit=crop" },
+      { badge: null, discount: "-36%", name: "Bóng Đèn LED Kim Long Tiết Kiệm Điện",
         old_price: "55.000 đ", new_price: "35.000 đ",
         tags: ["Ánh Sáng Trắng", "Đui E27", "Tiết Kiệm Điện"],
-        img: "https://images.unsplash.com/photo-1604322415766-3eccf7b56a0a?w=300&h=300&fit=crop"
-      },
-      {
-        badge: null, discount: "-22%",
-        name: "Bếp Điện Từ Kim Long Đơn",
+        img: "https://images.unsplash.com/photo-1604322415766-3eccf7b56a0a?w=300&h=300&fit=crop" },
+      { badge: null, discount: "-22%", name: "Bếp Điện Từ Kim Long Đơn",
         old_price: "890.000 đ", new_price: "690.000 đ",
         tags: ["Mâm Từ Đơn", "Hẹn Giờ", "Cảm Ứng"],
-        img: "https://images.unsplash.com/photo-1556819132-52350b2a7836?w=300&h=300&fit=crop"
-      }
+        img: "https://images.unsplash.com/photo-1556819132-52350b2a7836?w=300&h=300&fit=crop" },
+      { badge: "Mẫu mới", discount: "-23%", name: "Nồi Chiên Không Dầu Kim Long 5L",
+        old_price: "1.100.000 đ", new_price: "850.000 đ",
+        tags: ["Dung Tích 5L", "Không Dầu Mỡ", "Hẹn Giờ"],
+        img: "https://images.unsplash.com/photo-1599182345361-9542815e73f6?w=300&h=300&fit=crop" },
+      { badge: null, discount: "-26%", name: "Máy Xay Sinh Tố Kim Long Đa Năng",
+        old_price: "650.000 đ", new_price: "480.000 đ",
+        tags: ["Cối 1.5L", "2 Tốc Độ", "Lưỡi Inox"],
+        img: "https://images.unsplash.com/photo-1725656470947-6c655ba024d0?w=300&h=300&fit=crop" },
+      { badge: null, discount: "-28%", name: "Ấm Đun Siêu Tốc Kim Long 1.8L",
+        old_price: "320.000 đ", new_price: "230.000 đ",
+        tags: ["1.8L", "Tự Ngắt", "Chống Cạn Nước"],
+        img: "https://images.unsplash.com/photo-1561336739-ad95e6db39e5?w=300&h=300&fit=crop" },
+      { badge: "Mẫu mới", discount: "-27%", name: "Bàn Ủi Hơi Nước Kim Long",
+        old_price: "480.000 đ", new_price: "350.000 đ",
+        tags: ["Hơi Nước", "Đế Chống Dính", "1.5m Dây"],
+        img: "https://images.unsplash.com/photo-1540544093-b0880061e1a5?w=300&h=300&fit=crop" },
+      { badge: null, discount: "-34%", name: "Ổ Cắm Điện Đa Năng Kim Long",
+        old_price: "150.000 đ", new_price: "99.000 đ",
+        tags: ["6 Ổ Cắm", "Chống Giật", "Dây 3m"],
+        img: "https://images.unsplash.com/photo-1650501386688-41f6d0251875?w=300&h=300&fit=crop" },
+      { badge: "Mẫu mới", discount: "-22%", name: "Lò Vi Sóng Kim Long 20L",
+        old_price: "1.850.000 đ", new_price: "1.450.000 đ",
+        tags: ["20L", "Rã Đông", "Hẹn Giờ"],
+        img: "https://images.unsplash.com/photo-1630699144310-980c8ed310e3?w=300&h=300&fit=crop" },
+      { badge: null, discount: "-29%", name: "Quạt Hộp Kim Long Mini",
+        old_price: "280.000 đ", new_price: "199.000 đ",
+        tags: ["Gọn Nhẹ", "3 Tốc Độ", "Tiết Kiệm Điện"],
+        img: "https://images.unsplash.com/photo-1601084195907-44baaa49dabd?w=300&h=300&fit=crop" },
+      { badge: null, discount: "-25%", name: "Quạt Trần Kim Long 3 Cánh Nhựa",
+        old_price: "790.000 đ", new_price: "590.000 đ",
+        tags: ["3 Cánh Nhựa", "Vận Hành Êm", "Remote"],
+        img: "https://images.unsplash.com/photo-1620348578890-740dd10e1fe5?w=300&h=300&fit=crop" },
+      { badge: null, discount: "-37%", name: "Đui Đèn Kim Long Chống Nước E27",
+        old_price: "35.000 đ", new_price: "22.000 đ",
+        tags: ["Chống Nước", "Đui E27", "Chịu Nhiệt"],
+        img: "https://images.unsplash.com/photo-1604322415766-3eccf7b56a0a?w=300&h=300&fit=crop" },
+      { badge: null, discount: "-25%", name: "Bếp Hồng Ngoại Đơn Kim Long",
+        old_price: "650.000 đ", new_price: "490.000 đ",
+        tags: ["Mâm Hồng Ngoại", "Hẹn Giờ", "Cảm Ứng"],
+        img: "https://images.unsplash.com/photo-1556819132-52350b2a7836?w=300&h=300&fit=crop" }
     ];
 
     function renderProducts(products) {
       const grid = document.getElementById('product-grid');
+
+      if (!products || products.length === 0) {
+        grid.innerHTML = `<div class="col-span-full text-center py-10 font-body text-navy-900/50">Không có sản phẩm nào ở trang này.</div>`;
+        return;
+      }
+
       grid.innerHTML = products.map(p => `
         <div class="hover-lift bg-white border border-slate-200 rounded-2xl overflow-hidden flex flex-col relative">
           ${p.badge ? `<span class="absolute top-2 left-2 bg-white text-ember text-xs font-display font-700 px-2.5 py-1 rounded-full z-10 shadow-[0_2px_4px_rgba(0,0,0,.15)] border border-ember/20">${p.badge}</span>` : ''}
@@ -241,27 +279,79 @@
       `).join('');
     }
 
-    async function loadProducts() {
+    function renderPagination(totalItems, page) {
+      const container = document.getElementById('pagination');
+      const totalPages = Math.max(1, Math.ceil(totalItems / PAGE_SIZE));
+
+      if (totalPages <= 1) {
+        container.innerHTML = '';
+        return;
+      }
+
+      const btn = (label, targetPage, { disabled = false, active = false } = {}) => `
+        <button
+          data-page="${targetPage}"
+          ${disabled ? 'disabled' : ''}
+          class="focus-ring pagination-btn min-w-[2.5rem] px-3 py-2 rounded-xl text-sm font-display font-700 transition-colors
+            ${active ? 'bg-brand text-white shadow-[0_6px_14px_-6px_rgba(37,99,235,0.6)]' : ''}
+            ${!active && !disabled ? 'border border-slate-200 text-navy-900/70 hover:bg-slate-150 hover:border-brand hover:text-brand' : ''}
+            ${disabled ? 'border border-slate-200 text-navy-900/30 cursor-not-allowed' : ''}">
+          ${label}
+        </button>`;
+
+      let html = btn('← Trước', page - 1, { disabled: page <= 1 });
+
+      for (let i = 1; i <= totalPages; i++) {
+        html += btn(i, i, { active: i === page });
+      }
+
+      html += btn('Sau →', page + 1, { disabled: page >= totalPages });
+
+      container.innerHTML = html;
+
+      container.querySelectorAll('.pagination-btn:not([disabled])').forEach(el => {
+        el.addEventListener('click', () => {
+          const target = parseInt(el.dataset.page, 10);
+          if (target >= 1 && target <= totalPages) {
+            loadProducts(target);
+            window.scrollTo({ top: document.getElementById('product-grid').offsetTop - 100, behavior: 'smooth' });
+          }
+        });
+      });
+    }
+
+    async function loadProducts(page = 1) {
+      currentPage = page;
       const isConfigured = SUPABASE_URL.startsWith('https://') && SUPABASE_ANON_KEY.startsWith('eyJ');
+      const from = (page - 1) * PAGE_SIZE;
+      const to = from + PAGE_SIZE - 1;
 
       if (!isConfigured) {
         console.warn('Chưa cấu hình Supabase — đang hiển thị dữ liệu mẫu. Xem huong-dan-supabase.md để kết nối dữ liệu sống.');
-        renderProducts(FALLBACK_PRODUCTS);
+        renderProducts(FALLBACK_PRODUCTS.slice(from, to + 1));
+        renderPagination(FALLBACK_PRODUCTS.length, page);
         return;
       }
 
       try {
         const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
-        const { data, error } = await supabase.from('products').select('*').order('id');
-        if (error || !data || data.length === 0) throw error || new Error('Không có dữ liệu');
+        const { data, error, count } = await supabase
+          .from('products')
+          .select('*', { count: 'exact' })
+          .order('id')
+          .range(from, to);
+        if (error) throw error;
+        if (!data || data.length === 0) throw new Error('Không có dữ liệu');
         renderProducts(data);
+        renderPagination(count ?? data.length, page);
       } catch (err) {
         console.error('Lỗi tải dữ liệu từ Supabase, dùng dữ liệu dự phòng:', err);
-        renderProducts(FALLBACK_PRODUCTS);
+        renderProducts(FALLBACK_PRODUCTS.slice(from, to + 1));
+        renderPagination(FALLBACK_PRODUCTS.length, page);
       }
     }
 
-    loadProducts();
+    loadProducts(1);
 
     if ('serviceWorker' in navigator) {
       navigator.serviceWorker.register('service-worker.js').catch(() => {});
