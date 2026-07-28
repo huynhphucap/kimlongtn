@@ -104,21 +104,7 @@
 </head>
 <body class="bg-slate-150 text-navy-950">
 
-  <!-- Promo strip -->
-  <div class="bg-navy-950 text-slate-200 text-sm">
-    <div class="max-w-7xl mx-auto flex flex-wrap items-center justify-between px-4 py-2 gap-2 font-body">
-      <div class="flex flex-wrap items-center gap-3">
-        <span class="bg-white/10 rounded-full px-3 py-1 flex items-center gap-1">📞 Hotline 0364.878.771</span>
-      </div>
-      <div class="flex items-center gap-4 text-xs md:text-sm text-slate-300">
-        <span class="flex items-center gap-1">✔️ Khuyến mãi hot</span>
-        <span class="flex items-center gap-1">📍 Hệ thống cửa hàng</span>
-        <span class="flex items-center gap-1">📰 Tin tức nổi bật</span>
-      </div>
-    </div>
-  </div>
-
-  <!-- ============ NAVBAR (giống index.html) ============ -->
+  <!-- ============ NAVBAR (giống khuyen-mai.html & lien-he.html) ============ -->
   <header class="sticky top-0 z-50 bg-white/95 backdrop-blur border-b border-slate-200">
     <nav class="max-w-6xl mx-auto flex items-center justify-between px-5 py-4">
 
@@ -129,18 +115,30 @@
       </a>
 
       <!-- 3 menu items -->
-      <ul class="hidden sm:flex items-center gap-8 font-body font-medium text-sm text-navy-900/80">
-        <li><a href="san-pham.html" class="hover:text-brand transition-colors focus-ring rounded">Sản Phẩm</a></li>
-        <li><a href="khuyen-mai.html" class="hover:text-brand transition-colors focus-ring rounded">Khuyến Mãi</a></li>
-        <li><a href="lien-he.html" class="hover:text-brand transition-colors focus-ring rounded">Liên Hệ</a></li>
-      </ul>
+      <div class="flex items-center gap-6">
+        <ul class="hidden sm:flex items-center gap-8 font-body font-medium text-sm text-navy-900/80">
+          <li><a href="san-pham.html" class="text-brand focus-ring rounded">Sản Phẩm</a></li>
+          <li><a href="khuyen-mai.html" class="hover:text-brand transition-colors focus-ring rounded">Khuyến Mãi</a></li>
+          <li><a href="lien-he.html" class="hover:text-brand transition-colors focus-ring rounded">Liên Hệ</a></li>
+        </ul>
+
+        <a href="index.html"
+           class="focus-ring hidden sm:inline-flex items-center gap-1.5 border border-slate-200 hover:border-ember hover:text-ember rounded-full px-4 py-1.5 text-sm font-body font-medium text-navy-900/70 transition-colors">
+          <span aria-hidden="true">←</span> Trang Chủ
+        </a>
+      </div>
 
       <!-- Mobile: compact menu row -->
-      <ul class="flex sm:hidden items-center gap-4 font-body text-xs font-medium text-navy-900/80">
-        <li><a href="san-pham.html" class="focus-ring rounded">Sản Phẩm</a></li>
-        <li><a href="khuyen-mai.html" class="focus-ring rounded">Khuyến Mãi</a></li>
-        <li><a href="lien-he.html" class="focus-ring rounded">Liên Hệ</a></li>
-      </ul>
+      <div class="flex sm:hidden items-center gap-3">
+        <ul class="flex items-center gap-4 font-body text-xs font-medium text-navy-900/80">
+          <li><a href="san-pham.html" class="text-brand focus-ring rounded">Sản Phẩm</a></li>
+          <li><a href="khuyen-mai.html" class="focus-ring rounded">Khuyến Mãi</a></li>
+          <li><a href="lien-he.html" class="focus-ring rounded">Liên Hệ</a></li>
+        </ul>
+        <a href="index.html" class="focus-ring flex items-center gap-1 border border-slate-200 rounded-full px-3 py-1 text-xs font-body font-medium text-ember">
+          <span aria-hidden="true">←</span> Trang Chủ
+        </a>
+      </div>
     </nav>
   </header>
 
