@@ -2,6 +2,8 @@ const CACHE_NAME = "techonline-cache-v1";
 const ASSETS = [
   "./index.html",
   "./san-pham.html",
+  "./khuyen-mai.html",
+  "./lien-he.html",
   "./manifest.json",
   "./icon-192.png",
   "./icon-512.png"

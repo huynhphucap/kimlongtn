@@ -32,6 +32,13 @@
 <style>
   body { font-family: 'Inter', sans-serif; }
 
+  /* Mượt khi chuyển qua lại giữa các trang (hỗ trợ trên Chrome/Edge mới) */
+  @view-transition { navigation: auto; }
+
+  /* Fallback: trang mờ dần hiện ra khi tải, tạo cảm giác chuyển mượt trên mọi trình duyệt */
+  @keyframes page-in { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: translateY(0); } }
+  body { animation: page-in .35s ease-out; }
+
   /* Dot texture — subtle circuit-board feel for an electronics store */
   .keypad-texture {
     background-image: radial-gradient(circle, rgba(255,255,255,0.09) 1.6px, transparent 1.6px);
@@ -74,15 +81,15 @@
       <!-- 3 menu items -->
       <ul class="hidden sm:flex items-center gap-8 font-body font-medium text-sm text-navy-900/80">
         <li><a href="san-pham.html" class="hover:text-brand transition-colors focus-ring rounded">Sản Phẩm</a></li>
-        <li><a href="san-pham.html#khuyen-mai" class="hover:text-brand transition-colors focus-ring rounded">Khuyến Mãi</a></li>
-        <li><a href="#lien-he" class="hover:text-brand transition-colors focus-ring rounded">Liên Hệ</a></li>
+        <li><a href="khuyen-mai.html" class="hover:text-brand transition-colors focus-ring rounded">Khuyến Mãi</a></li>
+        <li><a href="lien-he.html" class="hover:text-brand transition-colors focus-ring rounded">Liên Hệ</a></li>
       </ul>
 
       <!-- Mobile: compact menu row -->
       <ul class="flex sm:hidden items-center gap-4 font-body text-xs font-medium text-navy-900/80">
         <li><a href="san-pham.html" class="focus-ring rounded">Sản Phẩm</a></li>
-        <li><a href="san-pham.html#khuyen-mai" class="focus-ring rounded">Khuyến Mãi</a></li>
-        <li><a href="#lien-he" class="focus-ring rounded">Liên Hệ</a></li>
+        <li><a href="khuyen-mai.html" class="focus-ring rounded">Khuyến Mãi</a></li>
+        <li><a href="lien-he.html" class="focus-ring rounded">Liên Hệ</a></li>
       </ul>
     </nav>
   </header>

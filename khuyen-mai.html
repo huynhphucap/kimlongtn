@@ -1,0 +1,346 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Cửa Hàng Kim Long - Khuyến Mãi Đặc Biệt</title>
+
+<link rel="manifest" href="manifest.json">
+<meta name="theme-color" content="#2563eb">
+<link rel="icon" href="icon-192.png">
+<link rel="apple-touch-icon" href="icon-192.png">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Kim Long">
+
+<script src="https://cdn.tailwindcss.com"></script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Sora:wght@400;600;700;800&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet">
+
+<script>
+  tailwind.config = {
+    theme: {
+      extend: {
+        colors: {
+          navy: { 950: '#0B1220', 900: '#0F1B33', 800: '#152A4D' },
+          brand: { DEFAULT: '#2563EB', light: '#5B8DFF' },
+          ember: { DEFAULT: '#F97316', dark: '#C2540A' },
+          slate: { 150: '#EEF1F6' }
+        },
+        fontFamily: {
+          display: ['Sora', 'sans-serif'],
+          body: ['Inter', 'sans-serif'],
+          mono: ['JetBrains Mono', 'monospace']
+        }
+      }
+    }
+  }
+</script>
+
+<style>
+  body { font-family: 'Inter', sans-serif; }
+
+  @view-transition { navigation: auto; }
+  @keyframes page-in { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: translateY(0); } }
+  body { animation: page-in .35s ease-out; }
+
+  .keypad-texture {
+    background-image: radial-gradient(circle, rgba(255,255,255,0.09) 1.6px, transparent 1.6px);
+    background-size: 22px 22px;
+  }
+
+  .promo-ribbon {
+    position: relative;
+    background: linear-gradient(180deg, #fb923c 0%, #f97316 55%, #c2540a 100%);
+    box-shadow:
+      inset 0 1px 0 rgba(255,255,255,.45),
+      inset 0 -3px 4px rgba(0,0,0,.25),
+      0 3px 6px rgba(194,84,10,.45);
+    text-shadow: 0 1px 1px rgba(0,0,0,.35);
+    letter-spacing: .02em;
+  }
+  .promo-ribbon::after{
+    content:"";
+    position:absolute; left:0; bottom:-6px;
+    border-style: solid;
+    border-width: 0 6px 6px 0;
+    border-color: transparent #7c2d12 transparent transparent;
+    filter: brightness(.7);
+  }
+  .promo-badge-3d {
+    position: relative;
+    background: linear-gradient(180deg, #ffe37a 0%, #fbbf24 55%, #f59e0b 100%);
+    box-shadow:
+      inset 0 1px 0 rgba(255,255,255,.6),
+      inset 0 -3px 4px rgba(0,0,0,.25),
+      0 3px 6px rgba(180,83,9,.5);
+    text-shadow: 0 1px 0 rgba(255,255,255,.35);
+  }
+  .promo-badge-3d::before{
+    content:"";
+    position:absolute; inset:0;
+    border-radius: inherit;
+    background: linear-gradient(120deg, rgba(255,255,255,.55) 0%, rgba(255,255,255,0) 40%);
+    pointer-events: none;
+  }
+
+  /* Thẻ khuyến mãi 3D: nổi khối, viền sáng dần khi hover */
+  .promo-card {
+    position: relative;
+    background: linear-gradient(180deg, #ffffff 0%, #fafbfe 100%);
+    box-shadow:
+      0 1px 0 rgba(255,255,255,.8) inset,
+      0 12px 24px -14px rgba(15,27,51,.25);
+    transition: transform .3s ease, box-shadow .3s ease, border-color .3s ease;
+  }
+  .promo-card:hover {
+    transform: translateY(-6px) scale(1.015);
+    box-shadow:
+      0 1px 0 rgba(255,255,255,.8) inset,
+      0 22px 40px -16px rgba(194,84,10,.35);
+    border-color: #F97316;
+  }
+  .promo-card::before {
+    content: "";
+    position: absolute; inset: 0;
+    border-radius: inherit;
+    padding: 1.5px;
+    background: linear-gradient(135deg, transparent 40%, rgba(249,115,22,.55) 100%);
+    -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
+    -webkit-mask-composite: xor;
+    mask-composite: exclude;
+    opacity: 0;
+    transition: opacity .3s ease;
+    pointer-events: none;
+  }
+  .promo-card:hover::before { opacity: 1; }
+
+  .focus-ring:focus-visible {
+    outline: 2px solid #F97316;
+    outline-offset: 2px;
+  }
+
+  /* Đồng hồ đếm ngược flash sale */
+  .countdown-chip {
+    font-family: 'JetBrains Mono', monospace;
+    background: #0B1220;
+    color: #5CF2A0;
+    text-shadow: 0 0 6px rgba(92, 242, 160, 0.55);
+  }
+</style>
+</head>
+
+<body class="bg-slate-150 text-navy-950">
+
+  <!-- ============ NAVBAR ============ -->
+  <header class="sticky top-0 z-50 bg-white/95 backdrop-blur border-b border-slate-200">
+    <nav class="max-w-6xl mx-auto flex items-center justify-between px-5 py-4">
+      <a href="index.html" class="flex items-center gap-2 shrink-0">
+        <span class="w-9 h-9 rounded-lg bg-brand flex items-center justify-center text-white font-display font-800 text-sm">KL</span>
+        <span class="font-display font-800 text-lg tracking-tight">Kim Long</span>
+      </a>
+
+      <ul class="hidden sm:flex items-center gap-8 font-body font-medium text-sm text-navy-900/80">
+        <li><a href="san-pham.html" class="hover:text-brand transition-colors focus-ring rounded">Sản Phẩm</a></li>
+        <li><a href="khuyen-mai.html" class="text-brand focus-ring rounded">Khuyến Mãi</a></li>
+        <li><a href="lien-he.html" class="hover:text-brand transition-colors focus-ring rounded">Liên Hệ</a></li>
+      </ul>
+
+      <ul class="flex sm:hidden items-center gap-4 font-body text-xs font-medium text-navy-900/80">
+        <li><a href="san-pham.html" class="focus-ring rounded">Sản Phẩm</a></li>
+        <li><a href="khuyen-mai.html" class="text-brand focus-ring rounded">Khuyến Mãi</a></li>
+        <li><a href="lien-he.html" class="focus-ring rounded">Liên Hệ</a></li>
+      </ul>
+    </nav>
+  </header>
+
+  <!-- ============ BANNER ============ -->
+  <section class="keypad-texture bg-gradient-to-br from-navy-950 via-navy-900 to-navy-800 text-white">
+    <div class="max-w-6xl mx-auto px-5 py-16 sm:py-20 flex flex-col items-center text-center gap-6">
+      <span class="font-mono text-xs sm:text-sm tracking-widest text-brand-light border border-brand-light/40 rounded-full px-4 py-1">
+        CỬA HÀNG KIM LONG • ƯU ĐÃI CÓ HẠN
+      </span>
+
+      <h1 class="font-display font-800 text-3xl sm:text-5xl leading-tight max-w-3xl">
+        Khuyến Mãi Đặc Biệt Tháng Này
+      </h1>
+
+      <p class="font-body text-slate-300 text-sm sm:text-lg max-w-xl">
+        Giảm giá sốc, mua kèm ưu đãi và miễn phí giao lắp — chỉ có tại Cửa Hàng Kim Long.
+      </p>
+
+      <!-- Flash sale countdown -->
+      <div class="mt-2 flex items-center gap-3 bg-white/5 border border-white/10 rounded-2xl px-5 py-3">
+        <span class="font-display font-700 text-sm sm:text-base text-ember">⚡ Flash Sale kết thúc sau</span>
+        <div id="countdown" class="countdown-chip flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-sm sm:text-base font-700">
+          <span id="cd-h">00</span>:<span id="cd-m">00</span>:<span id="cd-s">00</span>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ PROMO GRID ============ -->
+  <main class="max-w-6xl mx-auto px-5 py-14 sm:py-20">
+    <div class="text-center mb-10 sm:mb-14">
+      <h2 class="font-display font-800 text-2xl sm:text-3xl text-navy-950">Ưu Đãi Nổi Bật</h2>
+      <p class="font-body text-navy-900/60 text-sm sm:text-base mt-2">Rê chuột vào từng ưu đãi để xem chi tiết</p>
+    </div>
+
+    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 sm:gap-7">
+
+      <!-- Promo 1 -->
+      <article class="promo-card rounded-2xl border border-slate-200 overflow-hidden flex flex-col">
+        <div class="relative h-6">
+          <div class="absolute -top-4 left-0 right-0 flex items-stretch drop-shadow-md">
+            <span class="promo-ribbon text-white text-[11px] font-display font-800 uppercase px-3 py-1.5 flex-1 flex items-center justify-center rounded-l-sm">Giảm Sốc</span>
+            <span class="promo-badge-3d text-amber-900 text-xs font-display font-800 px-2.5 py-1.5 flex items-center rounded-r-sm">-30%</span>
+          </div>
+        </div>
+        <div class="p-6 pt-8 flex flex-col gap-3 flex-1">
+          <span class="text-3xl">🍚</span>
+          <h3 class="font-display font-700 text-lg text-navy-950">Giảm 30% Nồi Cơm Điện</h3>
+          <p class="font-body text-sm text-navy-900/60">Áp dụng cho toàn bộ nồi cơm điện Kim Long. Số lượng có hạn trong tháng.</p>
+          <a href="san-pham.html" class="focus-ring mt-auto inline-flex items-center gap-1 text-sm font-display font-700 text-brand hover:text-ember transition-colors pt-2">
+            Xem Sản Phẩm <span aria-hidden="true">→</span>
+          </a>
+        </div>
+      </article>
+
+      <!-- Promo 2 -->
+      <article class="promo-card rounded-2xl border border-slate-200 overflow-hidden flex flex-col">
+        <div class="relative h-6">
+          <div class="absolute -top-4 left-0 right-0 flex items-stretch drop-shadow-md">
+            <span class="promo-ribbon text-white text-[11px] font-display font-800 uppercase px-3 py-1.5 flex-1 flex items-center justify-center rounded-l-sm">Mua Kèm Ưu Đãi</span>
+            <span class="promo-badge-3d text-amber-900 text-xs font-display font-800 px-2.5 py-1.5 flex items-center rounded-r-sm">2+1</span>
+          </div>
+        </div>
+        <div class="p-6 pt-8 flex flex-col gap-3 flex-1">
+          <span class="text-3xl">💡</span>
+          <h3 class="font-display font-700 text-lg text-navy-950">Mua 2 Tặng 1 Bóng Đèn LED</h3>
+          <p class="font-body text-sm text-navy-900/60">Mua 2 bóng đèn LED Kim Long bất kỳ, tặng ngay 1 bóng cùng loại.</p>
+          <a href="san-pham.html" class="focus-ring mt-auto inline-flex items-center gap-1 text-sm font-display font-700 text-brand hover:text-ember transition-colors pt-2">
+            Xem Sản Phẩm <span aria-hidden="true">→</span>
+          </a>
+        </div>
+      </article>
+
+      <!-- Promo 3 -->
+      <article class="promo-card rounded-2xl border border-slate-200 overflow-hidden flex flex-col">
+        <div class="relative h-6">
+          <div class="absolute -top-4 left-0 right-0 flex items-stretch drop-shadow-md">
+            <span class="promo-ribbon text-white text-[11px] font-display font-800 uppercase px-3 py-1.5 flex-1 flex items-center justify-center rounded-l-sm">Combo Tiết Kiệm</span>
+            <span class="promo-badge-3d text-amber-900 text-xs font-display font-800 px-2.5 py-1.5 flex items-center rounded-r-sm">-500K</span>
+          </div>
+        </div>
+        <div class="p-6 pt-8 flex flex-col gap-3 flex-1">
+          <span class="text-3xl">🌀</span>
+          <h3 class="font-display font-700 text-lg text-navy-950">Combo Quạt Điện + Bếp Điện Từ</h3>
+          <p class="font-body text-sm text-navy-900/60">Mua kèm combo, giảm ngay 500.000₫ so với mua lẻ từng sản phẩm.</p>
+          <a href="san-pham.html" class="focus-ring mt-auto inline-flex items-center gap-1 text-sm font-display font-700 text-brand hover:text-ember transition-colors pt-2">
+            Xem Sản Phẩm <span aria-hidden="true">→</span>
+          </a>
+        </div>
+      </article>
+
+      <!-- Promo 4 -->
+      <article class="promo-card rounded-2xl border border-slate-200 overflow-hidden flex flex-col">
+        <div class="relative h-6">
+          <div class="absolute -top-4 left-0 right-0 flex items-stretch drop-shadow-md">
+            <span class="promo-ribbon text-white text-[11px] font-display font-800 uppercase px-3 py-1.5 flex-1 flex items-center justify-center rounded-l-sm">Miễn Phí</span>
+            <span class="promo-badge-3d text-amber-900 text-xs font-display font-800 px-2.5 py-1.5 flex items-center rounded-r-sm">0đ</span>
+          </div>
+        </div>
+        <div class="p-6 pt-8 flex flex-col gap-3 flex-1">
+          <span class="text-3xl">🚚</span>
+          <h3 class="font-display font-700 text-lg text-navy-950">Miễn Phí Giao Lắp Toàn Quốc</h3>
+          <p class="font-body text-sm text-navy-900/60">Áp dụng cho đơn hàng từ 2.000.000₫, giao và lắp đặt tận nhà.</p>
+          <a href="san-pham.html" class="focus-ring mt-auto inline-flex items-center gap-1 text-sm font-display font-700 text-brand hover:text-ember transition-colors pt-2">
+            Xem Sản Phẩm <span aria-hidden="true">→</span>
+          </a>
+        </div>
+      </article>
+
+      <!-- Promo 5 -->
+      <article class="promo-card rounded-2xl border border-slate-200 overflow-hidden flex flex-col">
+        <div class="relative h-6">
+          <div class="absolute -top-4 left-0 right-0 flex items-stretch drop-shadow-md">
+            <span class="promo-ribbon text-white text-[11px] font-display font-800 uppercase px-3 py-1.5 flex-1 flex items-center justify-center rounded-l-sm">Khách Cũ</span>
+            <span class="promo-badge-3d text-amber-900 text-xs font-display font-800 px-2.5 py-1.5 flex items-center rounded-r-sm">-10%</span>
+          </div>
+        </div>
+        <div class="p-6 pt-8 flex flex-col gap-3 flex-1">
+          <span class="text-3xl">🎁</span>
+          <h3 class="font-display font-700 text-lg text-navy-950">Ưu Đãi Khách Hàng Thân Thiết</h3>
+          <p class="font-body text-sm text-navy-900/60">Giảm thêm 10% cho khách hàng đã từng mua sắm tại Kim Long.</p>
+          <a href="lien-he.html" class="focus-ring mt-auto inline-flex items-center gap-1 text-sm font-display font-700 text-brand hover:text-ember transition-colors pt-2">
+            Liên Hệ Ngay <span aria-hidden="true">→</span>
+          </a>
+        </div>
+      </article>
+
+      <!-- Promo 6 -->
+      <article class="promo-card rounded-2xl border border-slate-200 overflow-hidden flex flex-col">
+        <div class="relative h-6">
+          <div class="absolute -top-4 left-0 right-0 flex items-stretch drop-shadow-md">
+            <span class="promo-ribbon text-white text-[11px] font-display font-800 uppercase px-3 py-1.5 flex-1 flex items-center justify-center rounded-l-sm">Bảo Hành</span>
+            <span class="promo-badge-3d text-amber-900 text-xs font-display font-800 px-2.5 py-1.5 flex items-center rounded-r-sm">18 Tháng</span>
+          </div>
+        </div>
+        <div class="p-6 pt-8 flex flex-col gap-3 flex-1">
+          <span class="text-3xl">🛡️</span>
+          <h3 class="font-display font-700 text-lg text-navy-950">Nâng Hạn Bảo Hành Lên 18 Tháng</h3>
+          <p class="font-body text-sm text-navy-900/60">Áp dụng cho tất cả thiết bị điện mua trong tháng khuyến mãi.</p>
+          <a href="san-pham.html" class="focus-ring mt-auto inline-flex items-center gap-1 text-sm font-display font-700 text-brand hover:text-ember transition-colors pt-2">
+            Xem Sản Phẩm <span aria-hidden="true">→</span>
+          </a>
+        </div>
+      </article>
+
+    </div>
+
+    <div class="flex justify-center mt-10 sm:mt-14">
+      <a href="san-pham.html"
+         class="focus-ring inline-flex items-center gap-2 bg-ember hover:bg-ember-dark text-white font-display font-700 text-sm sm:text-base px-7 py-3 rounded-xl shadow-[0_10px_25px_-8px_rgba(249,115,22,0.6)] transition-colors">
+        Mua Ngay Kẻo Lỡ
+        <span aria-hidden="true">→</span>
+      </a>
+    </div>
+  </main>
+
+  <!-- ============ FOOTER ============ -->
+  <footer class="border-t border-slate-200 bg-white">
+    <div class="max-w-6xl mx-auto px-5 py-8 text-center text-xs sm:text-sm text-navy-900/50 font-body">
+      © 2026 Cửa Hàng Kim Long · Hotline 0364.878.771
+    </div>
+  </footer>
+
+  <!-- Floating contact buttons -->
+  <div class="fixed right-4 bottom-24 flex flex-col gap-3 z-40">
+    <button class="focus-ring w-12 h-12 rounded-full bg-brand text-white flex items-center justify-center shadow-lg hover:bg-brand-light transition-colors">💬</button>
+    <button class="focus-ring w-12 h-12 rounded-full bg-sky-400 text-white flex items-center justify-center shadow-lg hover:bg-sky-500 transition-colors">Z</button>
+    <button class="focus-ring w-12 h-12 rounded-full bg-ember text-white flex items-center justify-center shadow-lg hover:bg-ember-dark transition-colors">📞</button>
+  </div>
+
+  <script>
+    // Đếm ngược tới nửa đêm mỗi ngày để tạo cảm giác flash sale hằng ngày
+    function updateCountdown() {
+      const now = new Date();
+      const end = new Date();
+      end.setHours(24, 0, 0, 0);
+      const diff = Math.max(0, end - now);
+      const h = Math.floor(diff / 3600000);
+      const m = Math.floor((diff % 3600000) / 60000);
+      const s = Math.floor((diff % 60000) / 1000);
+      document.getElementById('cd-h').textContent = String(h).padStart(2, '0');
+      document.getElementById('cd-m').textContent = String(m).padStart(2, '0');
+      document.getElementById('cd-s').textContent = String(s).padStart(2, '0');
+    }
+    updateCountdown();
+    setInterval(updateCountdown, 1000);
+
+    if ('serviceWorker' in navigator) {
+      navigator.serviceWorker.register('service-worker.js').catch(() => {});
+    }
+  </script>
+</body>
+</html>
