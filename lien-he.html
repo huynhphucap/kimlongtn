@@ -84,6 +84,10 @@
     outline-offset: 2px;
   }
 
+  /* Hiệu ứng mờ dần hiện ra khi cuộn tới */
+  .reveal { opacity: 0; transform: translateY(24px); transition: opacity .6s ease, transform .6s ease; }
+  .reveal.reveal-visible { opacity: 1; transform: translateY(0); }
+
   .icon-chip {
     box-shadow: inset 0 1px 0 rgba(255,255,255,.5), 0 3px 8px -3px rgba(37,99,235,.5);
   }
@@ -156,34 +160,34 @@
   <main class="max-w-6xl mx-auto px-5 py-14 sm:py-20">
     <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 mb-14 sm:mb-20">
 
-      <div class="info-card rounded-2xl border border-slate-200 p-6 flex flex-col gap-3">
+      <div class="reveal info-card rounded-2xl border border-slate-200 p-6 flex flex-col gap-3" style="transition-delay:0ms">
         <span class="icon-chip w-11 h-11 rounded-xl bg-brand flex items-center justify-center text-white text-lg">📞</span>
         <h3 class="font-display font-700 text-base text-navy-950">Hotline</h3>
         <a href="tel:0364878771" class="font-mono text-sm text-brand hover:text-ember transition-colors focus-ring rounded">0364.878.771</a>
       </div>
 
-      <div class="info-card rounded-2xl border border-slate-200 p-6 flex flex-col gap-3">
+      <div class="reveal info-card rounded-2xl border border-slate-200 p-6 flex flex-col gap-3" style="transition-delay:100ms">
         <span class="icon-chip w-11 h-11 rounded-xl bg-brand flex items-center justify-center text-white text-lg">✉️</span>
         <h3 class="font-display font-700 text-base text-navy-950">Email</h3>
         <a href="mailto:cskh@kimlong.vn" class="font-mono text-sm text-brand hover:text-ember transition-colors focus-ring rounded break-all">cskh@kimlong.vn</a>
       </div>
 
-      <div class="info-card rounded-2xl border border-slate-200 p-6 flex flex-col gap-3">
+      <div class="reveal info-card rounded-2xl border border-slate-200 p-6 flex flex-col gap-3" style="transition-delay:200ms">
         <span class="icon-chip w-11 h-11 rounded-xl bg-brand flex items-center justify-center text-white text-lg">📍</span>
         <h3 class="font-display font-700 text-base text-navy-950">Địa Chỉ</h3>
-        <p class="font-body text-sm text-navy-900/60">Hệ thống cửa hàng Kim Long tại xã Lộc Ninh, tỉnh Tây Ninh</p>
+        <p class="font-body text-sm text-navy-900/60">Hệ thống cửa hàng Kim Long trên toàn quốc</p>
       </div>
 
-      <div class="info-card rounded-2xl border border-slate-200 p-6 flex flex-col gap-3">
+      <div class="reveal info-card rounded-2xl border border-slate-200 p-6 flex flex-col gap-3" style="transition-delay:300ms">
         <span class="icon-chip w-11 h-11 rounded-xl bg-brand flex items-center justify-center text-white text-lg">🕒</span>
         <h3 class="font-display font-700 text-base text-navy-950">Giờ Làm Việc</h3>
-        <p class="font-body text-sm text-navy-900/60">Hằng ngày · 7:00 – 18:00</p>
+        <p class="font-body text-sm text-navy-900/60">Hằng ngày · 8:00 – 21:00</p>
       </div>
     </div>
 
     <!-- Contact form -->
     <div class="grid grid-cols-1 lg:grid-cols-5 gap-8 items-start">
-      <div class="lg:col-span-2 flex flex-col gap-4">
+      <div class="reveal lg:col-span-2 flex flex-col gap-4">
         <h2 class="font-display font-800 text-2xl text-navy-950">Gửi Yêu Cầu Cho Chúng Tôi</h2>
         <p class="font-body text-sm text-navy-900/60">
           Điền thông tin bên phải, đội ngũ Kim Long sẽ liên hệ lại trong vòng 24 giờ để tư vấn sản phẩm và báo giá tốt nhất.
@@ -194,7 +198,7 @@
         </div>
       </div>
 
-      <form class="lg:col-span-3 info-card rounded-2xl border border-slate-200 p-6 sm:p-8 flex flex-col gap-4">
+      <form class="reveal lg:col-span-3 info-card rounded-2xl border border-slate-200 p-6 sm:p-8 flex flex-col gap-4" style="transition-delay:150ms">
         <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
           <div class="flex flex-col gap-1.5">
             <label class="font-body text-xs font-medium text-navy-900/60">Họ và tên</label>
@@ -218,7 +222,7 @@
   </main>
 
   <!-- ============ FOOTER ============ -->
-  <footer class="border-t border-slate-200 bg-white">
+  <footer class="reveal border-t border-slate-200 bg-white">
     <div class="max-w-6xl mx-auto px-5 py-8 text-center text-xs sm:text-sm text-navy-900/50 font-body">
       © 2026 Cửa Hàng Kim Long · Hotline 0364.878.771
     </div>
@@ -232,6 +236,21 @@
   </div>
 
   <script>
+    function initScrollReveal() {
+      const els = document.querySelectorAll('.reveal:not(.reveal-visible)');
+      if (!('IntersectionObserver' in window)) { els.forEach(el => el.classList.add('reveal-visible')); return; }
+      const io = new IntersectionObserver((entries) => {
+        entries.forEach(entry => {
+          if (entry.isIntersecting) {
+            entry.target.classList.add('reveal-visible');
+            io.unobserve(entry.target);
+          }
+        });
+      }, { threshold: 0.15 });
+      els.forEach(el => io.observe(el));
+    }
+    initScrollReveal();
+
     if ('serviceWorker' in navigator) {
       navigator.serviceWorker.register('service-worker.js').catch(() => {});
     }
