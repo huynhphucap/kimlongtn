@@ -244,7 +244,7 @@
     const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InR2cWlwaGxtdmNibXB3ZXhpaGJ5Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODUyMTc2NzIsImV4cCI6MjEwMDc5MzY3Mn0.oz5-F_1UCM0aXf9T9bFd7cpDgKAa0ReZfG1kfxp5ni0";
 
     const isConfigured = SUPABASE_URL.startsWith('https://') && SUPABASE_ANON_KEY.startsWith('eyJ');
-    const supabase = isConfigured ? window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY) : null;
+    const sb = isConfigured ? window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY) : null;
 
     let allProducts = [];
     let editingId = null;
@@ -276,7 +276,7 @@
     // ---------- Auth ----------
     async function checkSession() {
       if (!isConfigured) return;
-      const { data } = await supabase.auth.getSession();
+      const { data } = await sb.auth.getSession();
       if (data.session) {
         showDashboard(data.session.user);
       } else {
@@ -309,7 +309,7 @@
       submitBtn.disabled = true;
       submitBtn.innerHTML = '<span class="spinner" style="border-top-color:#fff;border-color:rgba(255,255,255,.35)"></span> Đang đăng nhập...';
 
-      const { data, error } = await supabase.auth.signInWithPassword({ email, password });
+      const { data, error } = await sb.auth.signInWithPassword({ email, password });
 
       submitBtn.disabled = false;
       submitBtn.textContent = 'Đăng Nhập';
@@ -323,7 +323,7 @@
     });
 
     btnLogout.addEventListener('click', async () => {
-      await supabase.auth.signOut();
+      await sb.auth.signOut();
       showLogin();
     });
 
@@ -427,9 +427,9 @@
 
       let error;
       if (editingId) {
-        ({ error } = await supabase.from('products').update(payload).eq('id', editingId));
+        ({ error } = await sb.from('products').update(payload).eq('id', editingId));
       } else {
-        ({ error } = await supabase.from('products').insert(payload));
+        ({ error } = await sb.from('products').insert(payload));
       }
 
       submitBtn.disabled = false;
@@ -449,7 +449,7 @@
     // ---------- Delete ----------
     async function deleteProduct(id, name) {
       if (!confirm(`Xóa sản phẩm "${name}"? Hành động này không thể hoàn tác.`)) return;
-      const { error } = await supabase.from('products').delete().eq('id', id);
+      const { error } = await sb.from('products').delete().eq('id', id);
       if (error) {
         alert('Lỗi khi xóa: ' + error.message);
         return;
@@ -500,7 +500,7 @@
       productList.innerHTML = '';
       listEmpty.classList.add('hidden');
 
-      const { data, error } = await supabase.from('products').select('*').order('id', { ascending: false });
+      const { data, error } = await sb.from('products').select('*').order('id', { ascending: false });
 
       listLoading.classList.add('hidden');
 
