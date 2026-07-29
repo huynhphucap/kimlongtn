@@ -64,6 +64,22 @@
     .hover-lift { transition: transform .25s ease, box-shadow .25s ease; }
     .hover-lift:hover { transform: translateY(-4px); box-shadow: 0 16px 30px -12px rgba(15,27,51,0.35); }
   }
+
+  /* Hiệu ứng mờ dần hiện ra khi cuộn tới */
+  .reveal { opacity: 0; transform: translateY(24px); transition: opacity .6s ease, transform .6s ease; }
+  .reveal.reveal-visible { opacity: 1; transform: translateY(0); }
+
+  /* Khung xám nhấp nháy khi đang tải dữ liệu */
+  @keyframes skeleton-shimmer { 0% { background-position: 200% 0; } 100% { background-position: -200% 0; } }
+  .skeleton {
+    background: linear-gradient(90deg, #e2e8f0 25%, #eef1f6 37%, #e2e8f0 63%);
+    background-size: 400% 100%;
+    animation: skeleton-shimmer 1.4s ease infinite;
+  }
+
+  /* Thẻ sản phẩm xuất hiện lần lượt khi tải xong */
+  @keyframes card-in { from { opacity: 0; transform: translateY(16px); } to { opacity: 1; transform: translateY(0); } }
+  .card-enter { animation: card-in .45s ease-out both; }
 </style>
 </head>
 
@@ -121,14 +137,14 @@
 
   <!-- ============ PRODUCT GRID ============ -->
   <main id="san-pham-noi-bat" class="max-w-6xl mx-auto px-5 py-14 sm:py-20">
-    <div class="text-center mb-10 sm:mb-14">
+    <div class="reveal text-center mb-10 sm:mb-14">
       <h2 class="font-display font-800 text-2xl sm:text-3xl text-navy-950">Sản Phẩm Nổi Bật</h2>
       <p class="font-body text-navy-900/60 text-sm sm:text-base mt-2">Được hàng ngàn khách hàng tin chọn tại Cửa Hàng Kim Long</p>
     </div>
 
     <div id="featured-grid" class="grid grid-cols-1 sm:grid-cols-3 gap-6 sm:gap-7"></div>
 
-    <div class="flex justify-center mt-10 sm:mt-14">
+    <div class="reveal flex justify-center mt-10 sm:mt-14">
       <a href="san-pham.html"
          class="focus-ring inline-flex items-center gap-2 border-2 border-navy-950 text-navy-950 font-display font-700 text-sm sm:text-base px-6 py-3 rounded-xl hover:bg-navy-950 hover:text-white transition-colors">
         Xem Tất Cả Sản Phẩm
@@ -138,7 +154,7 @@
   </main>
 
   <!-- ============ FOOTER (minimal, ties banner section id) ============ -->
-  <footer id="lien-he" class="border-t border-slate-200 bg-white">
+  <footer id="lien-he" class="reveal border-t border-slate-200 bg-white">
     <div class="max-w-6xl mx-auto px-5 py-8 text-center text-xs sm:text-sm text-navy-900/50 font-body">
       © 2026 Cửa Hàng Kim Long · Hotline 0364.878.771
     </div>
@@ -163,10 +179,24 @@
         img: "https://images.unsplash.com/photo-1604322415766-3eccf7b56a0a?w=500&h=500&fit=crop" }
     ];
 
+    function renderFeaturedSkeletons() {
+      const grid = document.getElementById('featured-grid');
+      grid.innerHTML = Array.from({ length: 3 }).map(() => `
+        <div class="bg-white rounded-2xl border border-slate-200 overflow-hidden flex flex-col">
+          <div class="skeleton aspect-square"></div>
+          <div class="p-5 flex flex-col gap-2">
+            <div class="skeleton h-4 rounded w-full"></div>
+            <div class="skeleton h-3 rounded w-1/2"></div>
+            <div class="skeleton h-6 rounded w-2/3 mt-2"></div>
+          </div>
+        </div>
+      `).join('');
+    }
+
     function renderFeatured(products) {
       const grid = document.getElementById('featured-grid');
-      grid.innerHTML = products.map(p => `
-        <article class="hover-lift bg-white rounded-2xl border border-slate-200 overflow-hidden flex flex-col">
+      grid.innerHTML = products.map((p, i) => `
+        <article class="card-enter hover-lift bg-white rounded-2xl border border-slate-200 overflow-hidden flex flex-col" style="animation-delay:${i * 100}ms">
           <div class="aspect-square bg-slate-100 overflow-hidden">
             <img src="${p.img}" alt="${p.name}" class="w-full h-full object-cover">
           </div>
@@ -182,7 +212,23 @@
       `).join('');
     }
 
+    function initScrollReveal() {
+      const els = document.querySelectorAll('.reveal:not(.reveal-visible)');
+      if (!('IntersectionObserver' in window)) { els.forEach(el => el.classList.add('reveal-visible')); return; }
+      const io = new IntersectionObserver((entries) => {
+        entries.forEach(entry => {
+          if (entry.isIntersecting) {
+            entry.target.classList.add('reveal-visible');
+            io.unobserve(entry.target);
+          }
+        });
+      }, { threshold: 0.15 });
+      els.forEach(el => io.observe(el));
+    }
+    initScrollReveal();
+
     async function loadFeatured() {
+      renderFeaturedSkeletons();
       const isConfigured = SUPABASE_URL.startsWith('https://') && SUPABASE_ANON_KEY.startsWith('eyJ');
 
       if (!isConfigured) {
