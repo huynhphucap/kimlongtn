@@ -76,6 +76,23 @@
     animation: spin .7s linear infinite;
   }
   @keyframes spin { to { transform: rotate(360deg); } }
+
+  /* Toast thông báo */
+  @keyframes toast-in {
+    from { opacity: 0; transform: translateX(24px) scale(.96); }
+    to { opacity: 1; transform: translateX(0) scale(1); }
+  }
+  @keyframes toast-out {
+    from { opacity: 1; transform: translateX(0) scale(1); }
+    to { opacity: 0; transform: translateX(24px) scale(.96); }
+  }
+  .toast {
+    animation: toast-in .25s ease-out;
+    box-shadow: 0 12px 28px -12px rgba(15,27,51,.35);
+  }
+  .toast.toast-leaving {
+    animation: toast-out .25s ease-in forwards;
+  }
 </style>
 </head>
 
@@ -237,6 +254,9 @@
     </div>
   </main>
 
+  <!-- Toast thông báo -->
+  <div id="toast-container" class="fixed top-20 right-4 z-[100] flex flex-col gap-2 items-end"></div>
+
   <script>
     // ====== CẤU HÌNH SUPABASE ======
     // Dán CÙNG URL và Key y hệt như trong san-pham.html / index.html
@@ -271,6 +291,27 @@
     if (!isConfigured) {
       loginConfigWarning.classList.remove('hidden');
       document.getElementById('login-submit').disabled = true;
+    }
+
+    // ---------- Toast thông báo ----------
+    function showToast(message, type = 'success') {
+      const container = document.getElementById('toast-container');
+      const toast = document.createElement('div');
+
+      const styles = {
+        success: { bg: 'bg-emerald-600', icon: '✓' },
+        error: { bg: 'bg-red-600', icon: '✕' }
+      };
+      const s = styles[type] || styles.success;
+
+      toast.className = `toast ${s.bg} text-white font-body text-sm font-medium rounded-xl px-4 py-3 flex items-center gap-2.5 max-w-xs`;
+      toast.innerHTML = `<span class="font-display font-800">${s.icon}</span><span>${message}</span>`;
+      container.appendChild(toast);
+
+      setTimeout(() => {
+        toast.classList.add('toast-leaving');
+        setTimeout(() => toast.remove(), 250);
+      }, 3000);
     }
 
     // ---------- Auth ----------
@@ -437,9 +478,11 @@
       if (error) {
         formError.textContent = 'Lỗi khi lưu: ' + error.message;
         formError.classList.remove('hidden');
+        showToast('Lỗi khi lưu sản phẩm', 'error');
         return;
       }
 
+      showToast(editingId ? 'Đã cập nhật sản phẩm thành công!' : 'Đã thêm sản phẩm mới thành công!');
       formSuccess.textContent = editingId ? 'Đã cập nhật sản phẩm!' : 'Đã thêm sản phẩm mới!';
       formSuccess.classList.remove('hidden');
       resetForm();
@@ -451,9 +494,10 @@
       if (!confirm(`Xóa sản phẩm "${name}"? Hành động này không thể hoàn tác.`)) return;
       const { error } = await sb.from('products').delete().eq('id', id);
       if (error) {
-        alert('Lỗi khi xóa: ' + error.message);
+        showToast('Lỗi khi xóa: ' + error.message, 'error');
         return;
       }
+      showToast(`Đã xóa "${name}" thành công!`);
       loadProducts();
     }
 
