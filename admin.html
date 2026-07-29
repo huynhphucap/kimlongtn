@@ -1,0 +1,518 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Kim Long - Bảng Quản Trị Sản Phẩm</title>
+<meta name="robots" content="noindex, nofollow">
+
+<script src="https://cdn.tailwindcss.com"></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Sora:wght@400;600;700;800&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet">
+
+<script>
+  tailwind.config = {
+    theme: {
+      extend: {
+        colors: {
+          navy: { 950: '#0B1220', 900: '#0F1B33', 800: '#152A4D' },
+          brand: { DEFAULT: '#2563EB', light: '#5B8DFF' },
+          ember: { DEFAULT: '#F97316', dark: '#C2540A' },
+          slate: { 150: '#EEF1F6' }
+        },
+        fontFamily: {
+          display: ['Sora', 'sans-serif'],
+          body: ['Inter', 'sans-serif'],
+          mono: ['JetBrains Mono', 'monospace']
+        }
+      }
+    }
+  }
+</script>
+
+<style>
+  body { font-family: 'Inter', sans-serif; }
+  .price-strike { text-decoration: line-through; }
+
+  .promo-ribbon {
+    position: relative;
+    background: linear-gradient(180deg, #fb923c 0%, #f97316 55%, #c2540a 100%);
+    box-shadow: inset 0 1px 0 rgba(255,255,255,.45), inset 0 -3px 4px rgba(0,0,0,.25), 0 3px 6px rgba(194,84,10,.45);
+    text-shadow: 0 1px 1px rgba(0,0,0,.35);
+    letter-spacing: .02em;
+  }
+  .promo-badge-3d {
+    position: relative;
+    background: linear-gradient(180deg, #ffe37a 0%, #fbbf24 55%, #f59e0b 100%);
+    box-shadow: inset 0 1px 0 rgba(255,255,255,.6), inset 0 -3px 4px rgba(0,0,0,.25), 0 3px 6px rgba(180,83,9,.5);
+    text-shadow: 0 1px 0 rgba(255,255,255,.35);
+  }
+  .price-badge-3d {
+    background: linear-gradient(180deg, #fb923c 0%, #ea580c 60%, #c2540a 100%);
+    box-shadow: inset 0 1px 0 rgba(255,255,255,.5), inset 0 -2px 3px rgba(0,0,0,.3), 0 2px 4px rgba(194,84,10,.5);
+    text-shadow: 0 1px 1px rgba(0,0,0,.3);
+  }
+
+  .focus-ring:focus-visible { outline: 2px solid #F97316; outline-offset: 2px; }
+
+  input.form-input, textarea.form-input {
+    transition: border-color .2s ease, box-shadow .2s ease;
+  }
+  input.form-input:focus, textarea.form-input:focus {
+    outline: none; border-color: #2563EB; box-shadow: 0 0 0 3px rgba(37,99,235,.15);
+  }
+
+  @media (prefers-reduced-motion: no-preference) {
+    .hover-lift { transition: transform .2s ease, box-shadow .2s ease; }
+    .hover-lift:hover { transform: translateY(-3px); box-shadow: 0 14px 26px -14px rgba(15,27,51,.3); }
+  }
+
+  .spinner {
+    border: 2.5px solid rgba(37,99,235,.2);
+    border-top-color: #2563EB;
+    border-radius: 9999px;
+    width: 1.1rem; height: 1.1rem;
+    animation: spin .7s linear infinite;
+  }
+  @keyframes spin { to { transform: rotate(360deg); } }
+</style>
+</head>
+
+<body class="bg-slate-150 text-navy-950 font-body min-h-screen">
+
+  <!-- ============ HEADER ============ -->
+  <header class="sticky top-0 z-50 bg-white/95 backdrop-blur border-b border-slate-200">
+    <nav class="max-w-7xl mx-auto flex items-center justify-between px-5 py-4">
+      <div class="flex items-center gap-3">
+        <span class="w-9 h-9 rounded-lg bg-navy-950 flex items-center justify-center text-white font-display font-800 text-sm">KL</span>
+        <div class="leading-tight">
+          <div class="font-display font-800 text-base tracking-tight">Kim Long</div>
+          <div class="text-[11px] text-navy-900/50 font-body">Bảng Quản Trị</div>
+        </div>
+      </div>
+
+      <div class="flex items-center gap-3">
+        <span id="user-email" class="hidden sm:inline text-xs text-navy-900/50 font-body"></span>
+        <a href="index.html" class="focus-ring text-sm font-body font-medium text-navy-900/70 hover:text-brand transition-colors border border-slate-200 rounded-full px-4 py-1.5">
+          Xem Cửa Hàng
+        </a>
+        <button id="btn-logout" class="focus-ring hidden text-sm font-display font-700 text-white bg-navy-950 hover:bg-navy-800 rounded-full px-4 py-1.5 transition-colors">
+          Đăng Xuất
+        </button>
+      </div>
+    </nav>
+  </header>
+
+  <!-- ============ LOGIN VIEW ============ -->
+  <section id="login-view" class="max-w-md mx-auto px-5 py-20">
+    <div class="bg-white rounded-2xl border border-slate-200 p-8 shadow-[0_16px_32px_-20px_rgba(15,27,51,.3)]">
+      <h1 class="font-display font-800 text-2xl text-navy-950 mb-1">Đăng Nhập Quản Trị</h1>
+      <p class="font-body text-sm text-navy-900/60 mb-6">Đăng nhập để thêm, sửa, xóa sản phẩm.</p>
+
+      <form id="login-form" class="flex flex-col gap-4">
+        <div class="flex flex-col gap-1.5">
+          <label class="text-xs font-medium text-navy-900/60">Email</label>
+          <input type="email" id="login-email" required placeholder="ban@email.com"
+                 class="form-input border border-slate-200 rounded-lg px-4 py-2.5 text-sm">
+        </div>
+        <div class="flex flex-col gap-1.5">
+          <label class="text-xs font-medium text-navy-900/60">Mật khẩu</label>
+          <input type="password" id="login-password" required placeholder="••••••••"
+                 class="form-input border border-slate-200 rounded-lg px-4 py-2.5 text-sm">
+        </div>
+        <p id="login-error" class="hidden text-sm text-red-600 bg-red-50 border border-red-200 rounded-lg px-3 py-2"></p>
+        <button type="submit" id="login-submit"
+                class="focus-ring bg-ember hover:bg-ember-dark text-white font-display font-700 text-sm px-6 py-3 rounded-xl shadow-[0_10px_20px_-8px_rgba(249,115,22,0.5)] transition-colors flex items-center justify-center gap-2">
+          Đăng Nhập
+        </button>
+      </form>
+
+      <p id="login-config-warning" class="hidden mt-5 text-xs text-amber-700 bg-amber-50 border border-amber-200 rounded-lg px-3 py-2">
+        Chưa cấu hình Supabase trong file này. Xem <code>huong-dan-supabase.md</code>.
+      </p>
+    </div>
+  </section>
+
+  <!-- ============ DASHBOARD VIEW ============ -->
+  <main id="dashboard-view" class="hidden max-w-7xl mx-auto px-5 py-10">
+
+    <div class="flex flex-wrap items-center justify-between gap-3 mb-8">
+      <div>
+        <h1 class="font-display font-800 text-2xl text-navy-950">Quản Lý Sản Phẩm</h1>
+        <p class="font-body text-sm text-navy-900/60 mt-1">
+          Tổng cộng <span id="stat-count" class="font-700 text-brand">0</span> sản phẩm
+        </p>
+      </div>
+      <button id="btn-new" class="focus-ring bg-brand hover:bg-ember text-white font-display font-700 text-sm px-5 py-2.5 rounded-xl transition-colors flex items-center gap-2">
+        + Thêm Sản Phẩm Mới
+      </button>
+    </div>
+
+    <div class="grid grid-cols-1 lg:grid-cols-5 gap-8 items-start">
+
+      <!-- FORM + PREVIEW -->
+      <div class="lg:col-span-2 flex flex-col gap-5">
+        <div class="bg-white rounded-2xl border border-slate-200 p-6">
+          <h2 id="form-title" class="font-display font-700 text-lg text-navy-950 mb-4">Thêm Sản Phẩm Mới</h2>
+
+          <form id="product-form" class="flex flex-col gap-4">
+            <input type="hidden" id="f-id">
+
+            <div class="flex flex-col gap-1.5">
+              <label class="text-xs font-medium text-navy-900/60">Tên sản phẩm</label>
+              <input type="text" id="f-name" required placeholder="Nồi Cơm Điện Kim Long 1.8L" class="form-input border border-slate-200 rounded-lg px-3 py-2 text-sm">
+            </div>
+
+            <div class="grid grid-cols-2 gap-3">
+              <div class="flex flex-col gap-1.5">
+                <label class="text-xs font-medium text-navy-900/60">Giá gốc</label>
+                <input type="text" id="f-old-price" required placeholder="750.000 đ" class="form-input border border-slate-200 rounded-lg px-3 py-2 text-sm">
+              </div>
+              <div class="flex flex-col gap-1.5">
+                <label class="text-xs font-medium text-navy-900/60">Giá sốc</label>
+                <input type="text" id="f-new-price" required placeholder="590.000 đ" class="form-input border border-slate-200 rounded-lg px-3 py-2 text-sm">
+              </div>
+            </div>
+
+            <div class="grid grid-cols-2 gap-3">
+              <div class="flex flex-col gap-1.5">
+                <label class="text-xs font-medium text-navy-900/60">% Giảm giá</label>
+                <input type="text" id="f-discount" required placeholder="-21%" class="form-input border border-slate-200 rounded-lg px-3 py-2 text-sm">
+              </div>
+              <div class="flex flex-col gap-1.5">
+                <label class="text-xs font-medium text-navy-900/60">Nhãn (tùy chọn)</label>
+                <input type="text" id="f-badge" placeholder="Mẫu mới" class="form-input border border-slate-200 rounded-lg px-3 py-2 text-sm">
+              </div>
+            </div>
+
+            <div class="flex flex-col gap-1.5">
+              <label class="text-xs font-medium text-navy-900/60">Đặc điểm (cách nhau bằng dấu phẩy)</label>
+              <input type="text" id="f-tags" placeholder="Chống Dính, 1.8L, Giữ Ấm 24h" class="form-input border border-slate-200 rounded-lg px-3 py-2 text-sm">
+            </div>
+
+            <div class="flex flex-col gap-1.5">
+              <label class="text-xs font-medium text-navy-900/60">Link ảnh sản phẩm</label>
+              <input type="url" id="f-img" required placeholder="https://..." class="form-input border border-slate-200 rounded-lg px-3 py-2 text-sm">
+            </div>
+
+            <p id="form-error" class="hidden text-sm text-red-600 bg-red-50 border border-red-200 rounded-lg px-3 py-2"></p>
+            <p id="form-success" class="hidden text-sm text-emerald-700 bg-emerald-50 border border-emerald-200 rounded-lg px-3 py-2"></p>
+
+            <div class="flex items-center gap-3 pt-1">
+              <button type="submit" id="form-submit" class="focus-ring flex-1 bg-ember hover:bg-ember-dark text-white font-display font-700 text-sm px-5 py-2.5 rounded-xl shadow-[0_10px_20px_-8px_rgba(249,115,22,0.5)] transition-colors flex items-center justify-center gap-2">
+                Lưu Sản Phẩm
+              </button>
+              <button type="button" id="btn-cancel-edit" class="hidden focus-ring text-sm font-body font-medium text-navy-900/60 border border-slate-200 rounded-xl px-4 py-2.5 hover:bg-slate-150 transition-colors">
+                Hủy
+              </button>
+            </div>
+          </form>
+        </div>
+
+        <!-- LIVE PREVIEW -->
+        <div>
+          <p class="text-xs font-medium text-navy-900/50 mb-2 px-1">Xem trước card sản phẩm</p>
+          <div id="preview-card" class="hover-lift bg-white border border-slate-200 rounded-2xl overflow-hidden flex flex-col relative max-w-xs">
+            <!-- JS render -->
+          </div>
+        </div>
+      </div>
+
+      <!-- PRODUCT LIST -->
+      <div class="lg:col-span-3">
+        <div class="bg-white rounded-2xl border border-slate-200 overflow-hidden">
+          <div id="product-list" class="divide-y divide-slate-100">
+            <!-- JS render -->
+          </div>
+          <div id="list-empty" class="hidden text-center py-16 px-6 font-body text-sm text-navy-900/50">
+            Chưa có sản phẩm nào. Bấm "Thêm Sản Phẩm Mới" để bắt đầu.
+          </div>
+          <div id="list-loading" class="flex items-center justify-center gap-2 py-16 text-sm text-navy-900/50">
+            <span class="spinner"></span> Đang tải danh sách sản phẩm...
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </main>
+
+  <script>
+    // ====== CẤU HÌNH SUPABASE ======
+    // Dán CÙNG URL và Key y hệt như trong san-pham.html / index.html
+    const SUPABASE_URL = "DÁN_PROJECT_URL_VÀO_ĐÂY";
+    const SUPABASE_ANON_KEY = "DÁN_ANON_KEY_VÀO_ĐÂY";
+
+    const isConfigured = SUPABASE_URL.startsWith('https://') && SUPABASE_ANON_KEY.startsWith('eyJ');
+    const supabase = isConfigured ? window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY) : null;
+
+    let allProducts = [];
+    let editingId = null;
+
+    // ---------- DOM refs ----------
+    const loginView = document.getElementById('login-view');
+    const dashboardView = document.getElementById('dashboard-view');
+    const loginForm = document.getElementById('login-form');
+    const loginError = document.getElementById('login-error');
+    const loginConfigWarning = document.getElementById('login-config-warning');
+    const userEmailEl = document.getElementById('user-email');
+    const btnLogout = document.getElementById('btn-logout');
+    const btnNew = document.getElementById('btn-new');
+    const btnCancelEdit = document.getElementById('btn-cancel-edit');
+    const productForm = document.getElementById('product-form');
+    const formTitle = document.getElementById('form-title');
+    const formError = document.getElementById('form-error');
+    const formSuccess = document.getElementById('form-success');
+    const productList = document.getElementById('product-list');
+    const listEmpty = document.getElementById('list-empty');
+    const listLoading = document.getElementById('list-loading');
+    const statCount = document.getElementById('stat-count');
+
+    if (!isConfigured) {
+      loginConfigWarning.classList.remove('hidden');
+      document.getElementById('login-submit').disabled = true;
+    }
+
+    // ---------- Auth ----------
+    async function checkSession() {
+      if (!isConfigured) return;
+      const { data } = await supabase.auth.getSession();
+      if (data.session) {
+        showDashboard(data.session.user);
+      } else {
+        showLogin();
+      }
+    }
+
+    function showLogin() {
+      loginView.classList.remove('hidden');
+      dashboardView.classList.add('hidden');
+      btnLogout.classList.add('hidden');
+      userEmailEl.classList.add('hidden');
+    }
+
+    function showDashboard(user) {
+      loginView.classList.add('hidden');
+      dashboardView.classList.remove('hidden');
+      btnLogout.classList.remove('hidden');
+      userEmailEl.classList.remove('hidden');
+      userEmailEl.textContent = user.email;
+      loadProducts();
+    }
+
+    loginForm.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      loginError.classList.add('hidden');
+      const email = document.getElementById('login-email').value.trim();
+      const password = document.getElementById('login-password').value;
+      const submitBtn = document.getElementById('login-submit');
+      submitBtn.disabled = true;
+      submitBtn.innerHTML = '<span class="spinner" style="border-top-color:#fff;border-color:rgba(255,255,255,.35)"></span> Đang đăng nhập...';
+
+      const { data, error } = await supabase.auth.signInWithPassword({ email, password });
+
+      submitBtn.disabled = false;
+      submitBtn.textContent = 'Đăng Nhập';
+
+      if (error) {
+        loginError.textContent = 'Đăng nhập thất bại: ' + (error.message || 'Sai email hoặc mật khẩu.');
+        loginError.classList.remove('hidden');
+        return;
+      }
+      showDashboard(data.user);
+    });
+
+    btnLogout.addEventListener('click', async () => {
+      await supabase.auth.signOut();
+      showLogin();
+    });
+
+    // ---------- Live preview ----------
+    function currentFormData() {
+      return {
+        name: document.getElementById('f-name').value.trim() || 'Tên sản phẩm',
+        old_price: document.getElementById('f-old-price').value.trim() || '0 đ',
+        new_price: document.getElementById('f-new-price').value.trim() || '0 đ',
+        discount: document.getElementById('f-discount').value.trim() || '-0%',
+        badge: document.getElementById('f-badge').value.trim(),
+        tags: document.getElementById('f-tags').value.split(',').map(t => t.trim()).filter(Boolean),
+        img: document.getElementById('f-img').value.trim() || 'https://placehold.co/300x300?text=Anh+San+Pham'
+      };
+    }
+
+    function productCardHTML(p) {
+      return `
+        <div class="hover-lift bg-white border border-slate-200 rounded-2xl overflow-hidden flex flex-col relative">
+          ${p.badge ? `<span class="absolute top-2 left-2 bg-white text-ember text-xs font-display font-700 px-2.5 py-1 rounded-full z-10 shadow-[0_2px_4px_rgba(0,0,0,.15)] border border-ember/20">${p.badge}</span>` : ''}
+          <div class="aspect-square bg-slate-100 flex items-center justify-center overflow-hidden">
+            <img src="${p.img}" alt="${p.name}" class="object-cover w-full h-full" onerror="this.src='https://placehold.co/300x300?text=Anh+loi'">
+          </div>
+          <div class="relative h-5">
+            <div class="absolute -top-4 left-0 right-0 flex items-stretch drop-shadow-md">
+              <span class="promo-ribbon text-white text-[11px] font-display font-800 uppercase px-3 py-1.5 flex-1 flex items-center justify-center rounded-l-sm">Khuyến Mãi Đặc Biệt</span>
+              <span class="promo-badge-3d text-amber-900 text-xs font-display font-800 px-2.5 py-1.5 flex items-center rounded-r-sm">${p.discount}</span>
+            </div>
+          </div>
+          <div class="p-3 pt-6 flex flex-col gap-1 flex-1 font-body">
+            <p class="text-sm font-display font-700 text-navy-950 leading-snug line-clamp-2 min-h-[2.5em]">${p.name}</p>
+            <div class="price-strike text-navy-900/40 text-sm">${p.old_price}</div>
+            <div class="flex items-center gap-2">
+              <span class="text-ember-dark font-display font-800 text-lg">${p.new_price}</span>
+              <span class="price-badge-3d text-white text-xs font-display font-700 px-1.5 py-0.5 rounded">${p.discount}</span>
+            </div>
+            <div class="flex flex-wrap gap-1 mt-1">
+              ${(p.tags || []).map(t => `<span class="border border-slate-200 rounded px-2 py-0.5 text-[11px] text-navy-900/50">${t}</span>`).join('')}
+            </div>
+          </div>
+        </div>`;
+    }
+
+    function updatePreview() {
+      document.getElementById('preview-card').innerHTML = productCardHTML(currentFormData());
+    }
+    productForm.addEventListener('input', updatePreview);
+    updatePreview();
+
+    // ---------- Form: new / edit / cancel ----------
+    function resetForm() {
+      editingId = null;
+      productForm.reset();
+      document.getElementById('f-id').value = '';
+      formTitle.textContent = 'Thêm Sản Phẩm Mới';
+      document.getElementById('form-submit').textContent = 'Lưu Sản Phẩm';
+      btnCancelEdit.classList.add('hidden');
+      formError.classList.add('hidden');
+      formSuccess.classList.add('hidden');
+      updatePreview();
+    }
+
+    btnNew.addEventListener('click', () => {
+      resetForm();
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    });
+
+    btnCancelEdit.addEventListener('click', resetForm);
+
+    function fillFormForEdit(p) {
+      editingId = p.id;
+      document.getElementById('f-id').value = p.id;
+      document.getElementById('f-name').value = p.name || '';
+      document.getElementById('f-old-price').value = p.old_price || '';
+      document.getElementById('f-new-price').value = p.new_price || '';
+      document.getElementById('f-discount').value = p.discount || '';
+      document.getElementById('f-badge').value = p.badge || '';
+      document.getElementById('f-tags').value = (p.tags || []).join(', ');
+      document.getElementById('f-img').value = p.img || '';
+      formTitle.textContent = 'Sửa Sản Phẩm';
+      document.getElementById('form-submit').textContent = 'Cập Nhật Sản Phẩm';
+      btnCancelEdit.classList.remove('hidden');
+      formError.classList.add('hidden');
+      formSuccess.classList.add('hidden');
+      updatePreview();
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
+
+    // ---------- Save (insert / update) ----------
+    productForm.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      formError.classList.add('hidden');
+      formSuccess.classList.add('hidden');
+
+      const payload = currentFormData();
+      // Bỏ badge rỗng để lưu null thay vì chuỗi rỗng
+      if (!payload.badge) payload.badge = null;
+
+      const submitBtn = document.getElementById('form-submit');
+      submitBtn.disabled = true;
+
+      let error;
+      if (editingId) {
+        ({ error } = await supabase.from('products').update(payload).eq('id', editingId));
+      } else {
+        ({ error } = await supabase.from('products').insert(payload));
+      }
+
+      submitBtn.disabled = false;
+
+      if (error) {
+        formError.textContent = 'Lỗi khi lưu: ' + error.message;
+        formError.classList.remove('hidden');
+        return;
+      }
+
+      formSuccess.textContent = editingId ? 'Đã cập nhật sản phẩm!' : 'Đã thêm sản phẩm mới!';
+      formSuccess.classList.remove('hidden');
+      resetForm();
+      loadProducts();
+    });
+
+    // ---------- Delete ----------
+    async function deleteProduct(id, name) {
+      if (!confirm(`Xóa sản phẩm "${name}"? Hành động này không thể hoàn tác.`)) return;
+      const { error } = await supabase.from('products').delete().eq('id', id);
+      if (error) {
+        alert('Lỗi khi xóa: ' + error.message);
+        return;
+      }
+      loadProducts();
+    }
+
+    // ---------- List ----------
+    function renderList() {
+      statCount.textContent = allProducts.length;
+
+      if (allProducts.length === 0) {
+        productList.innerHTML = '';
+        listEmpty.classList.remove('hidden');
+        return;
+      }
+      listEmpty.classList.add('hidden');
+
+      productList.innerHTML = allProducts.map(p => `
+        <div class="flex items-center gap-4 px-5 py-4">
+          <img src="${p.img}" alt="${p.name}" class="w-14 h-14 rounded-lg object-cover bg-slate-100 shrink-0" onerror="this.src='https://placehold.co/100x100?text=?'">
+          <div class="flex-1 min-w-0">
+            <p class="font-display font-700 text-sm text-navy-950 truncate">${p.name}</p>
+            <p class="font-body text-xs text-navy-900/50 mt-0.5">
+              <span class="line-through">${p.old_price}</span> → <span class="text-ember-dark font-700">${p.new_price}</span> · ${p.discount}
+            </p>
+          </div>
+          <div class="flex items-center gap-2 shrink-0">
+            <button data-id="${p.id}" class="btn-edit focus-ring text-xs font-display font-700 text-brand border border-brand/30 hover:bg-brand hover:text-white rounded-lg px-3 py-1.5 transition-colors">Sửa</button>
+            <button data-id="${p.id}" data-name="${p.name.replace(/"/g, '&quot;')}" class="btn-delete focus-ring text-xs font-display font-700 text-red-600 border border-red-200 hover:bg-red-600 hover:text-white rounded-lg px-3 py-1.5 transition-colors">Xóa</button>
+          </div>
+        </div>
+      `).join('');
+
+      productList.querySelectorAll('.btn-edit').forEach(btn => {
+        btn.addEventListener('click', () => {
+          const p = allProducts.find(x => String(x.id) === btn.dataset.id);
+          if (p) fillFormForEdit(p);
+        });
+      });
+      productList.querySelectorAll('.btn-delete').forEach(btn => {
+        btn.addEventListener('click', () => deleteProduct(btn.dataset.id, btn.dataset.name));
+      });
+    }
+
+    async function loadProducts() {
+      listLoading.classList.remove('hidden');
+      productList.innerHTML = '';
+      listEmpty.classList.add('hidden');
+
+      const { data, error } = await supabase.from('products').select('*').order('id', { ascending: false });
+
+      listLoading.classList.add('hidden');
+
+      if (error) {
+        productList.innerHTML = `<div class="text-center py-10 text-sm text-red-600">Lỗi tải danh sách: ${error.message}</div>`;
+        return;
+      }
+      allProducts = data || [];
+      renderList();
+    }
+
+    checkSession();
+  </script>
+</body>
+</html>
