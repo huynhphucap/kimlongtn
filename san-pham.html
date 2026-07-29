@@ -97,6 +97,18 @@
     outline-offset: 2px;
   }
 
+  /* Khung xám nhấp nháy khi đang tải dữ liệu */
+  @keyframes skeleton-shimmer { 0% { background-position: 200% 0; } 100% { background-position: -200% 0; } }
+  .skeleton {
+    background: linear-gradient(90deg, #e2e8f0 25%, #eef1f6 37%, #e2e8f0 63%);
+    background-size: 400% 100%;
+    animation: skeleton-shimmer 1.4s ease infinite;
+  }
+
+  /* Thẻ sản phẩm xuất hiện lần lượt khi tải xong */
+  @keyframes card-in { from { opacity: 0; transform: translateY(16px); } to { opacity: 1; transform: translateY(0); } }
+  .card-enter { animation: card-in .45s ease-out both; }
+
   @media (prefers-reduced-motion: no-preference) {
     .hover-lift { transition: transform .25s ease, box-shadow .25s ease; }
     .hover-lift:hover { transform: translateY(-4px); box-shadow: 0 16px 30px -12px rgba(15,27,51,0.35); }
@@ -244,6 +256,20 @@
         img: "https://images.unsplash.com/photo-1556819132-52350b2a7836?w=300&h=300&fit=crop" }
     ];
 
+    function renderSkeletons(count) {
+      const grid = document.getElementById('product-grid');
+      grid.innerHTML = Array.from({ length: count }).map(() => `
+        <div class="bg-white border border-slate-200 rounded-2xl overflow-hidden flex flex-col">
+          <div class="skeleton aspect-square"></div>
+          <div class="p-3 pt-6 flex flex-col gap-2">
+            <div class="skeleton h-4 rounded w-full"></div>
+            <div class="skeleton h-3 rounded w-2/3"></div>
+            <div class="skeleton h-5 rounded w-1/2 mt-1"></div>
+          </div>
+        </div>
+      `).join('');
+    }
+
     function renderProducts(products) {
       const grid = document.getElementById('product-grid');
 
@@ -252,8 +278,8 @@
         return;
       }
 
-      grid.innerHTML = products.map(p => `
-        <div class="hover-lift bg-white border border-slate-200 rounded-2xl overflow-hidden flex flex-col relative">
+      grid.innerHTML = products.map((p, i) => `
+        <div class="card-enter hover-lift bg-white border border-slate-200 rounded-2xl overflow-hidden flex flex-col relative" style="animation-delay:${i * 60}ms">
           ${p.badge ? `<span class="absolute top-2 left-2 bg-white text-ember text-xs font-display font-700 px-2.5 py-1 rounded-full z-10 shadow-[0_2px_4px_rgba(0,0,0,.15)] border border-ember/20">${p.badge}</span>` : ''}
           <div class="aspect-square bg-slate-100 flex items-center justify-center overflow-hidden">
             <img src="${p.img}" alt="${p.name}" class="object-cover w-full h-full">
@@ -322,6 +348,7 @@
 
     async function loadProducts(page = 1) {
       currentPage = page;
+      renderSkeletons(PAGE_SIZE);
       const isConfigured = SUPABASE_URL.startsWith('https://') && SUPABASE_ANON_KEY.startsWith('eyJ');
       const from = (page - 1) * PAGE_SIZE;
       const to = from + PAGE_SIZE - 1;
