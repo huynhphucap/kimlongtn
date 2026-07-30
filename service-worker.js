@@ -1,19 +1,6 @@
-const CACHE_NAME = "techonline-cache-v10";
-const ASSETS = [
-  "./index.html",
-  "./san-pham.html",
-  "./khuyen-mai.html",
-  "./lien-he.html",
-  "./chi-tiet-san-pham.html",
-  "./manifest.json",
-  "./icon-192.png",
-  "./icon-512.png"
-];
+const CACHE_NAME = "techonline-cache-v11";
 
-self.addEventListener("install", (event) => {
-  event.waitUntil(
-    caches.open(CACHE_NAME).then((cache) => cache.addAll(ASSETS))
-  );
+self.addEventListener("install", () => {
   self.skipWaiting();
 });
 
@@ -31,7 +18,7 @@ self.addEventListener("fetch", (event) => {
   const isHTML = req.mode === "navigate" || (req.headers.get("accept") || "").includes("text/html");
 
   if (isHTML) {
-    // Trang HTML: luôn ưu tiên lấy bản mới nhất từ mạng, chỉ dùng cache khi mất mạng
+    // Trang HTML: luôn lấy bản mới nhất từ mạng, và tự lưu lại để dùng khi mất mạng
     event.respondWith(
       fetch(req)
         .then((res) => {
@@ -42,9 +29,16 @@ self.addEventListener("fetch", (event) => {
         .catch(() => caches.match(req))
     );
   } else {
-    // Ảnh, manifest...: dùng cache trước cho nhanh, nếu chưa có thì tải mạng
+    // Ảnh, manifest, v.v.: dùng cache nếu đã có, chưa có thì tải và tự lưu lại
     event.respondWith(
-      caches.match(req).then((cached) => cached || fetch(req))
+      caches.match(req).then((cached) => {
+        if (cached) return cached;
+        return fetch(req).then((res) => {
+          const resClone = res.clone();
+          caches.open(CACHE_NAME).then((cache) => cache.put(req, resClone));
+          return res;
+        });
+      })
     );
   }
 });
