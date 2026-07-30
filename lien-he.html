@@ -14,6 +14,7 @@
 <meta name="apple-mobile-web-app-title" content="Kim Long">
 
 <script src="https://cdn.tailwindcss.com"></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Sora:wght@400;600;700;800&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet">
 
@@ -100,6 +101,20 @@
     border-color: #2563EB;
     box-shadow: 0 0 0 3px rgba(37,99,235,.15);
   }
+
+  .spinner {
+    border: 2.5px solid rgba(255,255,255,.35);
+    border-top-color: #fff;
+    border-radius: 9999px;
+    width: 1rem; height: 1rem;
+    animation: spin .7s linear infinite;
+  }
+  @keyframes spin { to { transform: rotate(360deg); } }
+
+  @keyframes toast-in { from { opacity: 0; transform: translateX(24px) scale(.96); } to { opacity: 1; transform: translateX(0) scale(1); } }
+  @keyframes toast-out { from { opacity: 1; transform: translateX(0) scale(1); } to { opacity: 0; transform: translateX(24px) scale(.96); } }
+  .toast { animation: toast-in .25s ease-out; box-shadow: 0 12px 28px -12px rgba(15,27,51,.35); }
+  .toast.toast-leaving { animation: toast-out .25s ease-in forwards; }
 </style>
 </head>
 
@@ -198,23 +213,24 @@
         </div>
       </div>
 
-      <form class="reveal lg:col-span-3 info-card rounded-2xl border border-slate-200 p-6 sm:p-8 flex flex-col gap-4" style="transition-delay:150ms">
+      <form id="contact-form" class="reveal lg:col-span-3 info-card rounded-2xl border border-slate-200 p-6 sm:p-8 flex flex-col gap-4" style="transition-delay:150ms">
         <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
           <div class="flex flex-col gap-1.5">
             <label class="font-body text-xs font-medium text-navy-900/60">Họ và tên</label>
-            <input type="text" placeholder="Nguyễn Văn A" class="form-input border border-slate-200 rounded-lg px-4 py-2.5 text-sm font-body">
+            <input type="text" id="c-name" required placeholder="Nguyễn Văn A" class="form-input border border-slate-200 rounded-lg px-4 py-2.5 text-sm font-body">
           </div>
           <div class="flex flex-col gap-1.5">
             <label class="font-body text-xs font-medium text-navy-900/60">Số điện thoại</label>
-            <input type="tel" placeholder="09xx xxx xxx" class="form-input border border-slate-200 rounded-lg px-4 py-2.5 text-sm font-body">
+            <input type="tel" id="c-phone" required placeholder="09xx xxx xxx" class="form-input border border-slate-200 rounded-lg px-4 py-2.5 text-sm font-body">
           </div>
         </div>
         <div class="flex flex-col gap-1.5">
           <label class="font-body text-xs font-medium text-navy-900/60">Nội dung cần tư vấn</label>
-          <textarea rows="4" placeholder="Tôi cần tư vấn về..." class="form-input border border-slate-200 rounded-lg px-4 py-2.5 text-sm font-body resize-none"></textarea>
+          <textarea rows="4" id="c-message" placeholder="Tôi cần tư vấn về..." class="form-input border border-slate-200 rounded-lg px-4 py-2.5 text-sm font-body resize-none"></textarea>
         </div>
-        <button type="button"
-                class="focus-ring self-start bg-ember hover:bg-ember-dark text-white font-display font-700 text-sm px-7 py-3 rounded-xl shadow-[0_10px_20px_-8px_rgba(249,115,22,0.5)] transition-colors">
+        <p id="c-error" class="hidden text-sm text-red-600 bg-red-50 border border-red-200 rounded-lg px-3 py-2"></p>
+        <button type="submit" id="c-submit"
+                class="focus-ring self-start bg-ember hover:bg-ember-dark text-white font-display font-700 text-sm px-7 py-3 rounded-xl shadow-[0_10px_20px_-8px_rgba(249,115,22,0.5)] transition-colors flex items-center gap-2">
           Gửi Yêu Cầu →
         </button>
       </form>
@@ -235,7 +251,74 @@
     <button class="focus-ring w-12 h-12 rounded-full bg-ember text-white flex items-center justify-center shadow-lg hover:bg-ember-dark transition-colors">📞</button>
   </div>
 
+  <!-- Toast thông báo -->
+  <div id="toast-container" class="fixed top-20 right-4 z-[100] flex flex-col gap-2 items-end"></div>
+
   <script>
+    const SUPABASE_URL = "https://tvqiphlmvcbmpwexihby.supabase.co";
+    const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InR2cWlwaGxtdmNibXB3ZXhpaGJ5Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODUyMTc2NzIsImV4cCI6MjEwMDc5MzY3Mn0.oz5-F_1UCM0aXf9T9bFd7cpDgKAa0ReZfG1kfxp5ni0";
+    const isConfigured = SUPABASE_URL.startsWith('https://') && SUPABASE_ANON_KEY.startsWith('eyJ');
+    const sb = isConfigured ? window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY) : null;
+
+    function showToast(message, type = 'success') {
+      const container = document.getElementById('toast-container');
+      const toast = document.createElement('div');
+      const styles = {
+        success: { bg: 'bg-emerald-600', icon: '✓' },
+        error: { bg: 'bg-red-600', icon: '✕' }
+      };
+      const s = styles[type] || styles.success;
+      toast.className = `toast ${s.bg} text-white font-body text-sm font-medium rounded-xl px-4 py-3 flex items-center gap-2.5 max-w-xs`;
+      toast.innerHTML = `<span class="font-display font-800">${s.icon}</span><span>${message}</span>`;
+      container.appendChild(toast);
+      setTimeout(() => {
+        toast.classList.add('toast-leaving');
+        setTimeout(() => toast.remove(), 250);
+      }, 3500);
+    }
+
+    const contactForm = document.getElementById('contact-form');
+    const contactError = document.getElementById('c-error');
+    const contactSubmit = document.getElementById('c-submit');
+
+    contactForm.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      contactError.classList.add('hidden');
+
+      const name = document.getElementById('c-name').value.trim();
+      const phone = document.getElementById('c-phone').value.trim();
+      const message = document.getElementById('c-message').value.trim();
+
+      if (!name || !phone) {
+        contactError.textContent = 'Vui lòng nhập đầy đủ Họ tên và Số điện thoại.';
+        contactError.classList.remove('hidden');
+        return;
+      }
+
+      if (!isConfigured) {
+        showToast('Chưa cấu hình Supabase — không thể gửi yêu cầu lúc này.', 'error');
+        return;
+      }
+
+      contactSubmit.disabled = true;
+      contactSubmit.innerHTML = '<span class="spinner"></span> Đang gửi...';
+
+      const { error } = await sb.from('contacts').insert({ name, phone, message: message || null });
+
+      contactSubmit.disabled = false;
+      contactSubmit.innerHTML = 'Gửi Yêu Cầu →';
+
+      if (error) {
+        contactError.textContent = 'Gửi thất bại: ' + error.message;
+        contactError.classList.remove('hidden');
+        showToast('Gửi yêu cầu thất bại, vui lòng thử lại.', 'error');
+        return;
+      }
+
+      showToast('Đã gửi yêu cầu thành công! Kim Long sẽ liên hệ lại sớm.');
+      contactForm.reset();
+    });
+
     function initScrollReveal() {
       const els = document.querySelectorAll('.reveal:not(.reveal-visible)');
       if (!('IntersectionObserver' in window)) { els.forEach(el => el.classList.add('reveal-visible')); return; }
