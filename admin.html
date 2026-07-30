@@ -204,6 +204,16 @@
             </div>
 
             <div class="flex flex-col gap-1.5">
+              <label class="text-xs font-medium text-navy-900/60">Danh mục</label>
+              <select id="f-category" required class="form-input border border-slate-200 rounded-lg px-3 py-2 text-sm bg-white">
+                <option value="Nhà Bếp">Nhà Bếp</option>
+                <option value="Quạt & Làm Mát">Quạt & Làm Mát</option>
+                <option value="Chiếu Sáng">Chiếu Sáng</option>
+                <option value="Gia Dụng Khác">Gia Dụng Khác</option>
+              </select>
+            </div>
+
+            <div class="flex flex-col gap-1.5">
               <label class="text-xs font-medium text-navy-900/60">Đặc điểm (cách nhau bằng dấu phẩy)</label>
               <input type="text" id="f-tags" placeholder="Chống Dính, 1.8L, Giữ Ấm 24h" class="form-input border border-slate-200 rounded-lg px-3 py-2 text-sm">
             </div>
@@ -376,6 +386,7 @@
         new_price: document.getElementById('f-new-price').value.trim() || '0 đ',
         discount: document.getElementById('f-discount').value.trim() || '-0%',
         badge: document.getElementById('f-badge').value.trim(),
+        category: document.getElementById('f-category').value,
         tags: document.getElementById('f-tags').value.split(',').map(t => t.trim()).filter(Boolean),
         img: document.getElementById('f-img').value.trim() || 'https://placehold.co/300x300?text=Anh+San+Pham'
       };
@@ -442,6 +453,7 @@
       document.getElementById('f-new-price').value = p.new_price || '';
       document.getElementById('f-discount').value = p.discount || '';
       document.getElementById('f-badge').value = p.badge || '';
+      document.getElementById('f-category').value = p.category || 'Nhà Bếp';
       document.getElementById('f-tags').value = (p.tags || []).join(', ');
       document.getElementById('f-img').value = p.img || '';
       formTitle.textContent = 'Sửa Sản Phẩm';
@@ -516,7 +528,10 @@
         <div class="flex items-center gap-4 px-5 py-4">
           <img src="${p.img}" alt="${p.name}" class="w-14 h-14 rounded-lg object-cover bg-slate-100 shrink-0" onerror="this.src='https://placehold.co/100x100?text=?'">
           <div class="flex-1 min-w-0">
-            <p class="font-display font-700 text-sm text-navy-950 truncate">${p.name}</p>
+            <div class="flex items-center gap-2">
+              <p class="font-display font-700 text-sm text-navy-950 truncate">${p.name}</p>
+              ${p.category ? `<span class="shrink-0 text-[10px] font-body font-medium text-brand bg-brand/10 rounded-full px-2 py-0.5">${p.category}</span>` : ''}
+            </div>
             <p class="font-body text-xs text-navy-900/50 mt-0.5">
               <span class="line-through">${p.old_price}</span> → <span class="text-ember-dark font-700">${p.new_price}</span> · ${p.discount}
             </p>
