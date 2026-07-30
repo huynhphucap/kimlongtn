@@ -154,113 +154,150 @@
   <!-- ============ DASHBOARD VIEW ============ -->
   <main id="dashboard-view" class="hidden max-w-7xl mx-auto px-5 py-10">
 
-    <div class="flex flex-wrap items-center justify-between gap-3 mb-8">
-      <div>
-        <h1 class="font-display font-800 text-2xl text-navy-950">Quản Lý Sản Phẩm</h1>
-        <p class="font-body text-sm text-navy-900/60 mt-1">
-          Tổng cộng <span id="stat-count" class="font-700 text-brand">0</span> sản phẩm
-        </p>
-      </div>
-      <button id="btn-new" class="focus-ring bg-brand hover:bg-ember text-white font-display font-700 text-sm px-5 py-2.5 rounded-xl transition-colors flex items-center gap-2">
-        + Thêm Sản Phẩm Mới
+    <!-- Dải tab -->
+    <div class="flex gap-2 mb-8 border-b border-slate-200">
+      <button id="tab-btn-products" class="tab-btn focus-ring font-display font-700 text-sm px-4 py-3 border-b-2 border-brand text-brand transition-colors">
+        Sản Phẩm
+      </button>
+      <button id="tab-btn-contacts" class="tab-btn focus-ring font-display font-700 text-sm px-4 py-3 border-b-2 border-transparent text-navy-900/50 hover:text-navy-900 transition-colors">
+        Tin Nhắn Liên Hệ <span id="contacts-badge" class="hidden ml-1 bg-ember text-white text-[10px] rounded-full px-1.5 py-0.5"></span>
       </button>
     </div>
 
-    <div class="grid grid-cols-1 lg:grid-cols-5 gap-8 items-start">
-
-      <!-- FORM + PREVIEW -->
-      <div class="lg:col-span-2 flex flex-col gap-5">
-        <div class="bg-white rounded-2xl border border-slate-200 p-6">
-          <h2 id="form-title" class="font-display font-700 text-lg text-navy-950 mb-4">Thêm Sản Phẩm Mới</h2>
-
-          <form id="product-form" class="flex flex-col gap-4">
-            <input type="hidden" id="f-id">
-
-            <div class="flex flex-col gap-1.5">
-              <label class="text-xs font-medium text-navy-900/60">Tên sản phẩm</label>
-              <input type="text" id="f-name" required placeholder="Nồi Cơm Điện Kim Long 1.8L" class="form-input border border-slate-200 rounded-lg px-3 py-2 text-sm">
-            </div>
-
-            <div class="grid grid-cols-2 gap-3">
-              <div class="flex flex-col gap-1.5">
-                <label class="text-xs font-medium text-navy-900/60">Giá gốc</label>
-                <input type="text" id="f-old-price" required placeholder="750.000 đ" class="form-input border border-slate-200 rounded-lg px-3 py-2 text-sm">
-              </div>
-              <div class="flex flex-col gap-1.5">
-                <label class="text-xs font-medium text-navy-900/60">Giá sốc</label>
-                <input type="text" id="f-new-price" required placeholder="590.000 đ" class="form-input border border-slate-200 rounded-lg px-3 py-2 text-sm">
-              </div>
-            </div>
-
-            <div class="grid grid-cols-2 gap-3">
-              <div class="flex flex-col gap-1.5">
-                <label class="text-xs font-medium text-navy-900/60">% Giảm giá</label>
-                <input type="text" id="f-discount" required placeholder="-21%" class="form-input border border-slate-200 rounded-lg px-3 py-2 text-sm">
-              </div>
-              <div class="flex flex-col gap-1.5">
-                <label class="text-xs font-medium text-navy-900/60">Nhãn (tùy chọn)</label>
-                <input type="text" id="f-badge" placeholder="Mẫu mới" class="form-input border border-slate-200 rounded-lg px-3 py-2 text-sm">
-              </div>
-            </div>
-
-            <div class="flex flex-col gap-1.5">
-              <label class="text-xs font-medium text-navy-900/60">Danh mục</label>
-              <select id="f-category" required class="form-input border border-slate-200 rounded-lg px-3 py-2 text-sm bg-white">
-                <option value="Nhà Bếp">Nhà Bếp</option>
-                <option value="Quạt & Làm Mát">Quạt & Làm Mát</option>
-                <option value="Chiếu Sáng">Chiếu Sáng</option>
-                <option value="Gia Dụng Khác">Gia Dụng Khác</option>
-              </select>
-            </div>
-
-            <div class="flex flex-col gap-1.5">
-              <label class="text-xs font-medium text-navy-900/60">Đặc điểm (cách nhau bằng dấu phẩy)</label>
-              <input type="text" id="f-tags" placeholder="Chống Dính, 1.8L, Giữ Ấm 24h" class="form-input border border-slate-200 rounded-lg px-3 py-2 text-sm">
-            </div>
-
-            <div class="flex flex-col gap-1.5">
-              <label class="text-xs font-medium text-navy-900/60">Link ảnh sản phẩm</label>
-              <input type="url" id="f-img" required placeholder="https://..." class="form-input border border-slate-200 rounded-lg px-3 py-2 text-sm">
-            </div>
-
-            <p id="form-error" class="hidden text-sm text-red-600 bg-red-50 border border-red-200 rounded-lg px-3 py-2"></p>
-            <p id="form-success" class="hidden text-sm text-emerald-700 bg-emerald-50 border border-emerald-200 rounded-lg px-3 py-2"></p>
-
-            <div class="flex items-center gap-3 pt-1">
-              <button type="submit" id="form-submit" class="focus-ring flex-1 bg-ember hover:bg-ember-dark text-white font-display font-700 text-sm px-5 py-2.5 rounded-xl shadow-[0_10px_20px_-8px_rgba(249,115,22,0.5)] transition-colors flex items-center justify-center gap-2">
-                Lưu Sản Phẩm
-              </button>
-              <button type="button" id="btn-cancel-edit" class="hidden focus-ring text-sm font-body font-medium text-navy-900/60 border border-slate-200 rounded-xl px-4 py-2.5 hover:bg-slate-150 transition-colors">
-                Hủy
-              </button>
-            </div>
-          </form>
-        </div>
-
-        <!-- LIVE PREVIEW -->
+    <!-- ===== TAB: SẢN PHẨM ===== -->
+    <div id="tab-products">
+      <div class="flex flex-wrap items-center justify-between gap-3 mb-8">
         <div>
-          <p class="text-xs font-medium text-navy-900/50 mb-2 px-1">Xem trước card sản phẩm</p>
-          <div id="preview-card" class="hover-lift bg-white border border-slate-200 rounded-2xl overflow-hidden flex flex-col relative max-w-xs">
-            <!-- JS render -->
+          <h1 class="font-display font-800 text-2xl text-navy-950">Quản Lý Sản Phẩm</h1>
+          <p class="font-body text-sm text-navy-900/60 mt-1">
+            Tổng cộng <span id="stat-count" class="font-700 text-brand">0</span> sản phẩm
+          </p>
+        </div>
+        <button id="btn-new" class="focus-ring bg-brand hover:bg-ember text-white font-display font-700 text-sm px-5 py-2.5 rounded-xl transition-colors flex items-center gap-2">
+          + Thêm Sản Phẩm Mới
+        </button>
+      </div>
+
+      <div class="grid grid-cols-1 lg:grid-cols-5 gap-8 items-start">
+
+        <!-- FORM + PREVIEW -->
+        <div class="lg:col-span-2 flex flex-col gap-5">
+          <div class="bg-white rounded-2xl border border-slate-200 p-6">
+            <h2 id="form-title" class="font-display font-700 text-lg text-navy-950 mb-4">Thêm Sản Phẩm Mới</h2>
+
+            <form id="product-form" class="flex flex-col gap-4">
+              <input type="hidden" id="f-id">
+
+              <div class="flex flex-col gap-1.5">
+                <label class="text-xs font-medium text-navy-900/60">Tên sản phẩm</label>
+                <input type="text" id="f-name" required placeholder="Nồi Cơm Điện Kim Long 1.8L" class="form-input border border-slate-200 rounded-lg px-3 py-2 text-sm">
+              </div>
+
+              <div class="grid grid-cols-2 gap-3">
+                <div class="flex flex-col gap-1.5">
+                  <label class="text-xs font-medium text-navy-900/60">Giá gốc</label>
+                  <input type="text" id="f-old-price" required placeholder="750.000 đ" class="form-input border border-slate-200 rounded-lg px-3 py-2 text-sm">
+                </div>
+                <div class="flex flex-col gap-1.5">
+                  <label class="text-xs font-medium text-navy-900/60">Giá sốc</label>
+                  <input type="text" id="f-new-price" required placeholder="590.000 đ" class="form-input border border-slate-200 rounded-lg px-3 py-2 text-sm">
+                </div>
+              </div>
+
+              <div class="grid grid-cols-2 gap-3">
+                <div class="flex flex-col gap-1.5">
+                  <label class="text-xs font-medium text-navy-900/60">% Giảm giá</label>
+                  <input type="text" id="f-discount" required placeholder="-21%" class="form-input border border-slate-200 rounded-lg px-3 py-2 text-sm">
+                </div>
+                <div class="flex flex-col gap-1.5">
+                  <label class="text-xs font-medium text-navy-900/60">Nhãn (tùy chọn)</label>
+                  <input type="text" id="f-badge" placeholder="Mẫu mới" class="form-input border border-slate-200 rounded-lg px-3 py-2 text-sm">
+                </div>
+              </div>
+
+              <div class="flex flex-col gap-1.5">
+                <label class="text-xs font-medium text-navy-900/60">Danh mục</label>
+                <select id="f-category" required class="form-input border border-slate-200 rounded-lg px-3 py-2 text-sm bg-white">
+                  <option value="Nhà Bếp">Nhà Bếp</option>
+                  <option value="Quạt & Làm Mát">Quạt & Làm Mát</option>
+                  <option value="Chiếu Sáng">Chiếu Sáng</option>
+                  <option value="Gia Dụng Khác">Gia Dụng Khác</option>
+                </select>
+              </div>
+
+              <div class="flex flex-col gap-1.5">
+                <label class="text-xs font-medium text-navy-900/60">Đặc điểm (cách nhau bằng dấu phẩy)</label>
+                <input type="text" id="f-tags" placeholder="Chống Dính, 1.8L, Giữ Ấm 24h" class="form-input border border-slate-200 rounded-lg px-3 py-2 text-sm">
+              </div>
+
+              <div class="flex flex-col gap-1.5">
+                <label class="text-xs font-medium text-navy-900/60">Link ảnh sản phẩm</label>
+                <input type="url" id="f-img" required placeholder="https://..." class="form-input border border-slate-200 rounded-lg px-3 py-2 text-sm">
+              </div>
+
+              <p id="form-error" class="hidden text-sm text-red-600 bg-red-50 border border-red-200 rounded-lg px-3 py-2"></p>
+              <p id="form-success" class="hidden text-sm text-emerald-700 bg-emerald-50 border border-emerald-200 rounded-lg px-3 py-2"></p>
+
+              <div class="flex items-center gap-3 pt-1">
+                <button type="submit" id="form-submit" class="focus-ring flex-1 bg-ember hover:bg-ember-dark text-white font-display font-700 text-sm px-5 py-2.5 rounded-xl shadow-[0_10px_20px_-8px_rgba(249,115,22,0.5)] transition-colors flex items-center justify-center gap-2">
+                  Lưu Sản Phẩm
+                </button>
+                <button type="button" id="btn-cancel-edit" class="hidden focus-ring text-sm font-body font-medium text-navy-900/60 border border-slate-200 rounded-xl px-4 py-2.5 hover:bg-slate-150 transition-colors">
+                  Hủy
+                </button>
+              </div>
+            </form>
           </div>
+
+          <!-- LIVE PREVIEW -->
+          <div>
+            <p class="text-xs font-medium text-navy-900/50 mb-2 px-1">Xem trước card sản phẩm</p>
+            <div id="preview-card" class="hover-lift bg-white border border-slate-200 rounded-2xl overflow-hidden flex flex-col relative max-w-xs">
+              <!-- JS render -->
+            </div>
+          </div>
+        </div>
+
+        <!-- PRODUCT LIST -->
+        <div class="lg:col-span-3">
+          <div class="bg-white rounded-2xl border border-slate-200 overflow-hidden">
+            <div id="product-list" class="divide-y divide-slate-100">
+              <!-- JS render -->
+            </div>
+            <div id="list-empty" class="hidden text-center py-16 px-6 font-body text-sm text-navy-900/50">
+              Chưa có sản phẩm nào. Bấm "Thêm Sản Phẩm Mới" để bắt đầu.
+            </div>
+            <div id="list-loading" class="flex items-center justify-center gap-2 py-16 text-sm text-navy-900/50">
+              <span class="spinner"></span> Đang tải danh sách sản phẩm...
+            </div>
+          </div>
+        </div>
+
+      </div>
+    </div>
+
+    <!-- ===== TAB: TIN NHẮN LIÊN HỆ ===== -->
+    <div id="tab-contacts" class="hidden">
+      <div class="flex flex-wrap items-center justify-between gap-3 mb-8">
+        <div>
+          <h1 class="font-display font-800 text-2xl text-navy-950">Tin Nhắn Liên Hệ</h1>
+          <p class="font-body text-sm text-navy-900/60 mt-1">
+            Yêu cầu khách hàng gửi từ trang Liên Hệ, mới nhất lên đầu
+          </p>
         </div>
       </div>
 
-      <!-- PRODUCT LIST -->
-      <div class="lg:col-span-3">
-        <div class="bg-white rounded-2xl border border-slate-200 overflow-hidden">
-          <div id="product-list" class="divide-y divide-slate-100">
-            <!-- JS render -->
-          </div>
-          <div id="list-empty" class="hidden text-center py-16 px-6 font-body text-sm text-navy-900/50">
-            Chưa có sản phẩm nào. Bấm "Thêm Sản Phẩm Mới" để bắt đầu.
-          </div>
-          <div id="list-loading" class="flex items-center justify-center gap-2 py-16 text-sm text-navy-900/50">
-            <span class="spinner"></span> Đang tải danh sách sản phẩm...
-          </div>
+      <div class="bg-white rounded-2xl border border-slate-200 overflow-hidden">
+        <div id="contacts-list" class="divide-y divide-slate-100">
+          <!-- JS render -->
+        </div>
+        <div id="contacts-empty" class="hidden text-center py-16 px-6 font-body text-sm text-navy-900/50">
+          Chưa có tin nhắn liên hệ nào.
+        </div>
+        <div id="contacts-loading" class="flex items-center justify-center gap-2 py-16 text-sm text-navy-900/50">
+          <span class="spinner"></span> Đang tải tin nhắn...
         </div>
       </div>
-
     </div>
   </main>
 
@@ -349,6 +386,7 @@
       userEmailEl.classList.remove('hidden');
       userEmailEl.textContent = user.email;
       loadProducts();
+      loadContactsBadgeCount();
     }
 
     loginForm.addEventListener('submit', async (e) => {
@@ -569,6 +607,91 @@
       }
       allProducts = data || [];
       renderList();
+    }
+
+    // ---------- Tabs ----------
+    const tabBtnProducts = document.getElementById('tab-btn-products');
+    const tabBtnContacts = document.getElementById('tab-btn-contacts');
+    const tabProducts = document.getElementById('tab-products');
+    const tabContacts = document.getElementById('tab-contacts');
+
+    function switchTab(tab) {
+      const isProducts = tab === 'products';
+      tabProducts.classList.toggle('hidden', !isProducts);
+      tabContacts.classList.toggle('hidden', isProducts);
+      tabBtnProducts.classList.toggle('border-brand', isProducts);
+      tabBtnProducts.classList.toggle('text-brand', isProducts);
+      tabBtnProducts.classList.toggle('border-transparent', !isProducts);
+      tabBtnProducts.classList.toggle('text-navy-900/50', !isProducts);
+      tabBtnContacts.classList.toggle('border-brand', !isProducts);
+      tabBtnContacts.classList.toggle('text-brand', !isProducts);
+      tabBtnContacts.classList.toggle('border-transparent', isProducts);
+      tabBtnContacts.classList.toggle('text-navy-900/50', isProducts);
+      if (!isProducts) loadContacts();
+    }
+    tabBtnProducts.addEventListener('click', () => switchTab('products'));
+    tabBtnContacts.addEventListener('click', () => switchTab('contacts'));
+
+    // ---------- Tin nhắn liên hệ ----------
+    async function loadContactsBadgeCount() {
+      if (!isConfigured) return;
+      const { count } = await sb.from('contacts').select('*', { count: 'exact', head: true });
+      const badge = document.getElementById('contacts-badge');
+      if (count && count > 0) {
+        badge.textContent = count;
+        badge.classList.remove('hidden');
+      }
+    }
+
+    async function loadContacts() {
+      const list = document.getElementById('contacts-list');
+      const empty = document.getElementById('contacts-empty');
+      const loading = document.getElementById('contacts-loading');
+
+      loading.classList.remove('hidden');
+      list.innerHTML = '';
+      empty.classList.add('hidden');
+
+      const { data, error } = await sb.from('contacts').select('*').order('created_at', { ascending: false });
+
+      loading.classList.add('hidden');
+
+      if (error) {
+        list.innerHTML = `<div class="text-center py-10 text-sm text-red-600">Lỗi tải tin nhắn: ${error.message}</div>`;
+        return;
+      }
+
+      if (!data || data.length === 0) {
+        empty.classList.remove('hidden');
+        return;
+      }
+
+      list.innerHTML = data.map(c => {
+        const date = new Date(c.created_at);
+        const dateStr = date.toLocaleString('vi-VN', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' });
+        return `
+        <div class="flex items-start gap-4 px-5 py-4">
+          <div class="flex-1 min-w-0">
+            <div class="flex items-center gap-2 flex-wrap">
+              <p class="font-display font-700 text-sm text-navy-950">${c.name}</p>
+              <a href="tel:${c.phone}" class="font-mono text-xs text-brand hover:text-ember transition-colors">${c.phone}</a>
+              <span class="text-[11px] text-navy-900/40 font-body">${dateStr}</span>
+            </div>
+            ${c.message ? `<p class="font-body text-sm text-navy-900/60 mt-1">${c.message}</p>` : '<p class="font-body text-sm text-navy-900/30 italic mt-1">Không có nội dung</p>'}
+          </div>
+          <button data-id="${c.id}" class="btn-delete-contact focus-ring shrink-0 text-xs font-display font-700 text-red-600 border border-red-200 hover:bg-red-600 hover:text-white rounded-lg px-3 py-1.5 transition-colors">Xóa</button>
+        </div>`;
+      }).join('');
+
+      list.querySelectorAll('.btn-delete-contact').forEach(btn => {
+        btn.addEventListener('click', async () => {
+          if (!confirm('Xóa tin nhắn này?')) return;
+          const { error } = await sb.from('contacts').delete().eq('id', btn.dataset.id);
+          if (error) { showToast('Lỗi khi xóa: ' + error.message, 'error'); return; }
+          showToast('Đã xóa tin nhắn.');
+          loadContacts();
+        });
+      });
     }
 
     checkSession();
