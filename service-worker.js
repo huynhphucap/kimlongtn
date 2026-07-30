@@ -1,4 +1,4 @@
-const CACHE_NAME = "techonline-cache-v11";
+const CACHE_NAME = "techonline-cache-v12";
 
 self.addEventListener("install", () => {
   self.skipWaiting();
@@ -15,30 +15,40 @@ self.addEventListener("activate", (event) => {
 
 self.addEventListener("fetch", (event) => {
   const req = event.request;
+
+  // Chỉ được cache yêu cầu kiểu GET và địa chỉ http/https
+  // (bỏ qua POST gửi lên Supabase, yêu cầu từ tiện ích mở rộng trình duyệt, v.v.)
+  const isCacheable = req.method === "GET" && req.url.startsWith("http");
   const isHTML = req.mode === "navigate" || (req.headers.get("accept") || "").includes("text/html");
 
   if (isHTML) {
-    // Trang HTML: luôn lấy bản mới nhất từ mạng, và tự lưu lại để dùng khi mất mạng
     event.respondWith(
       fetch(req)
         .then((res) => {
-          const resClone = res.clone();
-          caches.open(CACHE_NAME).then((cache) => cache.put(req, resClone));
+          if (isCacheable) {
+            const resClone = res.clone();
+            caches.open(CACHE_NAME).then((cache) => cache.put(req, resClone));
+          }
           return res;
         })
         .catch(() => caches.match(req))
     );
-  } else {
-    // Ảnh, manifest, v.v.: dùng cache nếu đã có, chưa có thì tải và tự lưu lại
-    event.respondWith(
-      caches.match(req).then((cached) => {
-        if (cached) return cached;
-        return fetch(req).then((res) => {
-          const resClone = res.clone();
-          caches.open(CACHE_NAME).then((cache) => cache.put(req, resClone));
-          return res;
-        });
-      })
-    );
+    return;
   }
+
+  if (!isCacheable) {
+    // Không phải yêu cầu nên can thiệp (VD: gọi API) → để trình duyệt tự xử lý bình thường
+    return;
+  }
+
+  event.respondWith(
+    caches.match(req).then((cached) => {
+      if (cached) return cached;
+      return fetch(req).then((res) => {
+        const resClone = res.clone();
+        caches.open(CACHE_NAME).then((cache) => cache.put(req, resClone));
+        return res;
+      });
+    })
+  );
 });
