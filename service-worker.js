@@ -1,4 +1,4 @@
-const CACHE_NAME = "techonline-cache-v12";
+const CACHE_NAME = "techonline-cache-v13";
 
 self.addEventListener("install", () => {
   self.skipWaiting();
@@ -16,9 +16,11 @@ self.addEventListener("activate", (event) => {
 self.addEventListener("fetch", (event) => {
   const req = event.request;
 
-  // Chỉ được cache yêu cầu kiểu GET và địa chỉ http/https
-  // (bỏ qua POST gửi lên Supabase, yêu cầu từ tiện ích mở rộng trình duyệt, v.v.)
-  const isCacheable = req.method === "GET" && req.url.startsWith("http");
+  // Chỉ được cache tài nguyên CÙNG DOMAIN với web (html, ảnh, manifest của chính site).
+  // Mọi yêu cầu tới domain khác — đặc biệt là Supabase (dữ liệu sản phẩm, tin nhắn liên hệ...)
+  // — phải LUÔN lấy mới từ mạng, không bao giờ được cache lại.
+  const isSameOrigin = req.url.startsWith(self.location.origin);
+  const isCacheable = req.method === "GET" && isSameOrigin;
   const isHTML = req.mode === "navigate" || (req.headers.get("accept") || "").includes("text/html");
 
   if (isHTML) {
@@ -37,7 +39,7 @@ self.addEventListener("fetch", (event) => {
   }
 
   if (!isCacheable) {
-    // Không phải yêu cầu nên can thiệp (VD: gọi API) → để trình duyệt tự xử lý bình thường
+    // Domain khác (API Supabase, ảnh CDN, font Google...) → để mạng xử lý bình thường, không can thiệp
     return;
   }
 
