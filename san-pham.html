@@ -202,63 +202,63 @@
 
     // Dữ liệu dự phòng: hiển thị tạm nếu chưa cấu hình Supabase hoặc mất mạng
     const FALLBACK_PRODUCTS = [
-      { badge: "Mẫu mới", discount: "-21%", name: "Nồi Cơm Điện Kim Long 1.8L", category: "Nhà Bếp",
+      { id: 1, badge: "Mẫu mới", discount: "-21%", name: "Nồi Cơm Điện Kim Long 1.8L", category: "Nhà Bếp",
         old_price: "750.000 đ", new_price: "590.000 đ",
         tags: ["Chống Dính", "1.8L", "Giữ Ấm 24h"],
         img: "https://images.unsplash.com/photo-1599182345361-9542815e73f6?w=300&h=300&fit=crop" },
-      { badge: null, discount: "-24%", name: "Quạt Điện Đứng Kim Long 3 Tốc Độ", category: "Quạt & Làm Mát",
+      { id: 2, badge: null, discount: "-24%", name: "Quạt Điện Đứng Kim Long 3 Tốc Độ", category: "Quạt & Làm Mát",
         old_price: "590.000 đ", new_price: "450.000 đ",
         tags: ["3 Tốc Độ", "Cánh 40cm", "Tuốc Xoay"],
         img: "https://images.unsplash.com/photo-1601084195907-44baaa49dabd?w=300&h=300&fit=crop" },
-      { badge: "Mẫu mới", discount: "-26%", name: "Quạt Trần Kim Long Cánh Gỗ Có Đèn", category: "Quạt & Làm Mát",
+      { id: 3, badge: "Mẫu mới", discount: "-26%", name: "Quạt Trần Kim Long Cánh Gỗ Có Đèn", category: "Quạt & Làm Mát",
         old_price: "1.200.000 đ", new_price: "890.000 đ",
         tags: ["3 Cánh Gỗ", "Có Đèn", "Remote"],
         img: "https://images.unsplash.com/photo-1620348578890-740dd10e1fe5?w=300&h=300&fit=crop" },
-      { badge: null, discount: "-36%", name: "Bóng Đèn LED Kim Long Tiết Kiệm Điện", category: "Chiếu Sáng",
+      { id: 4, badge: null, discount: "-36%", name: "Bóng Đèn LED Kim Long Tiết Kiệm Điện", category: "Chiếu Sáng",
         old_price: "55.000 đ", new_price: "35.000 đ",
         tags: ["Ánh Sáng Trắng", "Đui E27", "Tiết Kiệm Điện"],
         img: "https://images.unsplash.com/photo-1604322415766-3eccf7b56a0a?w=300&h=300&fit=crop" },
-      { badge: null, discount: "-22%", name: "Bếp Điện Từ Kim Long Đơn", category: "Nhà Bếp",
+      { id: 5, badge: null, discount: "-22%", name: "Bếp Điện Từ Kim Long Đơn", category: "Nhà Bếp",
         old_price: "890.000 đ", new_price: "690.000 đ",
         tags: ["Mâm Từ Đơn", "Hẹn Giờ", "Cảm Ứng"],
         img: "https://images.unsplash.com/photo-1556819132-52350b2a7836?w=300&h=300&fit=crop" },
-      { badge: "Mẫu mới", discount: "-23%", name: "Nồi Chiên Không Dầu Kim Long 5L", category: "Nhà Bếp",
+      { id: 6, badge: "Mẫu mới", discount: "-23%", name: "Nồi Chiên Không Dầu Kim Long 5L", category: "Nhà Bếp",
         old_price: "1.100.000 đ", new_price: "850.000 đ",
         tags: ["Dung Tích 5L", "Không Dầu Mỡ", "Hẹn Giờ"],
         img: "https://images.unsplash.com/photo-1599182345361-9542815e73f6?w=300&h=300&fit=crop" },
-      { badge: null, discount: "-26%", name: "Máy Xay Sinh Tố Kim Long Đa Năng", category: "Nhà Bếp",
+      { id: 7, badge: null, discount: "-26%", name: "Máy Xay Sinh Tố Kim Long Đa Năng", category: "Nhà Bếp",
         old_price: "650.000 đ", new_price: "480.000 đ",
         tags: ["Cối 1.5L", "2 Tốc Độ", "Lưỡi Inox"],
         img: "https://images.unsplash.com/photo-1725656470947-6c655ba024d0?w=300&h=300&fit=crop" },
-      { badge: null, discount: "-28%", name: "Ấm Đun Siêu Tốc Kim Long 1.8L", category: "Nhà Bếp",
+      { id: 8, badge: null, discount: "-28%", name: "Ấm Đun Siêu Tốc Kim Long 1.8L", category: "Nhà Bếp",
         old_price: "320.000 đ", new_price: "230.000 đ",
         tags: ["1.8L", "Tự Ngắt", "Chống Cạn Nước"],
         img: "https://images.unsplash.com/photo-1561336739-ad95e6db39e5?w=300&h=300&fit=crop" },
-      { badge: "Mẫu mới", discount: "-27%", name: "Bàn Ủi Hơi Nước Kim Long", category: "Gia Dụng Khác",
+      { id: 9, badge: "Mẫu mới", discount: "-27%", name: "Bàn Ủi Hơi Nước Kim Long", category: "Gia Dụng Khác",
         old_price: "480.000 đ", new_price: "350.000 đ",
         tags: ["Hơi Nước", "Đế Chống Dính", "1.5m Dây"],
         img: "https://images.unsplash.com/photo-1540544093-b0880061e1a5?w=300&h=300&fit=crop" },
-      { badge: null, discount: "-34%", name: "Ổ Cắm Điện Đa Năng Kim Long", category: "Gia Dụng Khác",
+      { id: 10, badge: null, discount: "-34%", name: "Ổ Cắm Điện Đa Năng Kim Long", category: "Gia Dụng Khác",
         old_price: "150.000 đ", new_price: "99.000 đ",
         tags: ["6 Ổ Cắm", "Chống Giật", "Dây 3m"],
         img: "https://images.unsplash.com/photo-1650501386688-41f6d0251875?w=300&h=300&fit=crop" },
-      { badge: "Mẫu mới", discount: "-22%", name: "Lò Vi Sóng Kim Long 20L", category: "Nhà Bếp",
+      { id: 11, badge: "Mẫu mới", discount: "-22%", name: "Lò Vi Sóng Kim Long 20L", category: "Nhà Bếp",
         old_price: "1.850.000 đ", new_price: "1.450.000 đ",
         tags: ["20L", "Rã Đông", "Hẹn Giờ"],
         img: "https://images.unsplash.com/photo-1630699144310-980c8ed310e3?w=300&h=300&fit=crop" },
-      { badge: null, discount: "-29%", name: "Quạt Hộp Kim Long Mini", category: "Quạt & Làm Mát",
+      { id: 12, badge: null, discount: "-29%", name: "Quạt Hộp Kim Long Mini", category: "Quạt & Làm Mát",
         old_price: "280.000 đ", new_price: "199.000 đ",
         tags: ["Gọn Nhẹ", "3 Tốc Độ", "Tiết Kiệm Điện"],
         img: "https://images.unsplash.com/photo-1601084195907-44baaa49dabd?w=300&h=300&fit=crop" },
-      { badge: null, discount: "-25%", name: "Quạt Trần Kim Long 3 Cánh Nhựa", category: "Quạt & Làm Mát",
+      { id: 13, badge: null, discount: "-25%", name: "Quạt Trần Kim Long 3 Cánh Nhựa", category: "Quạt & Làm Mát",
         old_price: "790.000 đ", new_price: "590.000 đ",
         tags: ["3 Cánh Nhựa", "Vận Hành Êm", "Remote"],
         img: "https://images.unsplash.com/photo-1620348578890-740dd10e1fe5?w=300&h=300&fit=crop" },
-      { badge: null, discount: "-37%", name: "Đui Đèn Kim Long Chống Nước E27", category: "Chiếu Sáng",
+      { id: 14, badge: null, discount: "-37%", name: "Đui Đèn Kim Long Chống Nước E27", category: "Chiếu Sáng",
         old_price: "35.000 đ", new_price: "22.000 đ",
         tags: ["Chống Nước", "Đui E27", "Chịu Nhiệt"],
         img: "https://images.unsplash.com/photo-1604322415766-3eccf7b56a0a?w=300&h=300&fit=crop" },
-      { badge: null, discount: "-25%", name: "Bếp Hồng Ngoại Đơn Kim Long", category: "Nhà Bếp",
+      { id: 15, badge: null, discount: "-25%", name: "Bếp Hồng Ngoại Đơn Kim Long", category: "Nhà Bếp",
         old_price: "650.000 đ", new_price: "490.000 đ",
         tags: ["Mâm Hồng Ngoại", "Hẹn Giờ", "Cảm Ứng"],
         img: "https://images.unsplash.com/photo-1556819132-52350b2a7836?w=300&h=300&fit=crop" }
@@ -289,9 +289,9 @@
       grid.innerHTML = products.map((p, i) => `
         <div class="card-enter hover-lift bg-white border border-slate-200 rounded-2xl overflow-hidden flex flex-col relative" style="animation-delay:${i * 60}ms">
           ${p.badge ? `<span class="absolute top-2 left-2 bg-white text-ember text-xs font-display font-700 px-2.5 py-1 rounded-full z-10 shadow-[0_2px_4px_rgba(0,0,0,.15)] border border-ember/20">${p.badge}</span>` : ''}
-          <div class="aspect-square bg-slate-100 flex items-center justify-center overflow-hidden">
+          <a href="chi-tiet-san-pham.html?id=${p.id}" class="aspect-square bg-slate-100 flex items-center justify-center overflow-hidden">
             <img src="${p.img}" alt="${p.name}" class="object-cover w-full h-full">
-          </div>
+          </a>
           <div class="relative h-5">
             <div class="absolute -top-4 left-0 right-0 flex items-stretch drop-shadow-md">
               <span class="promo-ribbon text-white text-[11px] font-display font-800 uppercase px-3 py-1.5 flex-1 flex items-center justify-center rounded-l-sm">Khuyến Mãi Đặc Biệt</span>
@@ -299,7 +299,7 @@
             </div>
           </div>
           <div class="p-3 pt-6 flex flex-col gap-1 flex-1 font-body">
-            <a href="#" class="focus-ring text-sm font-display font-700 text-navy-950 hover:text-brand transition-colors leading-snug line-clamp-2 min-h-[2.5em]">${p.name}</a>
+            <a href="chi-tiet-san-pham.html?id=${p.id}" class="focus-ring text-sm font-display font-700 text-navy-950 hover:text-brand transition-colors leading-snug line-clamp-2 min-h-[2.5em]">${p.name}</a>
             <div class="price-strike text-navy-900/40 text-sm">${p.old_price}</div>
             <div class="flex items-center gap-2">
               <span class="text-ember-dark font-display font-800 text-lg">${p.new_price}</span>
