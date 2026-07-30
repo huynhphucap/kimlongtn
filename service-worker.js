@@ -1,4 +1,4 @@
-const CACHE_NAME = "techonline-cache-v9";
+const CACHE_NAME = "techonline-cache-v10";
 const ASSETS = [
   "./index.html",
   "./san-pham.html",
