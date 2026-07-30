@@ -168,13 +168,13 @@
 
     // Dữ liệu dự phòng nếu chưa cấu hình Supabase hoặc mất mạng
     const FALLBACK_FEATURED = [
-      { name: "Nồi Cơm Điện Kim Long 1.8L", new_price: "590.000 đ",
+      { id: 1, name: "Nồi Cơm Điện Kim Long 1.8L", new_price: "590.000 đ",
         tags: ["Chống Dính", "1.8L", "Giữ Ấm 24h"],
         img: "https://images.unsplash.com/photo-1599182345361-9542815e73f6?w=500&h=500&fit=crop" },
-      { name: "Quạt Điện Đứng Kim Long 3 Tốc Độ", new_price: "450.000 đ",
+      { id: 2, name: "Quạt Điện Đứng Kim Long 3 Tốc Độ", new_price: "450.000 đ",
         tags: ["3 Tốc Độ", "Cánh 40cm", "Tuốc Xoay"],
         img: "https://images.unsplash.com/photo-1601084195907-44baaa49dabd?w=500&h=500&fit=crop" },
-      { name: "Bóng Đèn LED Kim Long Tiết Kiệm Điện", new_price: "35.000 đ",
+      { id: 4, name: "Bóng Đèn LED Kim Long Tiết Kiệm Điện", new_price: "35.000 đ",
         tags: ["Ánh Sáng Trắng", "Đui E27", "Tiết Kiệm Điện"],
         img: "https://images.unsplash.com/photo-1604322415766-3eccf7b56a0a?w=500&h=500&fit=crop" }
     ];
@@ -205,7 +205,7 @@
             <p class="font-body text-xs text-navy-900/50">${(p.tags || []).join(' · ')}</p>
             <div class="mt-auto flex items-center justify-between pt-2">
               <span class="led-price text-sm font-700 rounded px-3 py-1.5">${p.new_price}</span>
-              <a href="san-pham.html" class="focus-ring text-xs font-display font-700 text-brand hover:text-ember transition-colors">Chi tiết →</a>
+              <a href="chi-tiet-san-pham.html?id=${p.id}" class="focus-ring text-xs font-display font-700 text-brand hover:text-ember transition-colors">Chi tiết →</a>
             </div>
           </div>
         </article>
