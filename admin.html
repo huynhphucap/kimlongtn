@@ -406,13 +406,20 @@
       if (error) {
         loginError.textContent = 'Đăng nhập thất bại: ' + (error.message || 'Sai email hoặc mật khẩu.');
         loginError.classList.remove('hidden');
+        showToast('Đăng nhập thất bại! Sai email hoặc mật khẩu.', 'error');
         return;
       }
+      showToast(`Đăng nhập thành công! Chào ${data.user.email}`);
       showDashboard(data.user);
     });
 
     btnLogout.addEventListener('click', async () => {
-      await sb.auth.signOut();
+      const { error } = await sb.auth.signOut();
+      if (error) {
+        showToast('Đăng xuất thất bại: ' + error.message, 'error');
+        return;
+      }
+      showToast('Đã đăng xuất thành công!');
       showLogin();
     });
 
