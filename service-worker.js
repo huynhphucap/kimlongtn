@@ -1,9 +1,10 @@
-const CACHE_NAME = "techonline-cache-v8";
+const CACHE_NAME = "techonline-cache-v9";
 const ASSETS = [
   "./index.html",
   "./san-pham.html",
   "./khuyen-mai.html",
   "./lien-he.html",
+  "./chi-tiet-san-pham.html",
   "./manifest.json",
   "./icon-192.png",
   "./icon-512.png"
