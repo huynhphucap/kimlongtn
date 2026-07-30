@@ -1,0 +1,336 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title id="page-title">Chi Tiết Sản Phẩm - Cửa Hàng Kim Long</title>
+
+<link rel="manifest" href="manifest.json">
+<meta name="theme-color" content="#2563eb">
+<link rel="icon" href="icon-192.png">
+<link rel="apple-touch-icon" href="icon-192.png">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Kim Long">
+
+<script src="https://cdn.tailwindcss.com"></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Sora:wght@400;600;700;800&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet">
+
+<script>
+  tailwind.config = {
+    theme: {
+      extend: {
+        colors: {
+          navy: { 950: '#0B1220', 900: '#0F1B33', 800: '#152A4D' },
+          brand: { DEFAULT: '#2563EB', light: '#5B8DFF' },
+          ember: { DEFAULT: '#F97316', dark: '#C2540A' },
+          slate: { 150: '#EEF1F6' }
+        },
+        fontFamily: {
+          display: ['Sora', 'sans-serif'],
+          body: ['Inter', 'sans-serif'],
+          mono: ['JetBrains Mono', 'monospace']
+        }
+      }
+    }
+  }
+</script>
+
+<style>
+  body { font-family: 'Inter', sans-serif; }
+  .price-strike { text-decoration: line-through; }
+
+  @view-transition { navigation: auto; }
+  @keyframes page-in { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: translateY(0); } }
+  body { animation: page-in .35s ease-out; }
+
+  .led-price {
+    font-family: 'JetBrains Mono', monospace;
+    background: #0B1220;
+    color: #5CF2A0;
+    text-shadow: 0 0 6px rgba(92, 242, 160, 0.55);
+    letter-spacing: 0.02em;
+  }
+
+  .price-badge-3d {
+    background: linear-gradient(180deg, #fb923c 0%, #ea580c 60%, #c2540a 100%);
+    box-shadow: inset 0 1px 0 rgba(255,255,255,.5), inset 0 -2px 3px rgba(0,0,0,.3), 0 2px 4px rgba(194,84,10,.5);
+    text-shadow: 0 1px 1px rgba(0,0,0,.3);
+  }
+
+  .focus-ring:focus-visible { outline: 2px solid #F97316; outline-offset: 2px; }
+
+  @media (prefers-reduced-motion: no-preference) {
+    .hover-lift { transition: transform .25s ease, box-shadow .25s ease; }
+    .hover-lift:hover { transform: translateY(-4px); box-shadow: 0 16px 30px -12px rgba(15,27,51,0.35); }
+  }
+
+  /* Khung xám nhấp nháy khi đang tải dữ liệu */
+  @keyframes skeleton-shimmer { 0% { background-position: 200% 0; } 100% { background-position: -200% 0; } }
+  .skeleton {
+    background: linear-gradient(90deg, #e2e8f0 25%, #eef1f6 37%, #e2e8f0 63%);
+    background-size: 400% 100%;
+    animation: skeleton-shimmer 1.4s ease infinite;
+  }
+
+  /* Zoom nhẹ khi rê chuột vào ảnh sản phẩm */
+  .zoom-img-wrap { overflow: hidden; }
+  .zoom-img-wrap img { transition: transform .5s ease; }
+  .zoom-img-wrap:hover img { transform: scale(1.06); }
+
+  @keyframes card-in { from { opacity: 0; transform: translateY(16px); } to { opacity: 1; transform: translateY(0); } }
+  .card-enter { animation: card-in .45s ease-out both; }
+</style>
+</head>
+
+<body class="bg-slate-150 text-navy-950">
+
+  <!-- ============ NAVBAR ============ -->
+  <header class="sticky top-0 z-50 bg-navy-950/95 backdrop-blur border-b border-white/10">
+    <nav class="max-w-6xl mx-auto flex items-center justify-between px-5 py-4">
+      <a href="index.html" class="flex items-center gap-2 shrink-0">
+        <span class="w-9 h-9 rounded-lg bg-brand flex items-center justify-center text-white font-display font-800 text-sm">KL</span>
+        <span class="font-display font-800 text-lg tracking-tight text-white">Kim Long</span>
+      </a>
+
+      <div class="flex items-center gap-6">
+        <ul class="hidden sm:flex items-center gap-8 font-body font-medium text-sm text-white/70">
+          <li><a href="san-pham.html" class="text-ember focus-ring rounded">Sản Phẩm</a></li>
+          <li><a href="khuyen-mai.html" class="hover:text-brand-light transition-colors focus-ring rounded">Khuyến Mãi</a></li>
+          <li><a href="lien-he.html" class="hover:text-brand-light transition-colors focus-ring rounded">Liên Hệ</a></li>
+        </ul>
+
+        <a href="index.html"
+           class="focus-ring hidden sm:inline-flex items-center gap-1.5 border border-white/20 hover:border-ember hover:text-ember rounded-full px-4 py-1.5 text-sm font-body font-medium text-white/70 transition-colors">
+          <span aria-hidden="true">←</span> Trang Chủ
+        </a>
+      </div>
+
+      <div class="flex sm:hidden items-center gap-3">
+        <ul class="flex items-center gap-4 font-body text-xs font-medium text-white/70">
+          <li><a href="san-pham.html" class="text-ember focus-ring rounded">Sản Phẩm</a></li>
+          <li><a href="khuyen-mai.html" class="focus-ring rounded">Khuyến Mãi</a></li>
+          <li><a href="lien-he.html" class="focus-ring rounded">Liên Hệ</a></li>
+        </ul>
+        <a href="index.html" class="focus-ring flex items-center gap-1 border border-white/20 rounded-full px-3 py-1 text-xs font-body font-medium text-ember">
+          <span aria-hidden="true">←</span> Trang Chủ
+        </a>
+      </div>
+    </nav>
+  </header>
+
+  <!-- Breadcrumb -->
+  <div id="breadcrumb" class="max-w-6xl mx-auto px-5 py-4 text-sm font-body text-navy-900/50">
+    <a href="index.html" class="hover:text-brand transition-colors">Trang Chủ</a> /
+    <a href="san-pham.html" class="hover:text-brand transition-colors">Sản Phẩm</a> /
+    <span class="text-navy-950 font-medium">Chi tiết</span>
+  </div>
+
+  <!-- ============ CHI TIẾT SẢN PHẨM ============ -->
+  <main class="max-w-6xl mx-auto px-5 pb-16">
+    <div id="detail-container" class="grid grid-cols-1 lg:grid-cols-2 gap-10 items-start">
+      <!-- JS render -->
+    </div>
+
+    <!-- Không tìm thấy sản phẩm -->
+    <div id="not-found" class="hidden text-center py-20">
+      <p class="font-display font-700 text-xl text-navy-950 mb-2">Không tìm thấy sản phẩm</p>
+      <p class="font-body text-sm text-navy-900/60 mb-6">Sản phẩm có thể đã bị xóa hoặc đường dẫn không đúng.</p>
+      <a href="san-pham.html" class="focus-ring inline-flex items-center gap-2 bg-brand hover:bg-ember text-white font-display font-700 text-sm px-6 py-3 rounded-xl transition-colors">
+        Xem Tất Cả Sản Phẩm →
+      </a>
+    </div>
+
+    <!-- Sản phẩm liên quan -->
+    <div id="related-section" class="hidden mt-16 sm:mt-20">
+      <h2 class="font-display font-800 text-xl sm:text-2xl text-navy-950 mb-6">Sản Phẩm Liên Quan</h2>
+      <div id="related-grid" class="grid grid-cols-2 sm:grid-cols-4 gap-4"></div>
+    </div>
+  </main>
+
+  <!-- ============ FOOTER ============ -->
+  <footer class="border-t border-slate-200 bg-white">
+    <div class="max-w-6xl mx-auto px-5 py-8 text-center text-xs sm:text-sm text-navy-900/50 font-body">
+      © 2026 Cửa Hàng Kim Long · Hotline 0364.878.771
+    </div>
+  </footer>
+
+  <script>
+    const SUPABASE_URL = "https://tvqiphlmvcbmpwexihby.supabase.co";
+    const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InR2cWlwaGxtdmNibXB3ZXhpaGJ5Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODUyMTc2NzIsImV4cCI6MjEwMDc5MzY3Mn0.oz5-F_1UCM0aXf9T9bFd7cpDgKAa0ReZfG1kfxp5ni0";
+
+    const params = new URLSearchParams(window.location.search);
+    const productId = params.get('id');
+
+    // Dữ liệu dự phòng (dùng khi mất mạng hoặc chưa cấu hình)
+    const FALLBACK_PRODUCTS = [
+      { id: 1, badge: "Mẫu mới", discount: "-21%", name: "Nồi Cơm Điện Kim Long 1.8L", category: "Nhà Bếp",
+        old_price: "750.000 đ", new_price: "590.000 đ", tags: ["Chống Dính", "1.8L", "Giữ Ấm 24h"],
+        img: "https://images.unsplash.com/photo-1599182345361-9542815e73f6?w=700&h=700&fit=crop" },
+      { id: 2, badge: null, discount: "-24%", name: "Quạt Điện Đứng Kim Long 3 Tốc Độ", category: "Quạt & Làm Mát",
+        old_price: "590.000 đ", new_price: "450.000 đ", tags: ["3 Tốc Độ", "Cánh 40cm", "Tuốc Xoay"],
+        img: "https://images.unsplash.com/photo-1601084195907-44baaa49dabd?w=700&h=700&fit=crop" },
+      { id: 3, badge: "Mẫu mới", discount: "-26%", name: "Quạt Trần Kim Long Cánh Gỗ Có Đèn", category: "Quạt & Làm Mát",
+        old_price: "1.200.000 đ", new_price: "890.000 đ", tags: ["3 Cánh Gỗ", "Có Đèn", "Remote"],
+        img: "https://images.unsplash.com/photo-1620348578890-740dd10e1fe5?w=700&h=700&fit=crop" },
+      { id: 4, badge: null, discount: "-36%", name: "Bóng Đèn LED Kim Long Tiết Kiệm Điện", category: "Chiếu Sáng",
+        old_price: "55.000 đ", new_price: "35.000 đ", tags: ["Ánh Sáng Trắng", "Đui E27", "Tiết Kiệm Điện"],
+        img: "https://images.unsplash.com/photo-1604322415766-3eccf7b56a0a?w=700&h=700&fit=crop" },
+      { id: 5, badge: null, discount: "-22%", name: "Bếp Điện Từ Kim Long Đơn", category: "Nhà Bếp",
+        old_price: "890.000 đ", new_price: "690.000 đ", tags: ["Mâm Từ Đơn", "Hẹn Giờ", "Cảm Ứng"],
+        img: "https://images.unsplash.com/photo-1556819132-52350b2a7836?w=700&h=700&fit=crop" }
+    ];
+
+    const isConfigured = SUPABASE_URL.startsWith('https://') && SUPABASE_ANON_KEY.startsWith('eyJ');
+    const sb = isConfigured ? window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY) : null;
+
+    function renderSkeleton() {
+      document.getElementById('detail-container').innerHTML = `
+        <div class="skeleton aspect-square rounded-2xl"></div>
+        <div class="flex flex-col gap-4">
+          <div class="skeleton h-4 w-24 rounded"></div>
+          <div class="skeleton h-8 w-full rounded"></div>
+          <div class="skeleton h-6 w-1/2 rounded"></div>
+          <div class="skeleton h-10 w-1/3 rounded"></div>
+          <div class="skeleton h-24 w-full rounded"></div>
+        </div>`;
+    }
+
+    function renderProduct(p) {
+      document.getElementById('page-title').textContent = p.name + ' - Cửa Hàng Kim Long';
+      document.getElementById('breadcrumb').innerHTML = `
+        <a href="index.html" class="hover:text-brand transition-colors">Trang Chủ</a> /
+        <a href="san-pham.html" class="hover:text-brand transition-colors">Sản Phẩm</a> /
+        <span class="text-navy-950 font-medium">${p.name}</span>`;
+
+      const description = p.description
+        ? p.description
+        : `Sản phẩm ${p.name} thuộc danh mục ${p.category || 'Đồ Điện Gia Dụng'}. Đặc điểm nổi bật: ${(p.tags || []).join(', ')}. Hàng chính hãng, có bảo hành, giao lắp tận nơi.`;
+
+      document.getElementById('detail-container').innerHTML = `
+        <div class="zoom-img-wrap rounded-2xl bg-white border border-slate-200">
+          <div class="aspect-square bg-slate-100 overflow-hidden rounded-2xl">
+            <img src="${p.img}" alt="${p.name}" class="w-full h-full object-cover">
+          </div>
+        </div>
+
+        <div class="flex flex-col gap-4">
+          ${p.category ? `<span class="self-start text-xs font-body font-medium text-brand bg-brand/10 rounded-full px-3 py-1">${p.category}</span>` : ''}
+
+          <h1 class="font-display font-800 text-2xl sm:text-3xl text-navy-950 leading-snug">${p.name}</h1>
+
+          <div class="flex flex-wrap gap-2">
+            ${(p.tags || []).map(t => `<span class="border border-slate-200 rounded-full px-3 py-1 text-xs text-navy-900/60 font-body">${t}</span>`).join('')}
+          </div>
+
+          <div class="flex items-center gap-3 pt-2">
+            <span class="price-strike text-navy-900/40 text-lg font-body">${p.old_price}</span>
+            <span class="price-badge-3d text-white text-xs font-display font-700 px-2 py-1 rounded">${p.discount}</span>
+          </div>
+          <div class="led-price inline-flex self-start text-2xl sm:text-3xl font-display font-800 rounded-xl px-5 py-3">
+            ${p.new_price}
+          </div>
+
+          <p class="font-body text-sm text-navy-900/70 leading-relaxed border-t border-slate-200 pt-4 mt-2">
+            ${description}
+          </p>
+
+          <div class="flex flex-col sm:flex-row gap-3 pt-2">
+            <a href="lien-he.html"
+               class="focus-ring flex-1 text-center bg-ember hover:bg-ember-dark text-white font-display font-700 text-sm px-6 py-3.5 rounded-xl shadow-[0_10px_20px_-8px_rgba(249,115,22,0.5)] transition-colors">
+              Liên Hệ Đặt Mua
+            </a>
+            <a href="tel:0364878771"
+               class="focus-ring flex-1 text-center border-2 border-navy-950 text-navy-950 hover:bg-navy-950 hover:text-white font-display font-700 text-sm px-6 py-3.5 rounded-xl transition-colors">
+              📞 Gọi Ngay: 0364.878.771
+            </a>
+          </div>
+
+          <div class="flex items-center gap-2 text-xs text-navy-900/50 font-body pt-1">
+            <span>✓ Hàng chính hãng</span>
+            <span>·</span>
+            <span>✓ Bảo hành rõ ràng</span>
+            <span>·</span>
+            <span>✓ Giao lắp tận nơi</span>
+          </div>
+        </div>`;
+    }
+
+    function renderRelated(products, currentId) {
+      const section = document.getElementById('related-section');
+      const list = products.filter(p => String(p.id) !== String(currentId));
+      if (list.length === 0) { section.classList.add('hidden'); return; }
+      section.classList.remove('hidden');
+
+      document.getElementById('related-grid').innerHTML = list.slice(0, 4).map((p, i) => `
+        <a href="chi-tiet-san-pham.html?id=${p.id}" class="card-enter hover-lift bg-white border border-slate-200 rounded-2xl overflow-hidden flex flex-col" style="animation-delay:${i * 80}ms">
+          <div class="aspect-square bg-slate-100 overflow-hidden">
+            <img src="${p.img}" alt="${p.name}" class="w-full h-full object-cover">
+          </div>
+          <div class="p-3 flex flex-col gap-1">
+            <p class="text-sm font-display font-700 text-navy-950 leading-snug line-clamp-2 min-h-[2.5em]">${p.name}</p>
+            <span class="text-ember-dark font-display font-800 text-sm">${p.new_price}</span>
+          </div>
+        </a>
+      `).join('');
+    }
+
+    async function loadProduct() {
+      renderSkeleton();
+
+      if (!productId) {
+        document.getElementById('detail-container').innerHTML = '';
+        document.getElementById('not-found').classList.remove('hidden');
+        return;
+      }
+
+      // Không cấu hình Supabase → dùng dữ liệu dự phòng
+      if (!isConfigured) {
+        const p = FALLBACK_PRODUCTS.find(x => String(x.id) === String(productId));
+        if (!p) {
+          document.getElementById('detail-container').innerHTML = '';
+          document.getElementById('not-found').classList.remove('hidden');
+          return;
+        }
+        renderProduct(p);
+        renderRelated(FALLBACK_PRODUCTS.filter(x => x.category === p.category), p.id);
+        return;
+      }
+
+      try {
+        const { data, error } = await sb.from('products').select('*').eq('id', productId).single();
+        if (error || !data) throw error || new Error('Không tìm thấy sản phẩm');
+        renderProduct(data);
+
+        // Tải sản phẩm liên quan cùng danh mục
+        if (data.category) {
+          const { data: related } = await sb
+            .from('products').select('*')
+            .eq('category', data.category)
+            .neq('id', data.id)
+            .limit(4);
+          renderRelated(related || [], data.id);
+        }
+      } catch (err) {
+        console.error('Lỗi tải sản phẩm, thử dữ liệu dự phòng:', err);
+        const p = FALLBACK_PRODUCTS.find(x => String(x.id) === String(productId));
+        if (!p) {
+          document.getElementById('detail-container').innerHTML = '';
+          document.getElementById('not-found').classList.remove('hidden');
+          return;
+        }
+        renderProduct(p);
+        renderRelated(FALLBACK_PRODUCTS.filter(x => x.category === p.category), p.id);
+      }
+    }
+
+    loadProduct();
+
+    if ('serviceWorker' in navigator) {
+      navigator.serviceWorker.register('service-worker.js').catch(() => {});
+    }
+  </script>
+</body>
+</html>
