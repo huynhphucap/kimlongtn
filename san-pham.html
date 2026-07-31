@@ -416,6 +416,10 @@
       }
     }
 
+    const urlCategoryParam = new URLSearchParams(location.search).get('category');
+    if (urlCategoryParam && CATEGORIES.includes(urlCategoryParam)) {
+      currentCategory = urlCategoryParam;
+    }
     loadProducts(1);
 
     if ('serviceWorker' in navigator) {
