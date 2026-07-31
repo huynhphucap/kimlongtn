@@ -157,6 +157,33 @@
     </div>
   </footer>
 
+  <!-- Giỏ yêu cầu báo giá -->
+  <div class="fixed left-4 bottom-24 z-40">
+    <button type="button" id="quote-cart-btn" class="focus-ring relative w-12 h-12 rounded-full bg-navy-950 text-white flex items-center justify-center shadow-lg hover:bg-navy-800 transition-colors">
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="8" cy="21" r="1"/><circle cx="19" cy="21" r="1"/><path d="M2.05 2.05h2l2.66 12.42a2 2 0 0 0 2 1.58h9.78a2 2 0 0 0 2-1.58l1.65-7.42H5.12"/></svg>
+      <span id="quote-cart-count" class="hidden absolute -top-1.5 -right-1.5 min-w-[1.15rem] h-[1.15rem] px-1 rounded-full bg-ember text-white text-[10px] font-display font-800 flex items-center justify-center">0</span>
+    </button>
+
+    <div id="quote-cart-panel" class="hidden absolute left-0 bottom-16 w-72 bg-white rounded-2xl border border-slate-200 shadow-[0_20px_40px_-16px_rgba(15,27,51,.35)] overflow-hidden">
+      <div class="flex items-center justify-between px-4 py-3 border-b border-slate-100">
+        <p class="font-display font-700 text-sm text-navy-950">Yêu Cầu Báo Giá</p>
+        <button type="button" id="quote-cart-close" class="focus-ring text-navy-900/40 hover:text-navy-900 transition-colors">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><path d="M18 6 6 18M6 6l12 12"/></svg>
+        </button>
+      </div>
+      <div id="quote-cart-items" class="max-h-64 overflow-y-auto divide-y divide-slate-100"></div>
+      <div id="quote-cart-empty" class="hidden text-center py-8 px-4 text-xs text-navy-900/40 font-body">Chưa có sản phẩm nào được chọn.</div>
+      <div class="p-3 border-t border-slate-100">
+        <a href="lien-he.html" class="focus-ring w-full flex items-center justify-center gap-1.5 bg-ember hover:bg-ember-dark text-white font-display font-700 text-sm px-4 py-2.5 rounded-xl transition-colors">
+          Gửi Yêu Cầu Báo Giá <span aria-hidden="true">→</span>
+        </a>
+      </div>
+    </div>
+  </div>
+
+  <!-- Toast thông báo -->
+  <div id="toast-container" class="fixed top-20 right-4 z-[100] flex flex-col gap-2 items-end"></div>
+
   <!-- ============ LIGHTBOX: XEM TOÀN ẢNH ============ -->
   <div id="lightbox" class="hidden fixed inset-0 z-[100] items-center justify-center bg-navy-950/90 backdrop-blur-sm p-4">
     <button type="button" id="lightbox-close" class="focus-ring absolute top-4 right-4 w-10 h-10 rounded-full bg-white/10 hover:bg-white/20 text-white flex items-center justify-center transition-colors">
@@ -200,6 +227,105 @@
 
     const isConfigured = SUPABASE_URL.startsWith('https://') && SUPABASE_ANON_KEY.startsWith('eyJ');
     const sb = isConfigured ? window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY) : null;
+
+    function escapeHtml(str) {
+      const map = { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' };
+      return String(str ?? '').replace(/[&<>"']/g, ch => map[ch]);
+    }
+
+    // ---------- Toast thông báo ----------
+    function showToast(message, type = 'success') {
+      const container = document.getElementById('toast-container');
+      const toast = document.createElement('div');
+      const styles = {
+        success: { bg: 'bg-emerald-600', icon: '✓' },
+        error: { bg: 'bg-red-600', icon: '✕' }
+      };
+      const s = styles[type] || styles.success;
+      toast.className = `${s.bg} text-white font-body text-sm font-medium rounded-xl px-4 py-3 flex items-center gap-2.5 max-w-xs shadow-[0_12px_28px_-12px_rgba(15,27,51,.35)]`;
+      toast.innerHTML = `<span class="font-display font-800">${s.icon}</span><span>${escapeHtml(message)}</span>`;
+      container.appendChild(toast);
+      setTimeout(() => toast.remove(), 3000);
+    }
+
+    // ---------- Giỏ yêu cầu báo giá ----------
+    const QUOTE_CART_KEY = 'kl_quote_cart';
+    function getQuoteCart() {
+      try { return JSON.parse(localStorage.getItem(QUOTE_CART_KEY)) || []; }
+      catch { return []; }
+    }
+    function saveQuoteCart(list) {
+      localStorage.setItem(QUOTE_CART_KEY, JSON.stringify(list));
+    }
+    function isInQuoteCart(id) {
+      return getQuoteCart().some(x => String(x.id) === String(id));
+    }
+    function addToQuoteCart(p) {
+      const cart = getQuoteCart();
+      if (cart.some(x => String(x.id) === String(p.id))) return false;
+      if (cart.length >= 20) { showToast('Chỉ được chọn tối đa 20 sản phẩm.', 'error'); return false; }
+      cart.push({ id: p.id, name: p.name, price: p.new_price });
+      saveQuoteCart(cart);
+      renderQuoteCart();
+      return true;
+    }
+    function removeFromQuoteCart(id) {
+      saveQuoteCart(getQuoteCart().filter(x => String(x.id) !== String(id)));
+      renderQuoteCart();
+    }
+
+    function renderQuoteCart() {
+      const cart = getQuoteCart();
+      const countEl = document.getElementById('quote-cart-count');
+      countEl.textContent = cart.length;
+      countEl.classList.toggle('hidden', cart.length === 0);
+
+      const itemsEl = document.getElementById('quote-cart-items');
+      const emptyEl = document.getElementById('quote-cart-empty');
+      if (cart.length === 0) {
+        itemsEl.innerHTML = '';
+        emptyEl.classList.remove('hidden');
+      } else {
+        emptyEl.classList.add('hidden');
+        itemsEl.innerHTML = cart.map(item => `
+          <div class="flex items-center gap-2 px-4 py-2.5">
+            <p class="flex-1 min-w-0 text-xs font-body text-navy-900/80 truncate">${escapeHtml(item.name)}</p>
+            <button type="button" data-remove-quote="${escapeHtml(String(item.id))}" class="focus-ring shrink-0 text-navy-900/30 hover:text-red-600 transition-colors">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M18 6 6 18M6 6l12 12"/></svg>
+            </button>
+          </div>
+        `).join('');
+        itemsEl.querySelectorAll('[data-remove-quote]').forEach(btn => {
+          btn.addEventListener('click', () => {
+            removeFromQuoteCart(btn.dataset.removeQuote);
+            updateQuoteButton();
+          });
+        });
+      }
+    }
+
+    const quoteCartBtn = document.getElementById('quote-cart-btn');
+    const quoteCartPanel = document.getElementById('quote-cart-panel');
+    quoteCartBtn.addEventListener('click', () => quoteCartPanel.classList.toggle('hidden'));
+    document.getElementById('quote-cart-close').addEventListener('click', () => quoteCartPanel.classList.add('hidden'));
+    document.addEventListener('click', (e) => {
+      if (!quoteCartPanel.contains(e.target) && !quoteCartBtn.contains(e.target)) quoteCartPanel.classList.add('hidden');
+    });
+    renderQuoteCart();
+
+    function updateQuoteButton() {
+      const btn = document.getElementById('btn-add-quote');
+      if (!btn || !window.currentProduct) return;
+      const added = isInQuoteCart(window.currentProduct.id);
+      btn.classList.toggle('bg-navy-950', added);
+      btn.classList.toggle('text-white', added);
+      btn.classList.toggle('border-2', !added);
+      btn.classList.toggle('border-navy-950', !added);
+      btn.classList.toggle('text-navy-950', !added);
+      btn.classList.toggle('hover:bg-navy-950', !added);
+      btn.classList.toggle('hover:text-white', !added);
+      btn.textContent = added ? '✓ Đã thêm vào yêu cầu báo giá' : '+ Thêm vào yêu cầu báo giá';
+    }
 
     // ---------- Slider ảnh + xem toàn ảnh (lightbox) ----------
     let currentImages = [];
@@ -286,6 +412,7 @@
     }
 
     function renderProduct(p) {
+      window.currentProduct = p;
       document.getElementById('page-title').textContent = p.name + ' - Cửa Hàng Kim Long';
       document.getElementById('breadcrumb').innerHTML = `
         <a href="index.html" class="hover:text-brand transition-colors">Trang Chủ</a> /
@@ -365,6 +492,11 @@
             </a>
           </div>
 
+          <button type="button" id="btn-add-quote"
+                  class="focus-ring border-2 border-navy-950 text-navy-950 hover:bg-navy-950 hover:text-white font-display font-700 text-sm px-6 py-3 rounded-xl transition-colors">
+            + Thêm vào yêu cầu báo giá
+          </button>
+
           <div class="flex items-center gap-2 text-xs text-navy-900/50 font-body pt-1">
             <span>✓ Hàng chính hãng</span>
             <span>·</span>
@@ -384,6 +516,17 @@
           btn.addEventListener('click', () => showImage(Number(btn.dataset.index)));
         });
       }
+
+      updateQuoteButton();
+      document.getElementById('btn-add-quote').addEventListener('click', () => {
+        if (isInQuoteCart(p.id)) {
+          removeFromQuoteCart(p.id);
+          showToast('Đã bỏ khỏi yêu cầu báo giá.');
+        } else if (addToQuoteCart(p)) {
+          showToast(`Đã thêm "${p.name}" vào yêu cầu báo giá!`);
+        }
+        updateQuoteButton();
+      });
     }
 
     function renderRelated(products, currentId) {
