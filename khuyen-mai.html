@@ -84,61 +84,14 @@
     pointer-events: none;
   }
 
-  /* ===== Thẻ khuyến mãi 3D kiểu mới ===== */
-  .promo-grid-3d { perspective: 1400px; }
-
-  .promo-card-3d {
-    position: relative;
-    background: #fff;
-    border-radius: 1.5rem;
-    overflow: hidden;
-    transform-style: preserve-3d;
-    box-shadow:
-      0 1px 0 rgba(255,255,255,.6) inset,
-      0 4px 10px -6px rgba(15,27,51,.2),
-      0 16px 32px -18px rgba(15,27,51,.35);
-    transition: transform .4s cubic-bezier(.2,.8,.2,1), box-shadow .4s ease;
+  /* Thẻ khuyến mãi dạng poster — bấm cả thẻ, không cần rê chuột mới thấy chi tiết */
+  .promo-tile {
+    transition: transform .3s cubic-bezier(.2,.8,.2,1), box-shadow .3s ease;
   }
-  .promo-card-3d:hover {
-    transform: translateY(-10px) rotateX(4deg) scale(1.02);
-    box-shadow:
-      0 1px 0 rgba(255,255,255,.6) inset,
-      0 10px 20px -10px rgba(15,27,51,.3),
-      0 34px 55px -22px rgba(194,84,10,.45);
+  .promo-tile:hover {
+    transform: translateY(-6px);
+    box-shadow: 0 24px 40px -18px rgba(15,27,51,.45);
   }
-
-  .promo-card-header {
-    height: 7rem;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    position: relative;
-  }
-  .promo-card-header .badge-pill {
-    position: absolute; top: 0.75rem; left: 0.75rem;
-    background: rgba(255,255,255,.12);
-    border: 1px solid rgba(255,255,255,.3);
-    backdrop-filter: blur(2px);
-  }
-
-  /* Huy hiệu giảm giá 3D — nằm giữa phần đầu và phần thân, không đè chữ */
-  .discount-medal {
-    width: 4rem; height: 4rem;
-    border-radius: 9999px;
-    display: flex; align-items: center; justify-content: center;
-    font-family: 'Sora', sans-serif;
-    font-weight: 800;
-    font-size: 0.8rem;
-    box-shadow:
-      inset 0 2px 3px rgba(255,255,255,.7),
-      inset 0 -3px 5px rgba(0,0,0,.3),
-      0 10px 18px -6px rgba(0,0,0,.35),
-      0 0 0 4px #ffffff;
-  }
-  .medal-ember { background: radial-gradient(circle at 35% 30%, #ffe37a 0%, #fbbf24 45%, #f59e0b 100%); color: #7c2d12; }
-  .medal-brand { background: radial-gradient(circle at 35% 30%, #93c5fd 0%, #3b82f6 45%, #1d4ed8 100%); color: #fff; }
-  .medal-green { background: radial-gradient(circle at 35% 30%, #6ee7b7 0%, #10b981 45%, #047857 100%); color: #fff; }
-  .medal-purple { background: radial-gradient(circle at 35% 30%, #d8b4fe 0%, #a855f7 45%, #7e22ce 100%); color: #fff; }
 
   .focus-ring:focus-visible {
     outline: 2px solid #F97316;
@@ -224,118 +177,100 @@
   <main class="max-w-6xl mx-auto px-5 py-14 sm:py-20">
     <div class="reveal text-center mb-10 sm:mb-14">
       <h2 class="font-display font-800 text-2xl sm:text-3xl text-navy-950">Ưu Đãi Nổi Bật</h2>
-      <p class="font-body text-navy-900/60 text-sm sm:text-base mt-2">Rê chuột vào từng ưu đãi để xem chi tiết</p>
+      <p class="font-body text-navy-900/60 text-sm sm:text-base mt-2">Bấm vào ưu đãi để xem sản phẩm ngay</p>
     </div>
 
-    <div class="promo-grid-3d grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8 sm:gap-9">
+    <div class="grid grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
 
       <!-- Promo 1 -->
-      <article class="reveal promo-card-3d flex flex-col" style="transition-delay:0ms">
-        <div class="promo-card-header keypad-texture bg-gradient-to-br from-navy-950 via-navy-900 to-navy-800">
-          <span class="badge-pill text-white text-[10px] font-display font-700 uppercase tracking-wide px-2.5 py-1 rounded-full">Giảm Sốc</span>
-          <span class="text-5xl drop-shadow-[0_6px_10px_rgba(0,0,0,.45)]">🍚</span>
+      <a href="san-pham.html?category=Nh%C3%A0%20B%E1%BA%BFp"
+         class="promo-tile reveal group relative overflow-hidden rounded-2xl aspect-square sm:aspect-[4/3] flex flex-col justify-between p-4 sm:p-6 text-white bg-gradient-to-br from-orange-400 via-orange-500 to-orange-700 focus-ring"
+         style="transition-delay:0ms">
+        <span class="relative z-10 w-fit text-[10px] sm:text-xs font-display font-700 uppercase tracking-wide bg-white/15 border border-white/25 rounded-full px-2.5 py-1">Giảm Sốc</span>
+        <span class="absolute -right-3 -bottom-4 text-7xl sm:text-8xl opacity-20 group-hover:opacity-30 group-hover:scale-110 transition-all duration-300 select-none pointer-events-none">🍚</span>
+        <div class="relative z-10">
+          <p class="font-display font-800 text-3xl sm:text-5xl leading-none drop-shadow-[0_4px_10px_rgba(0,0,0,.3)]">-30%</p>
+          <p class="font-display font-700 text-xs sm:text-base mt-1.5">Nồi Cơm Điện</p>
         </div>
-        <div class="relative z-10 flex justify-center -mt-8">
-          <div class="discount-medal medal-ember">-30%</div>
-        </div>
-        <div class="px-6 pt-4 pb-6 flex flex-col gap-3 flex-1 text-center">
-          <h3 class="font-display font-700 text-lg text-navy-950">Giảm 30% Nồi Cơm Điện</h3>
-          <p class="font-body text-sm text-navy-900/60">Áp dụng cho toàn bộ nồi cơm điện Kim Long. Số lượng có hạn trong tháng.</p>
-          <a href="san-pham.html" class="focus-ring mt-auto inline-flex items-center justify-center gap-1.5 text-sm font-display font-700 text-white bg-brand hover:bg-ember rounded-xl px-4 py-2.5 transition-colors">
-            Xem Sản Phẩm <span aria-hidden="true">→</span>
-          </a>
-        </div>
-      </article>
+        <span class="relative z-10 inline-flex items-center gap-1 text-[11px] sm:text-sm font-display font-700">
+          Xem sản phẩm <span aria-hidden="true" class="transition-transform group-hover:translate-x-1">→</span>
+        </span>
+      </a>
 
       <!-- Promo 2 -->
-      <article class="reveal promo-card-3d flex flex-col" style="transition-delay:100ms">
-        <div class="promo-card-header keypad-texture bg-gradient-to-br from-navy-950 via-navy-900 to-navy-800">
-          <span class="badge-pill text-white text-[10px] font-display font-700 uppercase tracking-wide px-2.5 py-1 rounded-full">Mua Kèm Ưu Đãi</span>
-          <span class="text-5xl drop-shadow-[0_6px_10px_rgba(0,0,0,.45)]">💡</span>
+      <a href="san-pham.html?category=Chi%E1%BA%BFu%20S%C3%A1ng"
+         class="promo-tile reveal group relative overflow-hidden rounded-2xl aspect-square sm:aspect-[4/3] flex flex-col justify-between p-4 sm:p-6 text-white bg-gradient-to-br from-blue-400 via-blue-500 to-blue-700 focus-ring"
+         style="transition-delay:80ms">
+        <span class="relative z-10 w-fit text-[10px] sm:text-xs font-display font-700 uppercase tracking-wide bg-white/15 border border-white/25 rounded-full px-2.5 py-1">Mua Kèm Ưu Đãi</span>
+        <span class="absolute -right-3 -bottom-4 text-7xl sm:text-8xl opacity-20 group-hover:opacity-30 group-hover:scale-110 transition-all duration-300 select-none pointer-events-none">💡</span>
+        <div class="relative z-10">
+          <p class="font-display font-800 text-3xl sm:text-5xl leading-none drop-shadow-[0_4px_10px_rgba(0,0,0,.3)]">2+1</p>
+          <p class="font-display font-700 text-xs sm:text-base mt-1.5">Bóng Đèn LED</p>
         </div>
-        <div class="relative z-10 flex justify-center -mt-8">
-          <div class="discount-medal medal-ember">2+1</div>
-        </div>
-        <div class="px-6 pt-4 pb-6 flex flex-col gap-3 flex-1 text-center">
-          <h3 class="font-display font-700 text-lg text-navy-950">Mua 2 Tặng 1 Bóng Đèn LED</h3>
-          <p class="font-body text-sm text-navy-900/60">Mua 2 bóng đèn LED Kim Long bất kỳ, tặng ngay 1 bóng cùng loại.</p>
-          <a href="san-pham.html" class="focus-ring mt-auto inline-flex items-center justify-center gap-1.5 text-sm font-display font-700 text-white bg-brand hover:bg-ember rounded-xl px-4 py-2.5 transition-colors">
-            Xem Sản Phẩm <span aria-hidden="true">→</span>
-          </a>
-        </div>
-      </article>
+        <span class="relative z-10 inline-flex items-center gap-1 text-[11px] sm:text-sm font-display font-700">
+          Xem sản phẩm <span aria-hidden="true" class="transition-transform group-hover:translate-x-1">→</span>
+        </span>
+      </a>
 
       <!-- Promo 3 -->
-      <article class="reveal promo-card-3d flex flex-col" style="transition-delay:200ms">
-        <div class="promo-card-header keypad-texture bg-gradient-to-br from-navy-950 via-navy-900 to-navy-800">
-          <span class="badge-pill text-white text-[10px] font-display font-700 uppercase tracking-wide px-2.5 py-1 rounded-full">Combo Tiết Kiệm</span>
-          <span class="text-5xl drop-shadow-[0_6px_10px_rgba(0,0,0,.45)]">🌀</span>
+      <a href="san-pham.html?category=Qu%E1%BA%A1t%20%26%20L%C3%A0m%20M%C3%A1t"
+         class="promo-tile reveal group relative overflow-hidden rounded-2xl aspect-square sm:aspect-[4/3] flex flex-col justify-between p-4 sm:p-6 text-white bg-gradient-to-br from-purple-400 via-purple-500 to-purple-700 focus-ring"
+         style="transition-delay:160ms">
+        <span class="relative z-10 w-fit text-[10px] sm:text-xs font-display font-700 uppercase tracking-wide bg-white/15 border border-white/25 rounded-full px-2.5 py-1">Combo Tiết Kiệm</span>
+        <span class="absolute -right-3 -bottom-4 text-7xl sm:text-8xl opacity-20 group-hover:opacity-30 group-hover:scale-110 transition-all duration-300 select-none pointer-events-none">🌀</span>
+        <div class="relative z-10">
+          <p class="font-display font-800 text-3xl sm:text-5xl leading-none drop-shadow-[0_4px_10px_rgba(0,0,0,.3)]">-500K</p>
+          <p class="font-display font-700 text-xs sm:text-base mt-1.5">Quạt + Bếp Điện Từ</p>
         </div>
-        <div class="relative z-10 flex justify-center -mt-8">
-          <div class="discount-medal medal-brand">-500K</div>
-        </div>
-        <div class="px-6 pt-4 pb-6 flex flex-col gap-3 flex-1 text-center">
-          <h3 class="font-display font-700 text-lg text-navy-950">Combo Quạt Điện + Bếp Điện Từ</h3>
-          <p class="font-body text-sm text-navy-900/60">Mua kèm combo, giảm ngay 500.000₫ so với mua lẻ từng sản phẩm.</p>
-          <a href="san-pham.html" class="focus-ring mt-auto inline-flex items-center justify-center gap-1.5 text-sm font-display font-700 text-white bg-brand hover:bg-ember rounded-xl px-4 py-2.5 transition-colors">
-            Xem Sản Phẩm <span aria-hidden="true">→</span>
-          </a>
-        </div>
-      </article>
+        <span class="relative z-10 inline-flex items-center gap-1 text-[11px] sm:text-sm font-display font-700">
+          Xem sản phẩm <span aria-hidden="true" class="transition-transform group-hover:translate-x-1">→</span>
+        </span>
+      </a>
 
       <!-- Promo 4 -->
-      <article class="reveal promo-card-3d flex flex-col" style="transition-delay:300ms">
-        <div class="promo-card-header keypad-texture bg-gradient-to-br from-navy-950 via-navy-900 to-navy-800">
-          <span class="badge-pill text-white text-[10px] font-display font-700 uppercase tracking-wide px-2.5 py-1 rounded-full">Miễn Phí</span>
-          <span class="text-5xl drop-shadow-[0_6px_10px_rgba(0,0,0,.45)]">🚚</span>
+      <a href="san-pham.html"
+         class="promo-tile reveal group relative overflow-hidden rounded-2xl aspect-square sm:aspect-[4/3] flex flex-col justify-between p-4 sm:p-6 text-white bg-gradient-to-br from-emerald-400 via-emerald-500 to-emerald-700 focus-ring"
+         style="transition-delay:240ms">
+        <span class="relative z-10 w-fit text-[10px] sm:text-xs font-display font-700 uppercase tracking-wide bg-white/15 border border-white/25 rounded-full px-2.5 py-1">Miễn Phí</span>
+        <span class="absolute -right-3 -bottom-4 text-7xl sm:text-8xl opacity-20 group-hover:opacity-30 group-hover:scale-110 transition-all duration-300 select-none pointer-events-none">🚚</span>
+        <div class="relative z-10">
+          <p class="font-display font-800 text-3xl sm:text-5xl leading-none drop-shadow-[0_4px_10px_rgba(0,0,0,.3)]">0đ</p>
+          <p class="font-display font-700 text-xs sm:text-base mt-1.5">Giao Lắp Toàn Quốc</p>
         </div>
-        <div class="relative z-10 flex justify-center -mt-8">
-          <div class="discount-medal medal-green">0đ</div>
-        </div>
-        <div class="px-6 pt-4 pb-6 flex flex-col gap-3 flex-1 text-center">
-          <h3 class="font-display font-700 text-lg text-navy-950">Miễn Phí Giao Lắp Toàn Quốc</h3>
-          <p class="font-body text-sm text-navy-900/60">Áp dụng cho đơn hàng từ 2.000.000₫, giao và lắp đặt tận nhà.</p>
-          <a href="san-pham.html" class="focus-ring mt-auto inline-flex items-center justify-center gap-1.5 text-sm font-display font-700 text-white bg-brand hover:bg-ember rounded-xl px-4 py-2.5 transition-colors">
-            Xem Sản Phẩm <span aria-hidden="true">→</span>
-          </a>
-        </div>
-      </article>
+        <span class="relative z-10 inline-flex items-center gap-1 text-[11px] sm:text-sm font-display font-700">
+          Xem sản phẩm <span aria-hidden="true" class="transition-transform group-hover:translate-x-1">→</span>
+        </span>
+      </a>
 
       <!-- Promo 5 -->
-      <article class="reveal promo-card-3d flex flex-col" style="transition-delay:400ms">
-        <div class="promo-card-header keypad-texture bg-gradient-to-br from-navy-950 via-navy-900 to-navy-800">
-          <span class="badge-pill text-white text-[10px] font-display font-700 uppercase tracking-wide px-2.5 py-1 rounded-full">Khách Cũ</span>
-          <span class="text-5xl drop-shadow-[0_6px_10px_rgba(0,0,0,.45)]">🎁</span>
+      <a href="lien-he.html"
+         class="promo-tile reveal group relative overflow-hidden rounded-2xl aspect-square sm:aspect-[4/3] flex flex-col justify-between p-4 sm:p-6 text-white bg-gradient-to-br from-rose-400 via-rose-500 to-rose-700 focus-ring"
+         style="transition-delay:320ms">
+        <span class="relative z-10 w-fit text-[10px] sm:text-xs font-display font-700 uppercase tracking-wide bg-white/15 border border-white/25 rounded-full px-2.5 py-1">Khách Cũ</span>
+        <span class="absolute -right-3 -bottom-4 text-7xl sm:text-8xl opacity-20 group-hover:opacity-30 group-hover:scale-110 transition-all duration-300 select-none pointer-events-none">🎁</span>
+        <div class="relative z-10">
+          <p class="font-display font-800 text-3xl sm:text-5xl leading-none drop-shadow-[0_4px_10px_rgba(0,0,0,.3)]">-10%</p>
+          <p class="font-display font-700 text-xs sm:text-base mt-1.5">Khách Hàng Thân Thiết</p>
         </div>
-        <div class="relative z-10 flex justify-center -mt-8">
-          <div class="discount-medal medal-purple">-10%</div>
-        </div>
-        <div class="px-6 pt-4 pb-6 flex flex-col gap-3 flex-1 text-center">
-          <h3 class="font-display font-700 text-lg text-navy-950">Ưu Đãi Khách Hàng Thân Thiết</h3>
-          <p class="font-body text-sm text-navy-900/60">Giảm thêm 10% cho khách hàng đã từng mua sắm tại Kim Long.</p>
-          <a href="lien-he.html" class="focus-ring mt-auto inline-flex items-center justify-center gap-1.5 text-sm font-display font-700 text-white bg-brand hover:bg-ember rounded-xl px-4 py-2.5 transition-colors">
-            Liên Hệ Ngay <span aria-hidden="true">→</span>
-          </a>
-        </div>
-      </article>
+        <span class="relative z-10 inline-flex items-center gap-1 text-[11px] sm:text-sm font-display font-700">
+          Liên hệ ngay <span aria-hidden="true" class="transition-transform group-hover:translate-x-1">→</span>
+        </span>
+      </a>
 
       <!-- Promo 6 -->
-      <article class="reveal promo-card-3d flex flex-col" style="transition-delay:500ms">
-        <div class="promo-card-header keypad-texture bg-gradient-to-br from-navy-950 via-navy-900 to-navy-800">
-          <span class="badge-pill text-white text-[10px] font-display font-700 uppercase tracking-wide px-2.5 py-1 rounded-full">Bảo Hành</span>
-          <span class="text-5xl drop-shadow-[0_6px_10px_rgba(0,0,0,.45)]">🛡️</span>
+      <a href="san-pham.html"
+         class="promo-tile reveal group relative overflow-hidden rounded-2xl aspect-square sm:aspect-[4/3] flex flex-col justify-between p-4 sm:p-6 text-white bg-gradient-to-br from-cyan-400 via-cyan-500 to-cyan-700 focus-ring"
+         style="transition-delay:400ms">
+        <span class="relative z-10 w-fit text-[10px] sm:text-xs font-display font-700 uppercase tracking-wide bg-white/15 border border-white/25 rounded-full px-2.5 py-1">Bảo Hành</span>
+        <span class="absolute -right-3 -bottom-4 text-7xl sm:text-8xl opacity-20 group-hover:opacity-30 group-hover:scale-110 transition-all duration-300 select-none pointer-events-none">🛡️</span>
+        <div class="relative z-10">
+          <p class="font-display font-800 text-3xl sm:text-5xl leading-none drop-shadow-[0_4px_10px_rgba(0,0,0,.3)]">18T</p>
+          <p class="font-display font-700 text-xs sm:text-base mt-1.5">Nâng Hạn Bảo Hành</p>
         </div>
-        <div class="relative z-10 flex justify-center -mt-8">
-          <div class="discount-medal medal-brand">18T</div>
-        </div>
-        <div class="px-6 pt-4 pb-6 flex flex-col gap-3 flex-1 text-center">
-          <h3 class="font-display font-700 text-lg text-navy-950">Nâng Hạn Bảo Hành Lên 18 Tháng</h3>
-          <p class="font-body text-sm text-navy-900/60">Áp dụng cho tất cả thiết bị điện mua trong tháng khuyến mãi.</p>
-          <a href="san-pham.html" class="focus-ring mt-auto inline-flex items-center justify-center gap-1.5 text-sm font-display font-700 text-white bg-brand hover:bg-ember rounded-xl px-4 py-2.5 transition-colors">
-            Xem Sản Phẩm <span aria-hidden="true">→</span>
-          </a>
-        </div>
-      </article>
+        <span class="relative z-10 inline-flex items-center gap-1 text-[11px] sm:text-sm font-display font-700">
+          Xem sản phẩm <span aria-hidden="true" class="transition-transform group-hover:translate-x-1">→</span>
+        </span>
+      </a>
 
     </div>
 
