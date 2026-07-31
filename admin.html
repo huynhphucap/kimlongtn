@@ -463,24 +463,46 @@
           </div>
         </div>
 
-        <!-- PRODUCT LIST -->
+        <!-- PRODUCT LIST + SIDEBAR DANH MỤC -->
         <div id="product-list-wrapper" class="lg:col-span-3">
-          <div class="card-surface rounded-2xl overflow-hidden">
-            <div class="flex items-center gap-2 px-5 py-4 border-b border-slate-100">
-              <span class="icon-chip w-7 h-7 rounded-lg">
-                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 7 12 3 4 7l8 4 8-4Z"/><path d="M4 7v10l8 4 8-4V7"/><path d="M12 11v10"/></svg>
-              </span>
-              <h2 class="font-display font-700 text-sm text-navy-950">Danh Sách Sản Phẩm</h2>
+          <div class="flex flex-col sm:flex-row gap-4 items-start">
+
+            <!-- Sidebar danh mục -->
+            <div class="w-full sm:w-56 shrink-0 card-surface rounded-2xl overflow-hidden">
+              <div class="flex items-center gap-2 px-4 py-3.5 border-b border-slate-100">
+                <span class="icon-chip w-7 h-7 rounded-lg" style="background:linear-gradient(155deg, rgba(249,115,22,.14), rgba(249,115,22,.05)); color:#C2540A;">
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/></svg>
+                </span>
+                <h2 class="font-display font-700 text-sm text-navy-950">Danh Mục</h2>
+              </div>
+              <div id="category-sidebar-list" class="flex flex-col py-1.5">
+                <!-- JS render -->
+              </div>
             </div>
-            <div id="product-list" class="divide-y divide-slate-100">
-              <!-- JS render -->
+
+            <!-- Danh sách sản phẩm -->
+            <div class="flex-1 min-w-0 w-full card-surface rounded-2xl overflow-hidden">
+              <div class="flex items-center gap-2 px-5 py-4 border-b border-slate-100">
+                <span class="icon-chip w-7 h-7 rounded-lg">
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 7 12 3 4 7l8 4 8-4Z"/><path d="M4 7v10l8 4 8-4V7"/><path d="M12 11v10"/></svg>
+                </span>
+                <h2 id="product-list-title" class="font-display font-700 text-sm text-navy-950">Danh Sách Sản Phẩm</h2>
+              </div>
+              <div id="product-list" class="divide-y divide-slate-100">
+                <!-- JS render -->
+              </div>
+              <div id="list-empty" class="hidden text-center py-16 px-6 font-body text-sm text-navy-900/50">
+                Chưa có sản phẩm nào. Bấm "Thêm Sản Phẩm Mới" để bắt đầu.
+              </div>
+              <div id="list-loading" class="flex items-center justify-center gap-2 py-16 text-sm text-navy-900/50">
+                <span class="spinner"></span> Đang tải danh sách sản phẩm...
+              </div>
+              <div id="list-pagination" class="hidden items-center justify-between gap-3 flex-wrap px-5 py-3.5 border-t border-slate-100">
+                <p id="pagination-info" class="text-xs text-navy-900/50 font-body"></p>
+                <div id="pagination-controls" class="flex items-center gap-1"></div>
+              </div>
             </div>
-            <div id="list-empty" class="hidden text-center py-16 px-6 font-body text-sm text-navy-900/50">
-              Chưa có sản phẩm nào. Bấm "Thêm Sản Phẩm Mới" để bắt đầu.
-            </div>
-            <div id="list-loading" class="flex items-center justify-center gap-2 py-16 text-sm text-navy-900/50">
-              <span class="spinner"></span> Đang tải danh sách sản phẩm...
-            </div>
+
           </div>
         </div>
 
@@ -957,25 +979,36 @@
     productForm.addEventListener('input', updatePreview);
     updatePreview();
 
-    // ---------- Quản lý danh mục (cho phép thêm danh mục mới) ----------
-    const CATEGORY_STORAGE_KEY = 'kl_admin_extra_categories';
+    // ---------- Quản lý danh mục (thêm / đổi tên / xóa) ----------
+    const CATEGORY_STORAGE_KEY = 'kl_admin_categories';
     const DEFAULT_CATEGORIES = ['Nhà Bếp', 'Quạt & Làm Mát', 'Chiếu Sáng', 'Gia Dụng Khác'];
     const categorySelect = document.getElementById('f-category');
     const categoryAddRow = document.getElementById('category-add-row');
     const newCategoryInput = document.getElementById('new-category-input');
     let categoryBeforeAddNew = DEFAULT_CATEGORIES[0];
+    let editingCategoryName = null;
 
-    function loadExtraCategories() {
-      try { return JSON.parse(localStorage.getItem(CATEGORY_STORAGE_KEY)) || []; }
-      catch { return []; }
+    function loadCategoryList() {
+      try {
+        const stored = JSON.parse(localStorage.getItem(CATEGORY_STORAGE_KEY));
+        if (Array.isArray(stored) && stored.length) return stored;
+      } catch { /* dùng danh sách mặc định bên dưới */ }
+      return [...DEFAULT_CATEGORIES];
     }
-    function saveExtraCategories(list) {
+    function saveCategoryList(list) {
       localStorage.setItem(CATEGORY_STORAGE_KEY, JSON.stringify(list));
     }
     function getAllCategories() {
+      const stored = loadCategoryList();
       const fromProducts = allProducts.map(p => p.category).filter(Boolean);
-      const set = new Set([...DEFAULT_CATEGORIES, ...fromProducts, ...loadExtraCategories()]);
-      return Array.from(set);
+      const merged = Array.from(new Set([...stored, ...fromProducts]));
+      if (merged.length !== stored.length) saveCategoryList(merged);
+      return merged;
+    }
+    function computeCategoryCounts() {
+      const counts = {};
+      allProducts.forEach(p => { if (p.category) counts[p.category] = (counts[p.category] || 0) + 1; });
+      return counts;
     }
     function renderCategoryOptions() {
       const prev = categorySelect.value && categorySelect.value !== '__add_new__' ? categorySelect.value : categoryBeforeAddNew;
@@ -987,6 +1020,142 @@
     }
     renderCategoryOptions();
 
+    // ---------- Sidebar danh mục (lọc + đổi tên/xóa) ----------
+    function renderCategorySidebar() {
+      const container = document.getElementById('category-sidebar-list');
+      if (!container) return;
+      const categories = getAllCategories();
+      const counts = computeCategoryCounts();
+      const allActive = selectedCategoryFilter === null;
+
+      let html = `
+        <button type="button" data-category="" class="focus-ring w-full flex items-center justify-between gap-2 px-4 py-2.5 text-sm font-body font-700 transition-colors ${allActive ? 'bg-brand/10 text-brand' : 'text-navy-900/70 hover:bg-slate-150'}">
+          <span>Tất cả</span>
+          <span class="text-[11px] ${allActive ? 'text-brand' : 'text-navy-900/40'}">${allProducts.length}</span>
+        </button>`;
+
+      html += categories.map(cat => {
+        const active = selectedCategoryFilter === cat;
+        const count = counts[cat] || 0;
+
+        if (editingCategoryName === cat) {
+          return `
+          <div class="flex items-center gap-1.5 px-3 py-1.5 bg-slate-150">
+            <input type="text" data-rename-input value="${escapeHtml(cat)}" class="form-input border border-slate-200 rounded-md px-2 py-1 text-xs flex-1 bg-white">
+            <button type="button" data-rename-confirm="${escapeHtml(cat)}" class="focus-ring icon-btn w-6 h-6 text-emerald-600" title="Lưu">
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg>
+            </button>
+            <button type="button" data-rename-cancel class="focus-ring icon-btn w-6 h-6" title="Hủy">
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><path d="M18 6 6 18M6 6l12 12"/></svg>
+            </button>
+          </div>`;
+        }
+
+        return `
+        <div class="group relative flex items-center">
+          <button type="button" data-category="${escapeHtml(cat)}" class="focus-ring flex-1 min-w-0 flex items-center justify-between gap-2 pl-4 pr-2 py-2.5 text-sm font-body transition-colors ${active ? 'bg-brand/10 text-brand font-700' : 'text-navy-900/70 hover:bg-slate-150'}">
+            <span class="truncate">${escapeHtml(cat)}</span>
+            <span class="text-[11px] ${active ? 'text-brand' : 'text-navy-900/40'} shrink-0 group-hover:opacity-0 transition-opacity">${count}</span>
+          </button>
+          <div class="hidden group-hover:flex items-center gap-0.5 absolute right-1.5 bg-white">
+            <button type="button" data-edit-category="${escapeHtml(cat)}" class="focus-ring icon-btn w-6 h-6" title="Đổi tên danh mục">
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 3a2.85 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z"/></svg>
+            </button>
+            <button type="button" data-delete-category="${escapeHtml(cat)}" class="focus-ring icon-btn w-6 h-6 hover:text-red-600" title="Xóa danh mục">
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18"/><path d="M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/></svg>
+            </button>
+          </div>
+        </div>`;
+      }).join('');
+
+      container.innerHTML = html;
+
+      container.querySelectorAll('[data-category]').forEach(btn => {
+        btn.addEventListener('click', () => {
+          selectedCategoryFilter = btn.dataset.category || null;
+          currentPage = 1;
+          renderList();
+        });
+      });
+      container.querySelectorAll('[data-edit-category]').forEach(btn => {
+        btn.addEventListener('click', (e) => {
+          e.stopPropagation();
+          editingCategoryName = btn.dataset.editCategory;
+          renderCategorySidebar();
+          const input = container.querySelector('[data-rename-input]');
+          if (input) { input.focus(); input.select(); }
+        });
+      });
+      container.querySelectorAll('[data-delete-category]').forEach(btn => {
+        btn.addEventListener('click', (e) => {
+          e.stopPropagation();
+          deleteCategory(btn.dataset.deleteCategory);
+        });
+      });
+      container.querySelectorAll('[data-rename-confirm]').forEach(btn => {
+        btn.addEventListener('click', () => confirmRenameCategory(btn.dataset.renameConfirm));
+      });
+      container.querySelectorAll('[data-rename-cancel]').forEach(btn => {
+        btn.addEventListener('click', () => { editingCategoryName = null; renderCategorySidebar(); });
+      });
+      container.querySelectorAll('[data-rename-input]').forEach(input => {
+        input.addEventListener('keydown', (e) => {
+          if (e.key === 'Enter') { e.preventDefault(); confirmRenameCategory(editingCategoryName); }
+          else if (e.key === 'Escape') { e.preventDefault(); editingCategoryName = null; renderCategorySidebar(); }
+        });
+      });
+    }
+
+    async function confirmRenameCategory(oldName) {
+      const container = document.getElementById('category-sidebar-list');
+      const input = container.querySelector('[data-rename-input]');
+      const newName = input.value.trim();
+
+      if (!newName) { showToast('Tên danh mục không được để trống.', 'error'); return; }
+      if (newName === oldName) { editingCategoryName = null; renderCategorySidebar(); return; }
+
+      const categories = getAllCategories();
+      const dupe = categories.find(c => c.toLowerCase() === newName.toLowerCase() && c !== oldName);
+      if (dupe) { showToast(`Danh mục "${dupe}" đã tồn tại.`, 'error'); return; }
+
+      const counts = computeCategoryCounts();
+      const affected = counts[oldName] || 0;
+      if (affected > 0) {
+        const ok = await askConfirm('Đổi tên danh mục?', `${affected} sản phẩm đang thuộc danh mục "${oldName}" sẽ được chuyển sang "${newName}".`);
+        if (!ok) return;
+      }
+
+      saveCategoryList(Array.from(new Set(loadCategoryList().map(c => c === oldName ? newName : c))));
+
+      if (affected > 0) {
+        const { error } = await sb.from('products').update({ category: newName }).eq('category', oldName);
+        if (error) { showToast('Lỗi khi cập nhật sản phẩm: ' + error.message, 'error'); return; }
+      }
+
+      editingCategoryName = null;
+      if (selectedCategoryFilter === oldName) selectedCategoryFilter = newName;
+      showToast(`Đã đổi tên danh mục thành "${newName}"!`);
+      renderCategoryOptions();
+      await loadProducts();
+    }
+
+    async function deleteCategory(name) {
+      const counts = computeCategoryCounts();
+      const count = counts[name] || 0;
+      if (count > 0) {
+        showToast(`Không thể xóa: đang có ${count} sản phẩm thuộc danh mục "${name}". Hãy đổi danh mục cho các sản phẩm này trước.`, 'error');
+        return;
+      }
+      const ok = await askConfirm('Xóa danh mục này?', `Danh mục "${name}" sẽ bị xóa khỏi danh sách lựa chọn.`);
+      if (!ok) return;
+
+      saveCategoryList(loadCategoryList().filter(c => c !== name));
+      if (selectedCategoryFilter === name) selectedCategoryFilter = null;
+      renderCategoryOptions();
+      renderCategorySidebar();
+      showToast(`Đã xóa danh mục "${name}".`);
+    }
+
     function confirmAddCategory() {
       const name = newCategoryInput.value.trim();
       if (!name) {
@@ -997,11 +1166,12 @@
       const dupe = existing.find(c => c.toLowerCase() === name.toLowerCase());
       const finalName = dupe || name;
       if (!dupe) {
-        const extra = loadExtraCategories();
-        extra.push(name);
-        saveExtraCategories(extra);
+        const list = loadCategoryList();
+        list.push(name);
+        saveCategoryList(list);
       }
       renderCategoryOptions();
+      renderCategorySidebar();
       categorySelect.value = finalName;
       categoryBeforeAddNew = finalName;
       categoryAddRow.classList.add('hidden');
@@ -1211,33 +1381,111 @@
     }
 
     // ---------- List ----------
+    // ---------- Lọc theo danh mục + phân trang ----------
+    const PAGE_SIZE = 10;
+    let selectedCategoryFilter = null; // null = "Tất cả"
+    let currentPage = 1;
+    const listPagination = document.getElementById('list-pagination');
+    const paginationInfo = document.getElementById('pagination-info');
+    const paginationControls = document.getElementById('pagination-controls');
+    const productListTitle = document.getElementById('product-list-title');
+
+    function getFilteredProducts() {
+      return selectedCategoryFilter
+        ? allProducts.filter(p => p.category === selectedCategoryFilter)
+        : allProducts;
+    }
+
+    function renderPagination(totalItems) {
+      const totalPages = Math.max(1, Math.ceil(totalItems / PAGE_SIZE));
+      if (currentPage > totalPages) currentPage = totalPages;
+      if (currentPage < 1) currentPage = 1;
+
+      if (totalItems === 0) {
+        listPagination.classList.add('hidden');
+        listPagination.classList.remove('flex');
+        return;
+      }
+      listPagination.classList.remove('hidden');
+      listPagination.classList.add('flex');
+
+      const from = (currentPage - 1) * PAGE_SIZE + 1;
+      const to = Math.min(currentPage * PAGE_SIZE, totalItems);
+      paginationInfo.textContent = `Hiển thị ${from}-${to} trong ${totalItems} sản phẩm`;
+
+      function pageBtn(label, page, opts = {}) {
+        const disabled = opts.disabled ? 'disabled' : '';
+        const activeClasses = opts.active
+          ? 'bg-navy-950 text-white'
+          : 'text-navy-900/60 hover:bg-slate-150 disabled:opacity-30 disabled:hover:bg-transparent';
+        return `<button type="button" ${disabled} data-page="${page}" class="focus-ring pagination-btn w-7 h-7 rounded-lg text-xs font-display font-700 transition-colors ${activeClasses}">${label}</button>`;
+      }
+
+      let html = pageBtn('‹', currentPage - 1, { disabled: currentPage === 1 });
+
+      const windowSize = 1;
+      for (let p = 1; p <= totalPages; p++) {
+        const withinWindow = p === 1 || p === totalPages || Math.abs(p - currentPage) <= windowSize;
+        if (withinWindow) {
+          html += pageBtn(String(p), p, { active: p === currentPage });
+        } else if (p === currentPage - windowSize - 1 || p === currentPage + windowSize + 1) {
+          html += `<span class="w-7 h-7 flex items-center justify-center text-xs text-navy-900/30">…</span>`;
+        }
+      }
+
+      html += pageBtn('›', currentPage + 1, { disabled: currentPage === totalPages });
+      paginationControls.innerHTML = html;
+
+      paginationControls.querySelectorAll('.pagination-btn:not([disabled])').forEach(btn => {
+        btn.addEventListener('click', () => {
+          currentPage = Number(btn.dataset.page);
+          renderList();
+        });
+      });
+    }
+
     function renderList() {
       statCount.textContent = allProducts.length;
       const statCardProducts = document.getElementById('stat-card-products');
       if (statCardProducts) statCardProducts.textContent = allProducts.length;
 
-      if (allProducts.length === 0) {
+      renderCategorySidebar();
+      productListTitle.textContent = selectedCategoryFilter
+        ? `Danh Sách Sản Phẩm — ${selectedCategoryFilter}`
+        : 'Danh Sách Sản Phẩm';
+
+      const filtered = getFilteredProducts();
+
+      if (filtered.length === 0) {
         productList.innerHTML = '';
         listEmpty.classList.remove('hidden');
+        listEmpty.textContent = selectedCategoryFilter
+          ? `Chưa có sản phẩm nào trong danh mục "${selectedCategoryFilter}".`
+          : 'Chưa có sản phẩm nào. Bấm "Thêm Sản Phẩm Mới" để bắt đầu.';
+        renderPagination(0);
         return;
       }
       listEmpty.classList.add('hidden');
 
-      productList.innerHTML = allProducts.map(p => `
+      const totalPages = Math.max(1, Math.ceil(filtered.length / PAGE_SIZE));
+      if (currentPage > totalPages) currentPage = totalPages;
+      const pageItems = filtered.slice((currentPage - 1) * PAGE_SIZE, currentPage * PAGE_SIZE);
+
+      productList.innerHTML = pageItems.map(p => `
         <div class="row-hover flex items-center gap-4 px-5 py-4">
-          <img src="${p.img}" alt="${p.name}" class="w-14 h-14 rounded-lg object-cover bg-slate-100 shrink-0" onerror="this.src='https://placehold.co/100x100?text=?'">
+          <img src="${escapeHtml(p.img)}" alt="${escapeHtml(p.name)}" class="w-14 h-14 rounded-lg object-cover bg-slate-100 shrink-0" onerror="this.src='https://placehold.co/100x100?text=?'">
           <div class="flex-1 min-w-0">
             <div class="flex items-center gap-2">
-              <p class="font-display font-700 text-sm text-navy-950 truncate">${p.name}</p>
-              ${p.category ? `<span class="shrink-0 text-[10px] font-body font-medium text-brand bg-brand/10 rounded-full px-2 py-0.5">${p.category}</span>` : ''}
+              <p class="font-display font-700 text-sm text-navy-950 truncate">${escapeHtml(p.name)}</p>
+              ${p.category ? `<span class="shrink-0 text-[10px] font-body font-medium text-brand bg-brand/10 rounded-full px-2 py-0.5">${escapeHtml(p.category)}</span>` : ''}
             </div>
             <p class="font-body text-xs text-navy-900/50 mt-0.5">
-              <span class="line-through">${p.old_price}</span> → <span class="text-ember-dark font-700">${p.new_price}</span> · ${p.discount}
+              <span class="line-through">${escapeHtml(p.old_price)}</span> → <span class="text-ember-dark font-700">${escapeHtml(p.new_price)}</span> · ${escapeHtml(p.discount)}
             </p>
           </div>
           <div class="flex items-center gap-2 shrink-0">
             <button data-id="${p.id}" class="btn-edit focus-ring text-xs font-display font-700 text-brand border border-brand/30 hover:bg-brand hover:text-white rounded-lg px-3 py-1.5 transition-colors">Sửa</button>
-            <button data-id="${p.id}" data-name="${p.name.replace(/"/g, '&quot;')}" class="btn-delete focus-ring text-xs font-display font-700 text-red-600 border border-red-200 hover:bg-red-600 hover:text-white rounded-lg px-3 py-1.5 transition-colors">Xóa</button>
+            <button data-id="${p.id}" data-name="${escapeHtml(p.name)}" class="btn-delete focus-ring text-xs font-display font-700 text-red-600 border border-red-200 hover:bg-red-600 hover:text-white rounded-lg px-3 py-1.5 transition-colors">Xóa</button>
           </div>
         </div>
       `).join('');
@@ -1251,22 +1499,27 @@
       productList.querySelectorAll('.btn-delete').forEach(btn => {
         btn.addEventListener('click', () => deleteProduct(btn.dataset.id, btn.dataset.name));
       });
+
+      renderPagination(filtered.length);
     }
 
     async function loadProducts() {
       listLoading.classList.remove('hidden');
       productList.innerHTML = '';
       listEmpty.classList.add('hidden');
+      listPagination.classList.add('hidden');
+      listPagination.classList.remove('flex');
 
       const { data, error } = await sb.from('products').select('*').order('id', { ascending: false });
 
       listLoading.classList.add('hidden');
 
       if (error) {
-        productList.innerHTML = `<div class="text-center py-10 text-sm text-red-600">Lỗi tải danh sách: ${error.message}</div>`;
+        productList.innerHTML = `<div class="text-center py-10 text-sm text-red-600">Lỗi tải danh sách: ${escapeHtml(error.message)}</div>`;
         return;
       }
       allProducts = data || [];
+      currentPage = 1;
       renderCategoryOptions();
       renderList();
     }
