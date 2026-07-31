@@ -93,16 +93,90 @@
   .toast.toast-leaving {
     animation: toast-out .25s ease-in forwards;
   }
+
+  /* Nền trang: gradient dịu + lưới chấm mờ */
+  body.app-bg {
+    background-color: #EEF1F6;
+    background-image:
+      radial-gradient(circle at 15% 0%, rgba(37,99,235,.08), transparent 45%),
+      radial-gradient(circle at 100% 20%, rgba(249,115,22,.07), transparent 40%),
+      radial-gradient(rgba(15,27,51,.06) 1px, transparent 1px);
+    background-size: auto, auto, 22px 22px;
+    background-attachment: fixed;
+  }
+
+  /* Nền màn hình đăng nhập: gradient tối + quầng sáng */
+  .login-bg {
+    background: radial-gradient(circle at 20% 20%, #16264a 0%, #0B1220 55%, #060a14 100%);
+  }
+  .login-glow {
+    position: absolute;
+    border-radius: 9999px;
+    filter: blur(60px);
+    opacity: .55;
+    pointer-events: none;
+  }
+
+  .card-surface {
+    background: #fff;
+    border: 1px solid #E4E9F2;
+    box-shadow: 0 1px 2px rgba(15,27,51,.04), 0 18px 32px -22px rgba(15,27,51,.16);
+  }
+
+  .card-accent-top {
+    position: relative;
+  }
+  .card-accent-top::before {
+    content: '';
+    position: absolute; top: 0; left: 0; right: 0; height: 3px;
+    background: linear-gradient(90deg, #2563EB, #5B8DFF 45%, #F97316);
+    border-radius: 9999px 9999px 0 0;
+  }
+
+  .icon-chip {
+    width: 2.25rem; height: 2.25rem; border-radius: .65rem;
+    display: flex; align-items: center; justify-content: center;
+    background: linear-gradient(155deg, rgba(37,99,235,.12), rgba(37,99,235,.05));
+    color: #2563EB;
+  }
+
+  .stat-card {
+    background: #fff;
+    border: 1px solid #E4E9F2;
+    box-shadow: 0 1px 2px rgba(15,27,51,.04), 0 14px 24px -18px rgba(15,27,51,.18);
+  }
+
+  .segmented { background: #fff; border: 1px solid #E4E9F2; }
+  .tab-btn {
+    display: inline-flex; align-items: center; gap: .4rem;
+    border-radius: .85rem;
+  }
+  .tab-btn[data-active="true"] {
+    background: #0F1B33;
+    color: #fff;
+    box-shadow: 0 8px 16px -8px rgba(15,27,51,.5);
+  }
+  .tab-btn[data-active="false"] {
+    color: rgba(15,27,51,.5);
+  }
+  .tab-btn[data-active="false"]:hover {
+    background: #F3F5F9;
+    color: #0F1B33;
+  }
+
+  .row-hover { transition: background-color .15s ease; }
+  .row-hover:hover { background-color: #F8FAFD; }
 </style>
 </head>
 
-<body class="bg-slate-150 text-navy-950 font-body min-h-screen">
+<body class="app-bg text-navy-950 font-body min-h-screen">
 
   <!-- ============ HEADER ============ -->
-  <header class="sticky top-0 z-50 bg-navy-950/95 backdrop-blur border-b border-white/10">
+  <header class="sticky top-0 z-50 bg-navy-950/95 backdrop-blur border-b border-white/10 relative">
+    <div class="absolute bottom-0 left-0 right-0 h-px bg-gradient-to-r from-brand/60 via-brand-light/40 to-ember/60"></div>
     <nav class="max-w-7xl mx-auto flex items-center justify-between px-5 py-4">
       <div class="flex items-center gap-3">
-        <span class="w-9 h-9 rounded-lg bg-brand flex items-center justify-center text-white font-display font-800 text-sm">KL</span>
+        <span class="w-9 h-9 rounded-xl bg-gradient-to-br from-brand to-brand-light flex items-center justify-center text-white font-display font-800 text-sm shadow-[0_6px_14px_-4px_rgba(37,99,235,.6)]">KL</span>
         <div class="leading-tight">
           <div class="font-display font-800 text-base tracking-tight text-white">Kim Long</div>
           <div class="text-[11px] text-white/50 font-body">Bảng Quản Trị</div>
@@ -110,7 +184,7 @@
       </div>
 
       <div class="flex items-center gap-3">
-        <span id="user-email" class="hidden sm:inline text-xs text-white/50 font-body"></span>
+        <span id="user-email" class="hidden sm:inline text-xs text-white/50 font-body bg-white/5 border border-white/10 rounded-full px-3 py-1"></span>
         <a href="index.html" class="focus-ring text-sm font-body font-medium text-white/70 hover:text-brand-light transition-colors border border-white/20 rounded-full px-4 py-1.5">
           Xem Cửa Hàng
         </a>
@@ -122,47 +196,91 @@
   </header>
 
   <!-- ============ LOGIN VIEW ============ -->
-  <section id="login-view" class="max-w-md mx-auto px-5 py-20">
-    <div class="bg-white rounded-2xl border border-slate-200 p-8 shadow-[0_16px_32px_-20px_rgba(15,27,51,.3)]">
-      <h1 class="font-display font-800 text-2xl text-navy-950 mb-1">Đăng Nhập Quản Trị</h1>
-      <p class="font-body text-sm text-navy-900/60 mb-6">Đăng nhập để thêm, sửa, xóa sản phẩm.</p>
+  <section id="login-view" class="login-bg relative min-h-[calc(100vh-73px)] flex items-center overflow-hidden">
+    <span class="login-glow w-72 h-72 bg-brand -top-10 -left-10"></span>
+    <span class="login-glow w-72 h-72 bg-ember bottom-0 right-0"></span>
 
-      <form id="login-form" class="flex flex-col gap-4">
-        <div class="flex flex-col gap-1.5">
-          <label class="text-xs font-medium text-navy-900/60">Email</label>
-          <input type="email" id="login-email" required placeholder="ban@email.com"
-                 class="form-input border border-slate-200 rounded-lg px-4 py-2.5 text-sm">
-        </div>
-        <div class="flex flex-col gap-1.5">
-          <label class="text-xs font-medium text-navy-900/60">Mật khẩu</label>
-          <input type="password" id="login-password" required placeholder="••••••••"
-                 class="form-input border border-slate-200 rounded-lg px-4 py-2.5 text-sm">
-        </div>
-        <p id="login-error" class="hidden text-sm text-red-600 bg-red-50 border border-red-200 rounded-lg px-3 py-2"></p>
-        <button type="submit" id="login-submit"
-                class="focus-ring bg-ember hover:bg-ember-dark text-white font-display font-700 text-sm px-6 py-3 rounded-xl shadow-[0_10px_20px_-8px_rgba(249,115,22,0.5)] transition-colors flex items-center justify-center gap-2">
-          Đăng Nhập
-        </button>
-      </form>
+    <div class="relative max-w-md w-full mx-auto px-5 py-16">
+      <div class="flex flex-col items-center mb-6">
+        <span class="w-14 h-14 rounded-2xl bg-gradient-to-br from-brand to-brand-light flex items-center justify-center text-white font-display font-800 text-lg shadow-[0_12px_24px_-8px_rgba(37,99,235,.6)] mb-3">KL</span>
+        <p class="text-white/50 text-xs font-body tracking-wide uppercase">Kim Long · Bảng Quản Trị</p>
+      </div>
 
-      <p id="login-config-warning" class="hidden mt-5 text-xs text-amber-700 bg-amber-50 border border-amber-200 rounded-lg px-3 py-2">
-        Chưa cấu hình Supabase trong file này. Xem <code>huong-dan-supabase.md</code>.
-      </p>
+      <div class="bg-white rounded-2xl border border-slate-200 p-8 shadow-[0_24px_48px_-20px_rgba(0,0,0,.45)]">
+        <h1 class="font-display font-800 text-2xl text-navy-950 mb-1">Đăng Nhập Quản Trị</h1>
+        <p class="font-body text-sm text-navy-900/60 mb-6">Đăng nhập để thêm, sửa, xóa sản phẩm.</p>
+
+        <form id="login-form" class="flex flex-col gap-4">
+          <div class="flex flex-col gap-1.5">
+            <label class="text-xs font-medium text-navy-900/60">Email</label>
+            <input type="email" id="login-email" required placeholder="ban@email.com"
+                   class="form-input border border-slate-200 rounded-lg px-4 py-2.5 text-sm">
+          </div>
+          <div class="flex flex-col gap-1.5">
+            <label class="text-xs font-medium text-navy-900/60">Mật khẩu</label>
+            <input type="password" id="login-password" required placeholder="••••••••"
+                   class="form-input border border-slate-200 rounded-lg px-4 py-2.5 text-sm">
+          </div>
+          <p id="login-error" class="hidden text-sm text-red-600 bg-red-50 border border-red-200 rounded-lg px-3 py-2"></p>
+          <button type="submit" id="login-submit"
+                  class="focus-ring bg-ember hover:bg-ember-dark text-white font-display font-700 text-sm px-6 py-3 rounded-xl shadow-[0_10px_20px_-8px_rgba(249,115,22,0.5)] transition-colors flex items-center justify-center gap-2">
+            Đăng Nhập
+          </button>
+        </form>
+
+        <p id="login-config-warning" class="hidden mt-5 text-xs text-amber-700 bg-amber-50 border border-amber-200 rounded-lg px-3 py-2">
+          Chưa cấu hình Supabase trong file này. Xem <code>huong-dan-supabase.md</code>.
+        </p>
+      </div>
     </div>
   </section>
 
   <!-- ============ DASHBOARD VIEW ============ -->
   <main id="dashboard-view" class="hidden max-w-7xl mx-auto px-5 py-10">
 
+    <!-- Dải thống kê nhanh -->
+    <div class="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-8">
+      <div class="stat-card rounded-2xl px-5 py-4 flex items-center gap-4">
+        <span class="icon-chip">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 7 12 3 4 7l8 4 8-4Z"/><path d="M4 7v10l8 4 8-4V7"/><path d="M12 11v10"/></svg>
+        </span>
+        <div>
+          <p id="stat-card-products" class="font-display font-800 text-xl text-navy-950 leading-none">0</p>
+          <p class="text-xs text-navy-900/50 font-body mt-1">Sản phẩm</p>
+        </div>
+      </div>
+      <div class="stat-card rounded-2xl px-5 py-4 flex items-center gap-4">
+        <span class="icon-chip" style="background:linear-gradient(155deg, rgba(249,115,22,.14), rgba(249,115,22,.05)); color:#C2540A;">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+        </span>
+        <div>
+          <p id="stat-card-contacts" class="font-display font-800 text-xl text-navy-950 leading-none">0</p>
+          <p class="text-xs text-navy-900/50 font-body mt-1">Tin nhắn liên hệ</p>
+        </div>
+      </div>
+      <div class="stat-card rounded-2xl px-5 py-4 flex items-center gap-4">
+        <span class="icon-chip" style="background:linear-gradient(155deg, rgba(16,185,129,.14), rgba(16,185,129,.05)); color:#059669;">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+        </span>
+        <div>
+          <p id="stat-card-users" class="font-display font-800 text-xl text-navy-950 leading-none">0</p>
+          <p class="text-xs text-navy-900/50 font-body mt-1">Tài khoản quản trị</p>
+        </div>
+      </div>
+    </div>
+
     <!-- Dải tab -->
-    <div class="flex gap-2 mb-8 border-b border-slate-200">
-      <button id="tab-btn-products" class="tab-btn focus-ring font-display font-700 text-sm px-4 py-3 border-b-2 border-brand text-brand transition-colors">
+    <div class="segmented inline-flex flex-wrap gap-1 mb-8 p-1 rounded-2xl">
+      <button id="tab-btn-products" data-active="true" class="tab-btn focus-ring font-display font-700 text-sm px-4 py-2.5 transition-colors">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 7 12 3 4 7l8 4 8-4Z"/><path d="M4 7v10l8 4 8-4V7"/><path d="M12 11v10"/></svg>
         Sản Phẩm
       </button>
-      <button id="tab-btn-contacts" class="tab-btn focus-ring font-display font-700 text-sm px-4 py-3 border-b-2 border-transparent text-navy-900/50 hover:text-navy-900 transition-colors">
-        Tin Nhắn Liên Hệ <span id="contacts-badge" class="hidden ml-1 bg-ember text-white text-[10px] rounded-full px-1.5 py-0.5"></span>
+      <button id="tab-btn-contacts" data-active="false" class="tab-btn focus-ring font-display font-700 text-sm px-4 py-2.5 transition-colors">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+        Tin Nhắn Liên Hệ <span id="contacts-badge" class="hidden ml-0.5 bg-ember text-white text-[10px] rounded-full px-1.5 py-0.5"></span>
       </button>
-      <button id="tab-btn-users" class="tab-btn focus-ring font-display font-700 text-sm px-4 py-3 border-b-2 border-transparent text-navy-900/50 hover:text-navy-900 transition-colors">
+      <button id="tab-btn-users" data-active="false" class="tab-btn focus-ring font-display font-700 text-sm px-4 py-2.5 transition-colors">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
         Tài Khoản Quản Trị
       </button>
     </div>
@@ -176,8 +294,9 @@
             Tổng cộng <span id="stat-count" class="font-700 text-brand">0</span> sản phẩm
           </p>
         </div>
-        <button id="btn-new" class="focus-ring bg-brand hover:bg-ember text-white font-display font-700 text-sm px-5 py-2.5 rounded-xl transition-colors flex items-center gap-2">
-          + Thêm Sản Phẩm Mới
+        <button id="btn-new" class="focus-ring bg-brand hover:bg-ember text-white font-display font-700 text-sm px-5 py-2.5 rounded-xl shadow-[0_10px_20px_-10px_rgba(37,99,235,.6)] transition-colors flex items-center gap-2">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg>
+          Thêm Sản Phẩm Mới
         </button>
       </div>
 
@@ -185,8 +304,13 @@
 
         <!-- FORM + PREVIEW -->
         <div class="lg:col-span-2 flex flex-col gap-5">
-          <div class="bg-white rounded-2xl border border-slate-200 p-6">
-            <h2 id="form-title" class="font-display font-700 text-lg text-navy-950 mb-4">Thêm Sản Phẩm Mới</h2>
+          <div class="card-surface card-accent-top rounded-2xl p-6">
+            <h2 id="form-title" class="font-display font-700 text-lg text-navy-950 mb-4 flex items-center gap-2">
+              <span class="icon-chip w-7 h-7 rounded-lg">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg>
+              </span>
+              Thêm Sản Phẩm Mới
+            </h2>
 
             <form id="product-form" class="flex flex-col gap-4">
               <input type="hidden" id="f-id">
@@ -263,7 +387,7 @@
 
         <!-- PRODUCT LIST -->
         <div class="lg:col-span-3">
-          <div class="bg-white rounded-2xl border border-slate-200 overflow-hidden">
+          <div class="card-surface rounded-2xl overflow-hidden">
             <div id="product-list" class="divide-y divide-slate-100">
               <!-- JS render -->
             </div>
@@ -290,7 +414,7 @@
         </div>
       </div>
 
-      <div class="bg-white rounded-2xl border border-slate-200 overflow-hidden">
+      <div class="card-surface rounded-2xl overflow-hidden">
         <div id="contacts-list" class="divide-y divide-slate-100">
           <!-- JS render -->
         </div>
@@ -317,8 +441,13 @@
     <div class="grid grid-cols-1 lg:grid-cols-3 gap-8 items-start">
 
       <!-- Form thêm tài khoản mới -->
-      <div class="bg-white rounded-2xl border border-slate-200 p-6 flex flex-col gap-4">
-        <h2 class="font-display font-700 text-lg text-navy-950">Thêm Tài Khoản Mới</h2>
+      <div class="card-surface card-accent-top rounded-2xl p-6 flex flex-col gap-4">
+        <h2 class="font-display font-700 text-lg text-navy-950 flex items-center gap-2">
+          <span class="icon-chip w-7 h-7 rounded-lg" style="background:linear-gradient(155deg, rgba(16,185,129,.14), rgba(16,185,129,.05)); color:#059669;">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg>
+          </span>
+          Thêm Tài Khoản Mới
+        </h2>
         <p class="font-body text-xs text-navy-900/50">Người này sẽ có thể đăng nhập và quản lý toàn bộ sản phẩm, tin nhắn.</p>
 
         <div class="flex flex-col gap-1.5">
@@ -335,7 +464,8 @@
         <p id="u-error" class="hidden text-sm text-red-600 bg-red-50 border border-red-200 rounded-lg px-3 py-2"></p>
 
         <button id="btn-add-user"
-                class="focus-ring bg-brand hover:bg-ember text-white font-display font-700 text-sm px-5 py-2.5 rounded-xl transition-colors flex items-center justify-center gap-2">
+                class="focus-ring bg-brand hover:bg-ember text-white font-display font-700 text-sm px-5 py-2.5 rounded-xl shadow-[0_10px_20px_-10px_rgba(37,99,235,.6)] transition-colors flex items-center justify-center gap-2">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg>
           Thêm Tài Khoản
         </button>
 
@@ -346,7 +476,7 @@
 
       <!-- Danh sách tài khoản hiện có -->
       <div class="lg:col-span-2">
-        <div class="bg-white rounded-2xl border border-slate-200 overflow-hidden">
+        <div class="card-surface rounded-2xl overflow-hidden">
           <div id="users-list" class="divide-y divide-slate-100"></div>
           <div id="users-empty" class="hidden text-center py-16 px-6 font-body text-sm text-navy-900/50">
             Chưa có tài khoản nào.
@@ -620,6 +750,8 @@
     // ---------- List ----------
     function renderList() {
       statCount.textContent = allProducts.length;
+      const statCardProducts = document.getElementById('stat-card-products');
+      if (statCardProducts) statCardProducts.textContent = allProducts.length;
 
       if (allProducts.length === 0) {
         productList.innerHTML = '';
@@ -629,7 +761,7 @@
       listEmpty.classList.add('hidden');
 
       productList.innerHTML = allProducts.map(p => `
-        <div class="flex items-center gap-4 px-5 py-4">
+        <div class="row-hover flex items-center gap-4 px-5 py-4">
           <img src="${p.img}" alt="${p.name}" class="w-14 h-14 rounded-lg object-cover bg-slate-100 shrink-0" onerror="this.src='https://placehold.co/100x100?text=?'">
           <div class="flex-1 min-w-0">
             <div class="flex items-center gap-2">
@@ -693,10 +825,7 @@
       ALL_TABS.forEach(({ btn, panel, key }) => {
         const active = key === activeKey;
         panel.classList.toggle('hidden', !active);
-        btn.classList.toggle('border-brand', active);
-        btn.classList.toggle('text-brand', active);
-        btn.classList.toggle('border-transparent', !active);
-        btn.classList.toggle('text-navy-900/50', !active);
+        btn.dataset.active = active ? 'true' : 'false';
       });
       if (activeKey === 'contacts') loadContacts();
       if (activeKey === 'users') loadUsers();
@@ -731,6 +860,8 @@
 
         if (!res.ok) throw new Error(json.message || 'Không tải được danh sách');
         const users = json.users || [];
+        const statCardUsers = document.getElementById('stat-card-users');
+        if (statCardUsers) statCardUsers.textContent = users.length;
         if (users.length === 0) { empty.classList.remove('hidden'); return; }
 
         // Lấy email của user đang đăng nhập để đánh dấu
@@ -743,7 +874,7 @@
             ? new Date(u.last_sign_in_at).toLocaleString('vi-VN', { day:'2-digit', month:'2-digit', year:'numeric', hour:'2-digit', minute:'2-digit' })
             : 'Chưa đăng nhập';
           return `
-          <div class="flex items-center gap-4 px-5 py-4">
+          <div class="row-hover flex items-center gap-4 px-5 py-4">
             <div class="w-9 h-9 rounded-full bg-brand/10 flex items-center justify-center shrink-0">
               <span class="text-brand font-display font-700 text-sm">${u.email.charAt(0).toUpperCase()}</span>
             </div>
@@ -811,7 +942,7 @@
       }
 
       btn.disabled = false;
-      btn.textContent = 'Thêm Tài Khoản';
+      btn.innerHTML = '<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg> Thêm Tài Khoản';
     });
 
     async function deleteUser(id, email) {
@@ -837,6 +968,8 @@
       if (!isConfigured) return;
       const { count } = await sb.from('contacts').select('*', { count: 'exact', head: true });
       const badge = document.getElementById('contacts-badge');
+      const statCardContacts = document.getElementById('stat-card-contacts');
+      if (statCardContacts) statCardContacts.textContent = count || 0;
       if (count && count > 0) {
         badge.textContent = count;
         badge.classList.remove('hidden');
@@ -870,7 +1003,7 @@
         const date = new Date(c.created_at);
         const dateStr = date.toLocaleString('vi-VN', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' });
         return `
-        <div class="flex items-start gap-4 px-5 py-4">
+        <div class="row-hover flex items-start gap-4 px-5 py-4">
           <div class="flex-1 min-w-0">
             <div class="flex items-center gap-2 flex-wrap">
               <p class="font-display font-700 text-sm text-navy-950">${c.name}</p>
