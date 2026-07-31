@@ -1890,11 +1890,17 @@
       const c = allContacts.find(x => String(x.id) === String(id));
       if (!c) return;
       const newVal = !c.is_read;
-      const { error } = await sb.from('contacts').update({ is_read: newVal }).eq('id', id);
+      // .select() để biết chắc có dòng nào thực sự được cập nhật hay không —
+      // nếu thiếu quyền UPDATE (RLS), Supabase trả về thành công nhưng 0 dòng.
+      const { data: updatedRows, error } = await sb.from('contacts').update({ is_read: newVal }).eq('id', id).select();
       if (error) {
         showToast(contactsMissingReadColumn(error)
           ? 'Bảng "contacts" chưa có cột "is_read". Vào Supabase → Table Editor → contacts → thêm cột "is_read" kiểu boolean, mặc định false.'
           : 'Lỗi: ' + error.message, 'error');
+        return;
+      }
+      if (!updatedRows || updatedRows.length === 0) {
+        showToast('Không lưu được trạng thái đọc — có thể do bảng "contacts" chưa có quyền UPDATE (RLS). Vào Supabase → Authentication → Policies → contacts → thêm policy cho phép UPDATE với vai trò "authenticated".', 'error');
         return;
       }
       c.is_read = newVal;
