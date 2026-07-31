@@ -163,6 +163,16 @@
   <!-- Product grid -->
   <main class="max-w-7xl mx-auto px-4 pb-16">
 
+    <!-- Tìm kiếm -->
+    <div class="relative max-w-md mb-5">
+      <svg class="absolute left-4 top-1/2 -translate-y-1/2 text-navy-900/30 pointer-events-none" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>
+      <input type="search" id="search-input" placeholder="Tìm sản phẩm theo tên..."
+             class="focus-ring w-full border border-slate-200 rounded-full pl-11 pr-10 py-2.5 text-sm bg-white transition-colors focus:outline-none focus:border-brand">
+      <button type="button" id="search-clear" class="hidden focus-ring absolute right-3 top-1/2 -translate-y-1/2 w-6 h-6 rounded-full text-navy-900/40 hover:text-navy-900 hover:bg-slate-150 flex items-center justify-center transition-colors">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><path d="M18 6 6 18M6 6l12 12"/></svg>
+      </button>
+    </div>
+
     <!-- Bộ lọc danh mục -->
     <div id="category-filters" class="flex flex-wrap gap-2 mb-6"></div>
 
@@ -199,6 +209,9 @@
     // Danh mục lọc
     const CATEGORIES = ["Tất Cả", "Nhà Bếp", "Quạt & Làm Mát", "Chiếu Sáng", "Gia Dụng Khác"];
     let currentCategory = "Tất Cả";
+
+    // Tìm kiếm theo tên
+    let searchQuery = "";
 
     // Dữ liệu dự phòng: hiển thị tạm nếu chưa cấu hình Supabase hoặc mất mạng
     const FALLBACK_PRODUCTS = [
@@ -264,6 +277,11 @@
         img: "https://images.unsplash.com/photo-1556819132-52350b2a7836?w=300&h=300&fit=crop" }
     ];
 
+    function escapeHtml(str) {
+      const map = { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' };
+      return String(str ?? '').replace(/[&<>"']/g, ch => map[ch]);
+    }
+
     function renderSkeletons(count) {
       const grid = document.getElementById('product-grid');
       grid.innerHTML = Array.from({ length: count }).map(() => `
@@ -282,7 +300,9 @@
       const grid = document.getElementById('product-grid');
 
       if (!products || products.length === 0) {
-        grid.innerHTML = `<div class="col-span-full text-center py-10 font-body text-navy-900/50">Không có sản phẩm nào ở trang này.</div>`;
+        grid.innerHTML = searchQuery
+          ? `<div class="col-span-full text-center py-10 font-body text-navy-900/50">Không tìm thấy sản phẩm nào khớp với "${escapeHtml(searchQuery)}".</div>`
+          : `<div class="col-span-full text-center py-10 font-body text-navy-900/50">Không có sản phẩm nào ở trang này.</div>`;
         return;
       }
 
@@ -386,10 +406,20 @@
       const from = (page - 1) * PAGE_SIZE;
       const to = from + PAGE_SIZE - 1;
       const filterActive = currentCategory !== 'Tất Cả';
+      const searchActive = searchQuery.trim().length > 0;
+
+      function applyLocalFilters(list) {
+        let out = filterActive ? list.filter(p => p.category === currentCategory) : list;
+        if (searchActive) {
+          const q = searchQuery.trim().toLowerCase();
+          out = out.filter(p => (p.name || '').toLowerCase().includes(q));
+        }
+        return out;
+      }
 
       if (!isConfigured) {
         console.warn('Chưa cấu hình Supabase — đang hiển thị dữ liệu mẫu. Xem huong-dan-supabase.md để kết nối dữ liệu sống.');
-        const filtered = filterActive ? FALLBACK_PRODUCTS.filter(p => p.category === currentCategory) : FALLBACK_PRODUCTS;
+        const filtered = applyLocalFilters(FALLBACK_PRODUCTS);
         renderProducts(filtered.slice(from, to + 1));
         renderPagination(filtered.length, page);
         return;
@@ -399,6 +429,7 @@
         const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
         let query = supabase.from('products').select('*', { count: 'exact' }).order('id');
         if (filterActive) query = query.eq('category', currentCategory);
+        if (searchActive) query = query.ilike('name', `%${searchQuery.trim()}%`);
         const { data, error, count } = await query.range(from, to);
         if (error) throw error;
         if (!data || data.length === 0) {
@@ -410,7 +441,7 @@
         renderPagination(count ?? data.length, page);
       } catch (err) {
         console.error('Lỗi tải dữ liệu từ Supabase, dùng dữ liệu dự phòng:', err);
-        const filtered = filterActive ? FALLBACK_PRODUCTS.filter(p => p.category === currentCategory) : FALLBACK_PRODUCTS;
+        const filtered = applyLocalFilters(FALLBACK_PRODUCTS);
         renderProducts(filtered.slice(from, to + 1));
         renderPagination(filtered.length, page);
       }
@@ -420,6 +451,27 @@
     if (urlCategoryParam && CATEGORIES.includes(urlCategoryParam)) {
       currentCategory = urlCategoryParam;
     }
+
+    const searchInput = document.getElementById('search-input');
+    const searchClear = document.getElementById('search-clear');
+    let searchDebounceTimer = null;
+
+    searchInput.addEventListener('input', () => {
+      searchClear.classList.toggle('hidden', !searchInput.value);
+      clearTimeout(searchDebounceTimer);
+      searchDebounceTimer = setTimeout(() => {
+        searchQuery = searchInput.value;
+        loadProducts(1);
+      }, 350);
+    });
+    searchClear.addEventListener('click', () => {
+      searchInput.value = '';
+      searchQuery = '';
+      searchClear.classList.add('hidden');
+      searchInput.focus();
+      loadProducts(1);
+    });
+
     loadProducts(1);
 
     if ('serviceWorker' in navigator) {
