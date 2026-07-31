@@ -189,6 +189,11 @@
     -webkit-box-orient: vertical;
     overflow: hidden;
   }
+
+  .img-tab { border-radius: .5rem; transition: background-color .15s ease, color .15s ease; }
+  .img-tab[data-active="true"] { background: #fff; color: #2563EB; box-shadow: 0 1px 2px rgba(15,27,51,.08); }
+  .img-tab[data-active="false"] { color: rgba(15,27,51,.45); }
+  .img-tab[data-active="false"]:hover { color: #0F1B33; }
 </style>
 </head>
 
@@ -343,40 +348,48 @@
         </button>
       </div>
 
-      <div class="grid grid-cols-1 lg:grid-cols-5 gap-8 items-start">
+      <div id="product-workspace" class="grid grid-cols-1 lg:grid-cols-5 gap-8 items-start">
 
-        <!-- FORM + PREVIEW -->
-        <div class="lg:col-span-2 flex flex-col gap-5">
-          <div class="card-surface card-accent-top rounded-2xl p-6">
-            <h2 id="form-title" class="font-display font-700 text-lg text-navy-950 mb-4 flex items-center gap-2">
-              <span class="icon-chip w-7 h-7 rounded-lg">
-                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg>
-              </span>
-              Thêm Sản Phẩm Mới
-            </h2>
+        <!-- FORM + PREVIEW (chỉ hiện khi bấm "Thêm Sản Phẩm Mới" hoặc "Sửa") -->
+        <div id="product-form-panel" class="hidden lg:col-span-2 flex flex-col gap-5">
+          <div class="card-surface card-accent-top border-brand/15 rounded-2xl p-6">
+            <div class="flex items-center justify-between gap-2 mb-1">
+              <h2 id="form-title" class="font-display font-700 text-lg text-navy-950 flex items-center gap-2">
+                <span class="icon-chip w-7 h-7 rounded-lg">
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg>
+                </span>
+                Thêm Sản Phẩm Mới
+              </h2>
+              <button type="button" id="btn-close-form-panel" class="focus-ring icon-btn" title="Đóng">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M18 6 6 18M6 6l12 12"/></svg>
+              </button>
+            </div>
+            <p class="text-xs text-navy-900/40 font-body mb-4">
+              Các trường có dấu <span class="text-red-500 font-700">*</span> là bắt buộc
+            </p>
 
             <form id="product-form" class="flex flex-col gap-4">
               <input type="hidden" id="f-id">
 
               <div class="flex flex-col gap-1.5">
-                <label class="text-xs font-medium text-navy-900/60">Tên sản phẩm</label>
+                <label class="text-xs font-medium text-navy-900/60">Tên sản phẩm <span class="text-red-500">*</span></label>
                 <input type="text" id="f-name" required placeholder="Nồi Cơm Điện Kim Long 1.8L" class="form-input border border-slate-200 rounded-lg px-3 py-2 text-sm">
               </div>
 
               <div class="grid grid-cols-2 gap-3">
                 <div class="flex flex-col gap-1.5">
-                  <label class="text-xs font-medium text-navy-900/60">Giá gốc</label>
+                  <label class="text-xs font-medium text-navy-900/60">Giá gốc <span class="text-red-500">*</span></label>
                   <input type="text" id="f-old-price" required placeholder="750.000 đ" class="form-input border border-slate-200 rounded-lg px-3 py-2 text-sm">
                 </div>
                 <div class="flex flex-col gap-1.5">
-                  <label class="text-xs font-medium text-navy-900/60">Giá sốc</label>
+                  <label class="text-xs font-medium text-navy-900/60">Giá sốc <span class="text-red-500">*</span></label>
                   <input type="text" id="f-new-price" required placeholder="590.000 đ" class="form-input border border-slate-200 rounded-lg px-3 py-2 text-sm">
                 </div>
               </div>
 
               <div class="grid grid-cols-2 gap-3">
                 <div class="flex flex-col gap-1.5">
-                  <label class="text-xs font-medium text-navy-900/60">% Giảm giá</label>
+                  <label class="text-xs font-medium text-navy-900/60">% Giảm giá <span class="text-red-500">*</span></label>
                   <input type="text" id="f-discount" required placeholder="-21%" class="form-input border border-slate-200 rounded-lg px-3 py-2 text-sm">
                 </div>
                 <div class="flex flex-col gap-1.5">
@@ -386,13 +399,18 @@
               </div>
 
               <div class="flex flex-col gap-1.5">
-                <label class="text-xs font-medium text-navy-900/60">Danh mục</label>
+                <label class="text-xs font-medium text-navy-900/60">Danh mục <span class="text-red-500">*</span></label>
                 <select id="f-category" required class="form-input border border-slate-200 rounded-lg px-3 py-2 text-sm bg-white">
                   <option value="Nhà Bếp">Nhà Bếp</option>
                   <option value="Quạt & Làm Mát">Quạt & Làm Mát</option>
                   <option value="Chiếu Sáng">Chiếu Sáng</option>
                   <option value="Gia Dụng Khác">Gia Dụng Khác</option>
                 </select>
+                <div id="category-add-row" class="hidden flex items-center gap-2 mt-1 bg-slate-150 border border-slate-200 rounded-lg p-2">
+                  <input type="text" id="new-category-input" placeholder="Tên danh mục mới…" class="form-input border border-slate-200 rounded-lg px-3 py-1.5 text-sm flex-1 bg-white">
+                  <button type="button" id="btn-confirm-category" class="focus-ring text-xs font-display font-700 text-white bg-brand hover:bg-ember rounded-lg px-3 py-1.5 transition-colors shrink-0">Thêm</button>
+                  <button type="button" id="btn-cancel-category" class="focus-ring text-xs font-body font-medium text-navy-900/50 hover:text-navy-900 px-2 shrink-0">Hủy</button>
+                </div>
               </div>
 
               <div class="flex flex-col gap-1.5">
@@ -401,8 +419,25 @@
               </div>
 
               <div class="flex flex-col gap-1.5">
-                <label class="text-xs font-medium text-navy-900/60">Link ảnh sản phẩm</label>
-                <input type="url" id="f-img" required placeholder="https://..." class="form-input border border-slate-200 rounded-lg px-3 py-2 text-sm">
+                <label class="text-xs font-medium text-navy-900/60">Ảnh sản phẩm <span class="text-red-500">*</span></label>
+
+                <div class="inline-flex w-fit gap-0.5 p-0.5 rounded-lg border border-slate-200 bg-slate-100">
+                  <button type="button" id="img-tab-link" data-active="true" class="img-tab font-display font-700 text-xs px-3 py-1.5">Dán link ảnh</button>
+                  <button type="button" id="img-tab-upload" data-active="false" class="img-tab font-display font-700 text-xs px-3 py-1.5">Tải ảnh lên</button>
+                </div>
+
+                <div id="img-panel-link">
+                  <input type="url" id="f-img" required placeholder="https://..." class="form-input border border-slate-200 rounded-lg px-3 py-2 text-sm w-full">
+                </div>
+
+                <div id="img-panel-upload" class="hidden flex flex-col gap-2 border border-dashed border-slate-300 rounded-lg p-3 bg-slate-50">
+                  <input type="file" id="f-img-file" accept="image/*" class="text-xs font-body text-navy-900/60 file:mr-3 file:py-1.5 file:px-3 file:rounded-lg file:border-0 file:text-xs file:font-display file:font-700 file:bg-brand file:text-white hover:file:bg-ember file:cursor-pointer cursor-pointer">
+                  <p class="text-[11px] text-navy-900/40 font-body">Ảnh JPG/PNG, tối đa 5MB.</p>
+                  <div id="upload-status" class="hidden items-center gap-2 text-xs text-navy-900/50 font-body">
+                    <span class="spinner"></span> Đang tải ảnh lên...
+                  </div>
+                  <p id="upload-error" class="hidden text-xs text-red-600 bg-red-50 border border-red-200 rounded-lg px-2.5 py-1.5"></p>
+                </div>
               </div>
 
               <p id="form-error" class="hidden text-sm text-red-600 bg-red-50 border border-red-200 rounded-lg px-3 py-2"></p>
@@ -429,8 +464,14 @@
         </div>
 
         <!-- PRODUCT LIST -->
-        <div class="lg:col-span-3">
+        <div id="product-list-wrapper" class="lg:col-span-3">
           <div class="card-surface rounded-2xl overflow-hidden">
+            <div class="flex items-center gap-2 px-5 py-4 border-b border-slate-100">
+              <span class="icon-chip w-7 h-7 rounded-lg">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 7 12 3 4 7l8 4 8-4Z"/><path d="M4 7v10l8 4 8-4V7"/><path d="M12 11v10"/></svg>
+              </span>
+              <h2 class="font-display font-700 text-sm text-navy-950">Danh Sách Sản Phẩm</h2>
+            </div>
             <div id="product-list" class="divide-y divide-slate-100">
               <!-- JS render -->
             </div>
@@ -625,6 +666,19 @@
     const listEmpty = document.getElementById('list-empty');
     const listLoading = document.getElementById('list-loading');
     const statCount = document.getElementById('stat-count');
+    const productFormPanel = document.getElementById('product-form-panel');
+    const productListWrapper = document.getElementById('product-list-wrapper');
+
+    // ---------- Ẩn/hiện khối thêm/sửa sản phẩm ----------
+    function setFormPanelVisible(visible) {
+      productFormPanel.classList.toggle('hidden', !visible);
+      productListWrapper.classList.toggle('lg:col-span-3', visible);
+      productListWrapper.classList.toggle('lg:col-span-5', !visible);
+      if (visible) {
+        productFormPanel.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      }
+    }
+    setFormPanelVisible(false);
 
     if (!isConfigured) {
       loginConfigWarning.classList.remove('hidden');
@@ -903,6 +957,150 @@
     productForm.addEventListener('input', updatePreview);
     updatePreview();
 
+    // ---------- Quản lý danh mục (cho phép thêm danh mục mới) ----------
+    const CATEGORY_STORAGE_KEY = 'kl_admin_extra_categories';
+    const DEFAULT_CATEGORIES = ['Nhà Bếp', 'Quạt & Làm Mát', 'Chiếu Sáng', 'Gia Dụng Khác'];
+    const categorySelect = document.getElementById('f-category');
+    const categoryAddRow = document.getElementById('category-add-row');
+    const newCategoryInput = document.getElementById('new-category-input');
+    let categoryBeforeAddNew = DEFAULT_CATEGORIES[0];
+
+    function loadExtraCategories() {
+      try { return JSON.parse(localStorage.getItem(CATEGORY_STORAGE_KEY)) || []; }
+      catch { return []; }
+    }
+    function saveExtraCategories(list) {
+      localStorage.setItem(CATEGORY_STORAGE_KEY, JSON.stringify(list));
+    }
+    function getAllCategories() {
+      const fromProducts = allProducts.map(p => p.category).filter(Boolean);
+      const set = new Set([...DEFAULT_CATEGORIES, ...fromProducts, ...loadExtraCategories()]);
+      return Array.from(set);
+    }
+    function renderCategoryOptions() {
+      const prev = categorySelect.value && categorySelect.value !== '__add_new__' ? categorySelect.value : categoryBeforeAddNew;
+      const categories = getAllCategories();
+      categorySelect.innerHTML = categories.map(c => `<option value="${escapeHtml(c)}">${escapeHtml(c)}</option>`).join('')
+        + `<option value="__add_new__">+ Thêm danh mục mới…</option>`;
+      if (categories.includes(prev)) categorySelect.value = prev;
+      categoryBeforeAddNew = categorySelect.value;
+    }
+    renderCategoryOptions();
+
+    function confirmAddCategory() {
+      const name = newCategoryInput.value.trim();
+      if (!name) {
+        showToast('Vui lòng nhập tên danh mục.', 'error');
+        return;
+      }
+      const existing = getAllCategories();
+      const dupe = existing.find(c => c.toLowerCase() === name.toLowerCase());
+      const finalName = dupe || name;
+      if (!dupe) {
+        const extra = loadExtraCategories();
+        extra.push(name);
+        saveExtraCategories(extra);
+      }
+      renderCategoryOptions();
+      categorySelect.value = finalName;
+      categoryBeforeAddNew = finalName;
+      categoryAddRow.classList.add('hidden');
+      updatePreview();
+      showToast(dupe ? `Đã chọn danh mục có sẵn "${finalName}".` : `Đã thêm danh mục "${finalName}"!`);
+    }
+    function cancelAddCategory() {
+      categorySelect.value = categoryBeforeAddNew;
+      categoryAddRow.classList.add('hidden');
+    }
+    categorySelect.addEventListener('change', () => {
+      if (categorySelect.value === '__add_new__') {
+        categoryAddRow.classList.remove('hidden');
+        newCategoryInput.value = '';
+        newCategoryInput.focus();
+      } else {
+        categoryBeforeAddNew = categorySelect.value;
+        categoryAddRow.classList.add('hidden');
+        updatePreview();
+      }
+    });
+    document.getElementById('btn-confirm-category').addEventListener('click', confirmAddCategory);
+    document.getElementById('btn-cancel-category').addEventListener('click', cancelAddCategory);
+    newCategoryInput.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter') { e.preventDefault(); confirmAddCategory(); }
+      else if (e.key === 'Escape') { e.preventDefault(); cancelAddCategory(); }
+    });
+
+    // ---------- Ảnh sản phẩm: dán link hoặc tải lên từ máy (Supabase Storage) ----------
+    const PRODUCT_IMAGE_BUCKET = 'product-images';
+    const imgTabLink = document.getElementById('img-tab-link');
+    const imgTabUpload = document.getElementById('img-tab-upload');
+    const imgPanelLink = document.getElementById('img-panel-link');
+    const imgPanelUpload = document.getElementById('img-panel-upload');
+    const fImg = document.getElementById('f-img');
+    const fImgFile = document.getElementById('f-img-file');
+    const uploadStatus = document.getElementById('upload-status');
+    const uploadError = document.getElementById('upload-error');
+
+    function setImageTab(tab) {
+      const isLink = tab === 'link';
+      imgPanelLink.classList.toggle('hidden', !isLink);
+      imgPanelUpload.classList.toggle('hidden', isLink);
+      imgTabLink.dataset.active = isLink ? 'true' : 'false';
+      imgTabUpload.dataset.active = isLink ? 'false' : 'true';
+      fImg.required = isLink;
+    }
+    imgTabLink.addEventListener('click', () => setImageTab('link'));
+    imgTabUpload.addEventListener('click', () => setImageTab('upload'));
+
+    async function handleImageFileUpload(file) {
+      uploadError.classList.add('hidden');
+
+      if (!file.type.startsWith('image/')) {
+        uploadError.textContent = 'Vui lòng chọn một tệp hình ảnh.';
+        uploadError.classList.remove('hidden');
+        fImgFile.value = '';
+        return;
+      }
+      if (file.size > 5 * 1024 * 1024) {
+        uploadError.textContent = 'Ảnh vượt quá 5MB, vui lòng chọn ảnh nhỏ hơn.';
+        uploadError.classList.remove('hidden');
+        fImgFile.value = '';
+        return;
+      }
+
+      uploadStatus.classList.remove('hidden');
+      uploadStatus.classList.add('flex');
+      fImgFile.disabled = true;
+
+      const safeName = file.name.replace(/[^a-zA-Z0-9.\-_]/g, '_');
+      const path = `${Date.now()}-${Math.random().toString(36).slice(2, 8)}-${safeName}`;
+
+      const { error: uploadErr } = await sb.storage.from(PRODUCT_IMAGE_BUCKET).upload(path, file, { cacheControl: '3600', upsert: false });
+
+      uploadStatus.classList.add('hidden');
+      uploadStatus.classList.remove('flex');
+      fImgFile.disabled = false;
+
+      if (uploadErr) {
+        uploadError.textContent = 'Không tải được ảnh lên: ' + uploadErr.message + '. Kiểm tra đã tạo bucket "' + PRODUCT_IMAGE_BUCKET + '" (công khai) trên Supabase Storage chưa.';
+        uploadError.classList.remove('hidden');
+        fImgFile.value = '';
+        showToast('Tải ảnh lên thất bại', 'error');
+        return;
+      }
+
+      const { data: pub } = sb.storage.from(PRODUCT_IMAGE_BUCKET).getPublicUrl(path);
+      fImg.value = pub.publicUrl;
+      updatePreview();
+      setImageTab('link');
+      fImgFile.value = '';
+      showToast('Đã tải ảnh lên thành công!');
+    }
+    fImgFile.addEventListener('change', (e) => {
+      const file = e.target.files && e.target.files[0];
+      if (file) handleImageFileUpload(file);
+    });
+
     // ---------- Form: new / edit / cancel ----------
     function resetForm() {
       editingId = null;
@@ -913,15 +1111,26 @@
       btnCancelEdit.classList.add('hidden');
       formError.classList.add('hidden');
       formSuccess.classList.add('hidden');
+      categoryAddRow.classList.add('hidden');
+      setImageTab('link');
+      renderCategoryOptions();
       updatePreview();
     }
 
     btnNew.addEventListener('click', () => {
       resetForm();
-      window.scrollTo({ top: 0, behavior: 'smooth' });
+      setFormPanelVisible(true);
     });
 
-    btnCancelEdit.addEventListener('click', resetForm);
+    document.getElementById('btn-close-form-panel').addEventListener('click', () => {
+      resetForm();
+      setFormPanelVisible(false);
+    });
+
+    btnCancelEdit.addEventListener('click', () => {
+      resetForm();
+      setFormPanelVisible(false);
+    });
 
     function fillFormForEdit(p) {
       editingId = p.id;
@@ -931,8 +1140,10 @@
       document.getElementById('f-new-price').value = p.new_price || '';
       document.getElementById('f-discount').value = p.discount || '';
       document.getElementById('f-badge').value = p.badge || '';
+      renderCategoryOptions();
       document.getElementById('f-category').value = p.category || 'Nhà Bếp';
       document.getElementById('f-tags').value = (p.tags || []).join(', ');
+      setImageTab('link');
       document.getElementById('f-img').value = p.img || '';
       formTitle.textContent = 'Sửa Sản Phẩm';
       document.getElementById('form-submit').textContent = 'Cập Nhật Sản Phẩm';
@@ -940,7 +1151,7 @@
       formError.classList.add('hidden');
       formSuccess.classList.add('hidden');
       updatePreview();
-      window.scrollTo({ top: 0, behavior: 'smooth' });
+      setFormPanelVisible(true);
     }
 
     // ---------- Save (insert / update) ----------
@@ -948,6 +1159,13 @@
       e.preventDefault();
       formError.classList.add('hidden');
       formSuccess.classList.add('hidden');
+
+      if (!fImg.value.trim()) {
+        formError.textContent = 'Vui lòng dán link ảnh hoặc tải ảnh lên từ máy tính.';
+        formError.classList.remove('hidden');
+        setImageTab('link');
+        return;
+      }
 
       const payload = currentFormData();
       // Bỏ badge rỗng để lưu null thay vì chuỗi rỗng
@@ -976,6 +1194,7 @@
       formSuccess.textContent = editingId ? 'Đã cập nhật sản phẩm!' : 'Đã thêm sản phẩm mới!';
       formSuccess.classList.remove('hidden');
       resetForm();
+      setFormPanelVisible(false);
       loadProducts();
     });
 
@@ -1048,6 +1267,7 @@
         return;
       }
       allProducts = data || [];
+      renderCategoryOptions();
       renderList();
     }
 
