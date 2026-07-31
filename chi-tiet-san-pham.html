@@ -4,6 +4,21 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title id="page-title">Chi Tiết Sản Phẩm - Cửa Hàng Kim Long</title>
+<meta id="meta-description" name="description" content="Xem chi tiết sản phẩm đồ điện gia dụng chính hãng tại Cửa Hàng Kim Long. Giá tốt, bảo hành rõ ràng, giao lắp tận nơi.">
+<link id="meta-canonical" rel="canonical" href="https://huynhphucap.github.io/kimlongtn/chi-tiet-san-pham.html">
+
+<meta property="og:type" content="product">
+<meta property="og:site_name" content="Cửa Hàng Kim Long">
+<meta property="og:locale" content="vi_VN">
+<meta id="meta-og-title" property="og:title" content="Chi Tiết Sản Phẩm - Cửa Hàng Kim Long">
+<meta id="meta-og-description" property="og:description" content="Xem chi tiết sản phẩm đồ điện gia dụng chính hãng tại Cửa Hàng Kim Long. Giá tốt, bảo hành rõ ràng, giao lắp tận nơi.">
+<meta id="meta-og-image" property="og:image" content="https://huynhphucap.github.io/kimlongtn/icon-512.png">
+<meta id="meta-og-url" property="og:url" content="https://huynhphucap.github.io/kimlongtn/chi-tiet-san-pham.html">
+
+<meta name="twitter:card" content="summary_large_image">
+<meta id="meta-twitter-title" name="twitter:title" content="Chi Tiết Sản Phẩm - Cửa Hàng Kim Long">
+<meta id="meta-twitter-description" name="twitter:description" content="Xem chi tiết sản phẩm đồ điện gia dụng chính hãng tại Cửa Hàng Kim Long.">
+<meta id="meta-twitter-image" name="twitter:image" content="https://huynhphucap.github.io/kimlongtn/icon-512.png">
 
 <link rel="manifest" href="manifest.json">
 <meta name="theme-color" content="#2563eb">
@@ -411,9 +426,29 @@
         </div>`;
     }
 
+    const SITE_URL = 'https://huynhphucap.github.io/kimlongtn';
+
+    function updateSeoTags(p) {
+      const title = `${p.name} - Cửa Hàng Kim Long`;
+      const desc = `${p.name} — giá ${p.new_price || 'ưu đãi'}, hàng chính hãng, bảo hành rõ ràng, giao lắp tận nơi tại Cửa Hàng Kim Long.`;
+      const image = (Array.isArray(p.images) && p.images[0]) || p.img || `${SITE_URL}/icon-512.png`;
+      const url = `${SITE_URL}/chi-tiet-san-pham.html?id=${p.id}`;
+
+      document.getElementById('meta-description').setAttribute('content', desc);
+      document.getElementById('meta-canonical').setAttribute('href', url);
+      document.getElementById('meta-og-title').setAttribute('content', title);
+      document.getElementById('meta-og-description').setAttribute('content', desc);
+      document.getElementById('meta-og-image').setAttribute('content', image);
+      document.getElementById('meta-og-url').setAttribute('content', url);
+      document.getElementById('meta-twitter-title').setAttribute('content', title);
+      document.getElementById('meta-twitter-description').setAttribute('content', desc);
+      document.getElementById('meta-twitter-image').setAttribute('content', image);
+    }
+
     function renderProduct(p) {
       window.currentProduct = p;
       document.getElementById('page-title').textContent = p.name + ' - Cửa Hàng Kim Long';
+      updateSeoTags(p);
       document.getElementById('breadcrumb').innerHTML = `
         <a href="index.html" class="hover:text-brand transition-colors">Trang Chủ</a> /
         <a href="san-pham.html" class="hover:text-brand transition-colors">Sản Phẩm</a> /
