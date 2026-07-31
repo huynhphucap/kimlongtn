@@ -162,6 +162,9 @@
       <button id="tab-btn-contacts" class="tab-btn focus-ring font-display font-700 text-sm px-4 py-3 border-b-2 border-transparent text-navy-900/50 hover:text-navy-900 transition-colors">
         Tin Nhắn Liên Hệ <span id="contacts-badge" class="hidden ml-1 bg-ember text-white text-[10px] rounded-full px-1.5 py-0.5"></span>
       </button>
+      <button id="tab-btn-users" class="tab-btn focus-ring font-display font-700 text-sm px-4 py-3 border-b-2 border-transparent text-navy-900/50 hover:text-navy-900 transition-colors">
+        Tài Khoản Quản Trị
+      </button>
     </div>
 
     <!-- ===== TAB: SẢN PHẨM ===== -->
@@ -300,6 +303,62 @@
       </div>
     </div>
   </main>
+
+  <!-- ===== TAB: TÀI KHOẢN QUẢN TRỊ ===== -->
+  <!-- Đặt ngoài main vì cần full width, nhưng vẫn trong dashboard flow -->
+  <div id="tab-users" class="hidden max-w-7xl mx-auto px-5 pb-16">
+    <div class="flex flex-wrap items-center justify-between gap-3 mb-8">
+      <div>
+        <h1 class="font-display font-800 text-2xl text-navy-950">Tài Khoản Quản Trị</h1>
+        <p class="font-body text-sm text-navy-900/60 mt-1">Quản lý tài khoản có quyền đăng nhập vào trang quản trị</p>
+      </div>
+    </div>
+
+    <div class="grid grid-cols-1 lg:grid-cols-3 gap-8 items-start">
+
+      <!-- Form thêm tài khoản mới -->
+      <div class="bg-white rounded-2xl border border-slate-200 p-6 flex flex-col gap-4">
+        <h2 class="font-display font-700 text-lg text-navy-950">Thêm Tài Khoản Mới</h2>
+        <p class="font-body text-xs text-navy-900/50">Người này sẽ có thể đăng nhập và quản lý toàn bộ sản phẩm, tin nhắn.</p>
+
+        <div class="flex flex-col gap-1.5">
+          <label class="text-xs font-medium text-navy-900/60">Email</label>
+          <input type="email" id="u-email" required placeholder="nguoi@email.com"
+                 class="form-input border border-slate-200 rounded-lg px-3 py-2.5 text-sm">
+        </div>
+        <div class="flex flex-col gap-1.5">
+          <label class="text-xs font-medium text-navy-900/60">Mật khẩu (tối thiểu 6 ký tự)</label>
+          <input type="password" id="u-password" required placeholder="••••••••"
+                 class="form-input border border-slate-200 rounded-lg px-3 py-2.5 text-sm">
+        </div>
+
+        <p id="u-error" class="hidden text-sm text-red-600 bg-red-50 border border-red-200 rounded-lg px-3 py-2"></p>
+
+        <button id="btn-add-user"
+                class="focus-ring bg-brand hover:bg-ember text-white font-display font-700 text-sm px-5 py-2.5 rounded-xl transition-colors flex items-center justify-center gap-2">
+          Thêm Tài Khoản
+        </button>
+
+        <div class="bg-amber-50 border border-amber-200 rounded-lg px-3 py-2.5 text-xs text-amber-700 font-body leading-relaxed">
+          ⚠️ Lưu ý: chỉ thêm tài khoản cho người bạn thực sự tin tưởng — họ có thể sửa/xóa sản phẩm và xem toàn bộ tin nhắn khách hàng.
+        </div>
+      </div>
+
+      <!-- Danh sách tài khoản hiện có -->
+      <div class="lg:col-span-2">
+        <div class="bg-white rounded-2xl border border-slate-200 overflow-hidden">
+          <div id="users-list" class="divide-y divide-slate-100"></div>
+          <div id="users-empty" class="hidden text-center py-16 px-6 font-body text-sm text-navy-900/50">
+            Chưa có tài khoản nào.
+          </div>
+          <div id="users-loading" class="flex items-center justify-center gap-2 py-16 text-sm text-navy-900/50">
+            <span class="spinner"></span> Đang tải danh sách tài khoản...
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </div>
 
   <!-- Toast thông báo -->
   <div id="toast-container" class="fixed top-20 right-4 z-[100] flex flex-col gap-2 items-end"></div>
@@ -619,25 +678,159 @@
     // ---------- Tabs ----------
     const tabBtnProducts = document.getElementById('tab-btn-products');
     const tabBtnContacts = document.getElementById('tab-btn-contacts');
+    const tabBtnUsers = document.getElementById('tab-btn-users');
     const tabProducts = document.getElementById('tab-products');
     const tabContacts = document.getElementById('tab-contacts');
+    const tabUsers = document.getElementById('tab-users');
 
-    function switchTab(tab) {
-      const isProducts = tab === 'products';
-      tabProducts.classList.toggle('hidden', !isProducts);
-      tabContacts.classList.toggle('hidden', isProducts);
-      tabBtnProducts.classList.toggle('border-brand', isProducts);
-      tabBtnProducts.classList.toggle('text-brand', isProducts);
-      tabBtnProducts.classList.toggle('border-transparent', !isProducts);
-      tabBtnProducts.classList.toggle('text-navy-900/50', !isProducts);
-      tabBtnContacts.classList.toggle('border-brand', !isProducts);
-      tabBtnContacts.classList.toggle('text-brand', !isProducts);
-      tabBtnContacts.classList.toggle('border-transparent', isProducts);
-      tabBtnContacts.classList.toggle('text-navy-900/50', isProducts);
-      if (!isProducts) loadContacts();
+    const ALL_TABS = [
+      { btn: tabBtnProducts, panel: tabProducts, key: 'products' },
+      { btn: tabBtnContacts, panel: tabContacts, key: 'contacts' },
+      { btn: tabBtnUsers,    panel: tabUsers,    key: 'users'    },
+    ];
+
+    function switchTab(activeKey) {
+      ALL_TABS.forEach(({ btn, panel, key }) => {
+        const active = key === activeKey;
+        panel.classList.toggle('hidden', !active);
+        btn.classList.toggle('border-brand', active);
+        btn.classList.toggle('text-brand', active);
+        btn.classList.toggle('border-transparent', !active);
+        btn.classList.toggle('text-navy-900/50', !active);
+      });
+      if (activeKey === 'contacts') loadContacts();
+      if (activeKey === 'users') loadUsers();
     }
     tabBtnProducts.addEventListener('click', () => switchTab('products'));
     tabBtnContacts.addEventListener('click', () => switchTab('contacts'));
+    tabBtnUsers.addEventListener('click', () => switchTab('users'));
+
+    // ---------- Quản lý tài khoản (qua Supabase Admin API) ----------
+    async function getAdminHeaders() {
+      const { data } = await sb.auth.getSession();
+      return {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${data.session.access_token}`,
+        'apikey': SUPABASE_ANON_KEY
+      };
+    }
+
+    async function loadUsers() {
+      const list = document.getElementById('users-list');
+      const empty = document.getElementById('users-empty');
+      const loading = document.getElementById('users-loading');
+      loading.classList.remove('hidden');
+      list.innerHTML = '';
+      empty.classList.add('hidden');
+
+      try {
+        const headers = await getAdminHeaders();
+        const res = await fetch(`${SUPABASE_URL}/auth/v1/admin/users`, { headers });
+        const json = await res.json();
+        loading.classList.add('hidden');
+
+        if (!res.ok) throw new Error(json.message || 'Không tải được danh sách');
+        const users = json.users || [];
+        if (users.length === 0) { empty.classList.remove('hidden'); return; }
+
+        // Lấy email của user đang đăng nhập để đánh dấu
+        const { data: { user: me } } = await sb.auth.getUser();
+
+        list.innerHTML = users.map(u => {
+          const isMe = u.id === me?.id;
+          const date = new Date(u.created_at).toLocaleDateString('vi-VN');
+          const lastSign = u.last_sign_in_at
+            ? new Date(u.last_sign_in_at).toLocaleString('vi-VN', { day:'2-digit', month:'2-digit', year:'numeric', hour:'2-digit', minute:'2-digit' })
+            : 'Chưa đăng nhập';
+          return `
+          <div class="flex items-center gap-4 px-5 py-4">
+            <div class="w-9 h-9 rounded-full bg-brand/10 flex items-center justify-center shrink-0">
+              <span class="text-brand font-display font-700 text-sm">${u.email.charAt(0).toUpperCase()}</span>
+            </div>
+            <div class="flex-1 min-w-0">
+              <div class="flex items-center gap-2 flex-wrap">
+                <p class="font-display font-700 text-sm text-navy-950 truncate">${u.email}</p>
+                ${isMe ? '<span class="text-[10px] font-body font-medium text-emerald-700 bg-emerald-50 border border-emerald-200 rounded-full px-2 py-0.5">Bạn</span>' : ''}
+                ${u.confirmed_at ? '<span class="text-[10px] font-body font-medium text-brand bg-brand/10 rounded-full px-2 py-0.5">Đã xác nhận</span>' : '<span class="text-[10px] font-body text-amber-700 bg-amber-50 border border-amber-200 rounded-full px-2 py-0.5">Chưa xác nhận</span>'}
+              </div>
+              <p class="font-body text-xs text-navy-900/50 mt-0.5">
+                Tạo: ${date} · Đăng nhập lần cuối: ${lastSign}
+              </p>
+            </div>
+            ${!isMe ? `<button data-id="${u.id}" data-email="${u.email}" class="btn-delete-user focus-ring shrink-0 text-xs font-display font-700 text-red-600 border border-red-200 hover:bg-red-600 hover:text-white rounded-lg px-3 py-1.5 transition-colors">Xóa</button>` : ''}
+          </div>`;
+        }).join('');
+
+        list.querySelectorAll('.btn-delete-user').forEach(btn => {
+          btn.addEventListener('click', () => deleteUser(btn.dataset.id, btn.dataset.email));
+        });
+      } catch (err) {
+        loading.classList.add('hidden');
+        list.innerHTML = `<div class="text-center py-10 text-sm text-red-600 px-6">Lỗi: ${err.message}</div>`;
+      }
+    }
+
+    document.getElementById('btn-add-user').addEventListener('click', async () => {
+      const email = document.getElementById('u-email').value.trim();
+      const password = document.getElementById('u-password').value;
+      const errEl = document.getElementById('u-error');
+      const btn = document.getElementById('btn-add-user');
+      errEl.classList.add('hidden');
+
+      if (!email || !password) {
+        errEl.textContent = 'Vui lòng nhập đầy đủ email và mật khẩu.';
+        errEl.classList.remove('hidden');
+        return;
+      }
+      if (password.length < 6) {
+        errEl.textContent = 'Mật khẩu phải có ít nhất 6 ký tự.';
+        errEl.classList.remove('hidden');
+        return;
+      }
+
+      btn.disabled = true;
+      btn.innerHTML = '<span class="spinner"></span> Đang thêm...';
+
+      try {
+        const headers = await getAdminHeaders();
+        const res = await fetch(`${SUPABASE_URL}/auth/v1/admin/users`, {
+          method: 'POST',
+          headers,
+          body: JSON.stringify({ email, password, email_confirm: true })
+        });
+        const json = await res.json();
+        if (!res.ok) throw new Error(json.message || json.msg || 'Thêm thất bại');
+        showToast(`Đã thêm tài khoản ${email} thành công!`);
+        document.getElementById('u-email').value = '';
+        document.getElementById('u-password').value = '';
+        loadUsers();
+      } catch (err) {
+        errEl.textContent = 'Lỗi: ' + err.message;
+        errEl.classList.remove('hidden');
+        showToast('Thêm tài khoản thất bại!', 'error');
+      }
+
+      btn.disabled = false;
+      btn.textContent = 'Thêm Tài Khoản';
+    });
+
+    async function deleteUser(id, email) {
+      if (!confirm(`Xóa tài khoản "${email}"?\nNgười này sẽ không đăng nhập được nữa.`)) return;
+      try {
+        const headers = await getAdminHeaders();
+        const res = await fetch(`${SUPABASE_URL}/auth/v1/admin/users/${id}`, {
+          method: 'DELETE', headers
+        });
+        if (!res.ok) {
+          const json = await res.json();
+          throw new Error(json.message || 'Xóa thất bại');
+        }
+        showToast(`Đã xóa tài khoản ${email}!`);
+        loadUsers();
+      } catch (err) {
+        showToast('Xóa thất bại: ' + err.message, 'error');
+      }
+    }
 
     // ---------- Tin nhắn liên hệ ----------
     async function loadContactsBadgeCount() {
