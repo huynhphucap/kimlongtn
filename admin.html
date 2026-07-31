@@ -419,20 +419,28 @@
               </div>
 
               <div class="flex flex-col gap-1.5">
-                <label class="text-xs font-medium text-navy-900/60">Ảnh sản phẩm <span class="text-red-500">*</span></label>
+                <label class="text-xs font-medium text-navy-900/60">
+                  Ảnh sản phẩm <span class="text-red-500">*</span>
+                  <span class="text-navy-900/35 font-normal">(ảnh đầu tiên là ảnh bìa, tối đa 6 ảnh)</span>
+                </label>
+
+                <div id="image-thumbs" class="hidden grid grid-cols-4 sm:grid-cols-6 gap-2">
+                  <!-- JS render -->
+                </div>
 
                 <div class="inline-flex w-fit gap-0.5 p-0.5 rounded-lg border border-slate-200 bg-slate-100">
                   <button type="button" id="img-tab-link" data-active="true" class="img-tab font-display font-700 text-xs px-3 py-1.5">Dán link ảnh</button>
                   <button type="button" id="img-tab-upload" data-active="false" class="img-tab font-display font-700 text-xs px-3 py-1.5">Tải ảnh lên</button>
                 </div>
 
-                <div id="img-panel-link">
-                  <input type="url" id="f-img" required placeholder="https://..." class="form-input border border-slate-200 rounded-lg px-3 py-2 text-sm w-full">
+                <div id="img-panel-link" class="flex items-center gap-2">
+                  <input type="url" id="f-img-url-input" placeholder="https://..." class="form-input border border-slate-200 rounded-lg px-3 py-2 text-sm flex-1">
+                  <button type="button" id="btn-add-img-url" class="focus-ring shrink-0 text-xs font-display font-700 text-white bg-brand hover:bg-ember rounded-lg px-3 py-2 transition-colors">+ Thêm</button>
                 </div>
 
                 <div id="img-panel-upload" class="hidden flex flex-col gap-2 border border-dashed border-slate-300 rounded-lg p-3 bg-slate-50">
-                  <input type="file" id="f-img-file" accept="image/*" class="text-xs font-body text-navy-900/60 file:mr-3 file:py-1.5 file:px-3 file:rounded-lg file:border-0 file:text-xs file:font-display file:font-700 file:bg-brand file:text-white hover:file:bg-ember file:cursor-pointer cursor-pointer">
-                  <p class="text-[11px] text-navy-900/40 font-body">Ảnh JPG/PNG, tối đa 5MB.</p>
+                  <input type="file" id="f-img-file" accept="image/*" multiple class="text-xs font-body text-navy-900/60 file:mr-3 file:py-1.5 file:px-3 file:rounded-lg file:border-0 file:text-xs file:font-display file:font-700 file:bg-brand file:text-white hover:file:bg-ember file:cursor-pointer cursor-pointer">
+                  <p class="text-[11px] text-navy-900/40 font-body">Ảnh JPG/PNG, tối đa 5MB/ảnh — có thể chọn nhiều ảnh cùng lúc.</p>
                   <div id="upload-status" class="hidden items-center gap-2 text-xs text-navy-900/50 font-body">
                     <span class="spinner"></span> Đang tải ảnh lên...
                   </div>
@@ -669,6 +677,7 @@
     let allProducts = [];
     let allContacts = [];
     let editingId = null;
+    let productImages = [];
 
     // ---------- DOM refs ----------
     const loginView = document.getElementById('login-view');
@@ -942,7 +951,8 @@
         badge: document.getElementById('f-badge').value.trim(),
         category: document.getElementById('f-category').value,
         tags: document.getElementById('f-tags').value.split(',').map(t => t.trim()).filter(Boolean),
-        img: document.getElementById('f-img').value.trim() || 'https://placehold.co/300x300?text=Anh+San+Pham'
+        img: productImages[0] || 'https://placehold.co/300x300?text=Anh+San+Pham',
+        images: productImages
       };
     }
 
@@ -1200,13 +1210,16 @@
       else if (e.key === 'Escape') { e.preventDefault(); cancelAddCategory(); }
     });
 
-    // ---------- Ảnh sản phẩm: dán link hoặc tải lên từ máy (Supabase Storage) ----------
+    // ---------- Ảnh sản phẩm: nhiều ảnh, dán link hoặc tải lên từ máy (Supabase Storage) ----------
     const PRODUCT_IMAGE_BUCKET = 'product-images';
+    const MAX_PRODUCT_IMAGES = 6;
+
     const imgTabLink = document.getElementById('img-tab-link');
     const imgTabUpload = document.getElementById('img-tab-upload');
     const imgPanelLink = document.getElementById('img-panel-link');
     const imgPanelUpload = document.getElementById('img-panel-upload');
-    const fImg = document.getElementById('f-img');
+    const imageThumbs = document.getElementById('image-thumbs');
+    const fImgUrlInput = document.getElementById('f-img-url-input');
     const fImgFile = document.getElementById('f-img-file');
     const uploadStatus = document.getElementById('upload-status');
     const uploadError = document.getElementById('upload-error');
@@ -1217,24 +1230,91 @@
       imgPanelUpload.classList.toggle('hidden', isLink);
       imgTabLink.dataset.active = isLink ? 'true' : 'false';
       imgTabUpload.dataset.active = isLink ? 'false' : 'true';
-      fImg.required = isLink;
     }
     imgTabLink.addEventListener('click', () => setImageTab('link'));
     imgTabUpload.addEventListener('click', () => setImageTab('upload'));
 
+    function renderImageThumbs() {
+      if (productImages.length === 0) {
+        imageThumbs.classList.add('hidden');
+        imageThumbs.innerHTML = '';
+        return;
+      }
+      imageThumbs.classList.remove('hidden');
+      imageThumbs.innerHTML = productImages.map((url, i) => `
+        <div class="relative group aspect-square rounded-lg overflow-hidden border-2 ${i === 0 ? 'border-brand' : 'border-slate-200'}">
+          <img src="${escapeHtml(url)}" alt="Ảnh ${i + 1}" class="w-full h-full object-cover" onerror="this.src='https://placehold.co/100x100?text=Loi'">
+          ${i === 0 ? '<span class="absolute top-1 left-1 bg-brand text-white text-[9px] font-display font-700 px-1.5 py-0.5 rounded">Bìa</span>' : ''}
+          <div class="absolute inset-0 bg-navy-950/55 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-1">
+            ${i !== 0 ? `
+            <button type="button" data-set-cover="${i}" class="focus-ring icon-btn w-6 h-6 bg-white/90" title="Đặt làm ảnh bìa">
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m12 2 3.1 6.3 7 1-5 4.9 1.2 6.9-6.3-3.3-6.3 3.3 1.2-6.9-5-4.9 7-1z"/></svg>
+            </button>` : ''}
+            <button type="button" data-remove-img="${i}" class="focus-ring icon-btn w-6 h-6 bg-white/90 hover:text-red-600" title="Xóa ảnh">
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18"/><path d="M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/></svg>
+            </button>
+          </div>
+        </div>
+      `).join('');
+
+      imageThumbs.querySelectorAll('[data-remove-img]').forEach(btn => {
+        btn.addEventListener('click', () => {
+          productImages.splice(Number(btn.dataset.removeImg), 1);
+          renderImageThumbs();
+          updatePreview();
+        });
+      });
+      imageThumbs.querySelectorAll('[data-set-cover]').forEach(btn => {
+        btn.addEventListener('click', () => {
+          const idx = Number(btn.dataset.setCover);
+          const [item] = productImages.splice(idx, 1);
+          productImages.unshift(item);
+          renderImageThumbs();
+          updatePreview();
+        });
+      });
+    }
+
+    function addImageUrl(url) {
+      url = url.trim();
+      if (!url) return false;
+      if (productImages.length >= MAX_PRODUCT_IMAGES) {
+        showToast(`Chỉ được tối đa ${MAX_PRODUCT_IMAGES} ảnh.`, 'error');
+        return false;
+      }
+      if (productImages.includes(url)) {
+        showToast('Ảnh này đã được thêm rồi.', 'error');
+        return false;
+      }
+      productImages.push(url);
+      renderImageThumbs();
+      updatePreview();
+      return true;
+    }
+
+    document.getElementById('btn-add-img-url').addEventListener('click', () => {
+      if (addImageUrl(fImgUrlInput.value)) fImgUrlInput.value = '';
+    });
+    fImgUrlInput.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter') { e.preventDefault(); document.getElementById('btn-add-img-url').click(); }
+    });
+
     async function handleImageFileUpload(file) {
       uploadError.classList.add('hidden');
 
-      if (!file.type.startsWith('image/')) {
-        uploadError.textContent = 'Vui lòng chọn một tệp hình ảnh.';
+      if (productImages.length >= MAX_PRODUCT_IMAGES) {
+        uploadError.textContent = `Chỉ được tối đa ${MAX_PRODUCT_IMAGES} ảnh.`;
         uploadError.classList.remove('hidden');
-        fImgFile.value = '';
+        return;
+      }
+      if (!file.type.startsWith('image/')) {
+        uploadError.textContent = `Tệp "${file.name}" không phải hình ảnh, đã bỏ qua.`;
+        uploadError.classList.remove('hidden');
         return;
       }
       if (file.size > 5 * 1024 * 1024) {
-        uploadError.textContent = 'Ảnh vượt quá 5MB, vui lòng chọn ảnh nhỏ hơn.';
+        uploadError.textContent = `Ảnh "${file.name}" vượt quá 5MB, đã bỏ qua.`;
         uploadError.classList.remove('hidden');
-        fImgFile.value = '';
         return;
       }
 
@@ -1254,21 +1334,25 @@
       if (uploadErr) {
         uploadError.textContent = 'Không tải được ảnh lên: ' + uploadErr.message + '. Kiểm tra đã tạo bucket "' + PRODUCT_IMAGE_BUCKET + '" (công khai) trên Supabase Storage chưa.';
         uploadError.classList.remove('hidden');
-        fImgFile.value = '';
         showToast('Tải ảnh lên thất bại', 'error');
         return;
       }
 
       const { data: pub } = sb.storage.from(PRODUCT_IMAGE_BUCKET).getPublicUrl(path);
-      fImg.value = pub.publicUrl;
-      updatePreview();
-      setImageTab('link');
-      fImgFile.value = '';
-      showToast('Đã tải ảnh lên thành công!');
+      addImageUrl(pub.publicUrl);
     }
-    fImgFile.addEventListener('change', (e) => {
-      const file = e.target.files && e.target.files[0];
-      if (file) handleImageFileUpload(file);
+
+    fImgFile.addEventListener('change', async (e) => {
+      const files = Array.from(e.target.files || []);
+      for (const file of files) {
+        if (productImages.length >= MAX_PRODUCT_IMAGES) {
+          showToast(`Đã đạt tối đa ${MAX_PRODUCT_IMAGES} ảnh, dừng tải thêm.`, 'error');
+          break;
+        }
+        await handleImageFileUpload(file);
+      }
+      if (productImages.length > 0) showToast('Đã tải ảnh lên thành công!');
+      fImgFile.value = '';
     });
 
     // ---------- Form: new / edit / cancel ----------
@@ -1282,6 +1366,8 @@
       formError.classList.add('hidden');
       formSuccess.classList.add('hidden');
       categoryAddRow.classList.add('hidden');
+      productImages = [];
+      renderImageThumbs();
       setImageTab('link');
       renderCategoryOptions();
       updatePreview();
@@ -1313,8 +1399,9 @@
       renderCategoryOptions();
       document.getElementById('f-category').value = p.category || 'Nhà Bếp';
       document.getElementById('f-tags').value = (p.tags || []).join(', ');
+      productImages = Array.isArray(p.images) && p.images.length ? [...p.images] : (p.img ? [p.img] : []);
+      renderImageThumbs();
       setImageTab('link');
-      document.getElementById('f-img').value = p.img || '';
       formTitle.textContent = 'Sửa Sản Phẩm';
       document.getElementById('form-submit').textContent = 'Cập Nhật Sản Phẩm';
       btnCancelEdit.classList.remove('hidden');
@@ -1330,8 +1417,8 @@
       formError.classList.add('hidden');
       formSuccess.classList.add('hidden');
 
-      if (!fImg.value.trim()) {
-        formError.textContent = 'Vui lòng dán link ảnh hoặc tải ảnh lên từ máy tính.';
+      if (productImages.length === 0) {
+        formError.textContent = 'Vui lòng thêm ít nhất 1 ảnh (dán link hoặc tải ảnh lên từ máy tính).';
         formError.classList.remove('hidden');
         setImageTab('link');
         return;
@@ -1354,7 +1441,10 @@
       submitBtn.disabled = false;
 
       if (error) {
-        formError.textContent = 'Lỗi khi lưu: ' + error.message;
+        const missingImagesColumn = /images.*column|column .*images/i.test(error.message || '');
+        formError.textContent = missingImagesColumn
+          ? 'Lỗi khi lưu: bảng "products" trên Supabase chưa có cột "images". Vào Supabase → Table Editor → products → New Column, đặt tên "images", kiểu "jsonb", giá trị mặc định "[]", rồi lưu và thử lại.'
+          : 'Lỗi khi lưu: ' + error.message;
         formError.classList.remove('hidden');
         showToast('Lỗi khi lưu sản phẩm', 'error');
         return;

@@ -209,11 +209,23 @@
         ? p.description
         : `Sản phẩm ${p.name} thuộc danh mục ${p.category || 'Đồ Điện Gia Dụng'}. Đặc điểm nổi bật: ${(p.tags || []).join(', ')}. Hàng chính hãng, có bảo hành, giao lắp tận nơi.`;
 
+      const images = Array.isArray(p.images) && p.images.length ? p.images : [p.img];
+
       document.getElementById('detail-container').innerHTML = `
-        <div class="zoom-img-wrap rounded-2xl bg-white border border-slate-200">
-          <div class="aspect-square bg-slate-100 overflow-hidden rounded-2xl">
-            <img src="${p.img}" alt="${p.name}" class="w-full h-full object-cover">
+        <div class="flex flex-col gap-3">
+          <div class="zoom-img-wrap rounded-2xl bg-white border border-slate-200">
+            <div class="aspect-square bg-slate-100 overflow-hidden rounded-2xl">
+              <img id="main-product-img" src="${images[0]}" alt="${p.name}" class="w-full h-full object-cover">
+            </div>
           </div>
+          ${images.length > 1 ? `
+          <div class="grid grid-cols-5 gap-2">
+            ${images.map((img, i) => `
+              <button type="button" data-thumb-img="${img}" class="thumb-btn focus-ring aspect-square rounded-lg overflow-hidden border-2 ${i === 0 ? 'border-brand' : 'border-transparent'} bg-slate-100">
+                <img src="${img}" alt="${p.name} - ảnh ${i + 1}" class="w-full h-full object-cover">
+              </button>
+            `).join('')}
+          </div>` : ''}
         </div>
 
         <div class="flex flex-col gap-4">
@@ -256,6 +268,19 @@
             <span>✓ Giao lắp tận nơi</span>
           </div>
         </div>`;
+
+      if (images.length > 1) {
+        const mainImg = document.getElementById('main-product-img');
+        document.querySelectorAll('.thumb-btn').forEach(btn => {
+          btn.addEventListener('click', () => {
+            mainImg.src = btn.dataset.thumbImg;
+            document.querySelectorAll('.thumb-btn').forEach(b => b.classList.remove('border-brand'));
+            document.querySelectorAll('.thumb-btn').forEach(b => b.classList.add('border-transparent'));
+            btn.classList.remove('border-transparent');
+            btn.classList.add('border-brand');
+          });
+        });
+      }
     }
 
     function renderRelated(products, currentId) {
