@@ -229,13 +229,6 @@
       </div>
 
       <form id="contact-form" class="reveal lg:col-span-3 info-card rounded-2xl border border-slate-200 p-6 sm:p-8 flex flex-col gap-4" style="transition-delay:150ms">
-        <div id="quote-summary" class="hidden flex-col gap-2 bg-brand/5 border border-brand/20 rounded-xl p-4">
-          <p class="font-display font-700 text-xs text-navy-950 flex items-center gap-1.5">
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="8" cy="21" r="1"/><circle cx="19" cy="21" r="1"/><path d="M2.05 2.05h2l2.66 12.42a2 2 0 0 0 2 1.58h9.78a2 2 0 0 0 2-1.58l1.65-7.42H5.12"/></svg>
-            Sản phẩm bạn muốn báo giá (<span id="quote-summary-count">0</span>)
-          </p>
-          <div id="quote-summary-list" class="flex flex-wrap gap-2"></div>
-        </div>
         <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
           <div class="flex flex-col gap-1.5">
             <label class="font-body text-xs font-medium text-navy-900/60">Họ và tên</label>
@@ -287,42 +280,15 @@
       return String(str ?? '').replace(/[&<>"']/g, ch => map[ch]);
     }
 
-    // ---------- Giỏ yêu cầu báo giá (chọn từ trang Sản Phẩm / Chi tiết sản phẩm) ----------
-    const QUOTE_CART_KEY = 'kl_quote_cart';
-    function getQuoteCart() {
-      try { return JSON.parse(localStorage.getItem(QUOTE_CART_KEY)) || []; }
-      catch { return []; }
+    // Ghi nhớ Tên + SĐT đã dùng để gửi yêu cầu báo giá ở trang Sản Phẩm (nếu có),
+    // giúp điền sẵn form liên hệ chung cho đỡ phải gõ lại.
+    const CONTACT_INFO_KEY = 'kl_contact_info';
+    function getContactInfo() {
+      try { return JSON.parse(localStorage.getItem(CONTACT_INFO_KEY)); } catch { return null; }
     }
-    function saveQuoteCart(list) {
-      localStorage.setItem(QUOTE_CART_KEY, JSON.stringify(list));
+    function saveContactInfo(info) {
+      localStorage.setItem(CONTACT_INFO_KEY, JSON.stringify(info));
     }
-    function removeFromQuoteCart(id) {
-      saveQuoteCart(getQuoteCart().filter(x => String(x.id) !== String(id)));
-      renderQuoteSummary();
-    }
-
-    function renderQuoteSummary() {
-      const cart = getQuoteCart();
-      const wrap = document.getElementById('quote-summary');
-      const listEl = document.getElementById('quote-summary-list');
-      const countEl = document.getElementById('quote-summary-count');
-
-      wrap.classList.toggle('hidden', cart.length === 0);
-      wrap.classList.toggle('flex', cart.length > 0);
-      countEl.textContent = cart.length;
-
-      listEl.innerHTML = cart.map(item => `
-        <span class="inline-flex items-center gap-1.5 bg-white border border-slate-200 rounded-full pl-3 pr-1.5 py-1 text-xs font-body text-navy-900/80">
-          ${escapeHtml(item.name)}
-          <button type="button" data-remove-quote="${escapeHtml(String(item.id))}" class="focus-ring w-4 h-4 rounded-full flex items-center justify-center text-navy-900/40 hover:text-red-600 hover:bg-red-50 transition-colors">✕</button>
-        </span>
-      `).join('');
-
-      listEl.querySelectorAll('[data-remove-quote]').forEach(btn => {
-        btn.addEventListener('click', () => removeFromQuoteCart(btn.dataset.removeQuote));
-      });
-    }
-    renderQuoteSummary();
 
     function showToast(message, type = 'success') {
       const container = document.getElementById('toast-container');
@@ -345,13 +311,19 @@
     const contactError = document.getElementById('c-error');
     const contactSubmit = document.getElementById('c-submit');
 
+    const savedContactInfo = getContactInfo();
+    if (savedContactInfo) {
+      if (savedContactInfo.name) document.getElementById('c-name').value = savedContactInfo.name;
+      if (savedContactInfo.phone) document.getElementById('c-phone').value = savedContactInfo.phone;
+    }
+
     contactForm.addEventListener('submit', async (e) => {
       e.preventDefault();
       contactError.classList.add('hidden');
 
       const name = document.getElementById('c-name').value.trim();
       const phone = document.getElementById('c-phone').value.trim();
-      let message = document.getElementById('c-message').value.trim();
+      const message = document.getElementById('c-message').value.trim();
 
       if (!name || !phone) {
         contactError.textContent = 'Vui lòng nhập đầy đủ Họ tên và Số điện thoại.';
@@ -362,12 +334,6 @@
       if (!isConfigured) {
         showToast('Chưa cấu hình Supabase — không thể gửi yêu cầu lúc này.', 'error');
         return;
-      }
-
-      const quoteCart = getQuoteCart();
-      if (quoteCart.length > 0) {
-        const productList = quoteCart.map(item => `- ${item.name}${item.price ? ` (${item.price})` : ''}`).join('\n');
-        message = `Yêu cầu báo giá cho:\n${productList}${message ? `\n\n${message}` : ''}`;
       }
 
       contactSubmit.disabled = true;
@@ -385,13 +351,11 @@
         return;
       }
 
-      if (quoteCart.length > 0) {
-        saveQuoteCart([]);
-        renderQuoteSummary();
-      }
-
+      saveContactInfo({ name, phone });
       showToast('Đã gửi yêu cầu thành công! Kim Long sẽ liên hệ lại sớm.');
       contactForm.reset();
+      document.getElementById('c-name').value = name;
+      document.getElementById('c-phone').value = phone;
     });
 
     function initScrollReveal() {
