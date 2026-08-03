@@ -1862,17 +1862,25 @@
       const list = document.getElementById('contacts-list');
       const empty = document.getElementById('contacts-empty');
       const loading = document.getElementById('contacts-loading');
+      const quotesList = document.getElementById('quotes-list');
+      const quotesEmpty = document.getElementById('quotes-empty');
+      const quotesLoading = document.getElementById('quotes-loading');
 
       loading.classList.remove('hidden');
       list.innerHTML = '';
       empty.classList.add('hidden');
+      quotesLoading.classList.remove('hidden');
+      quotesList.innerHTML = '';
+      quotesEmpty.classList.add('hidden');
 
       const { data, error } = await sb.from('contacts').select('*').order('created_at', { ascending: false });
 
       loading.classList.add('hidden');
+      quotesLoading.classList.add('hidden');
 
       if (error) {
         list.innerHTML = `<div class="text-center py-10 text-sm text-red-600">Lỗi tải tin nhắn: ${escapeHtml(error.message)}</div>`;
+        quotesList.innerHTML = `<div class="text-center py-10 text-sm text-red-600">Lỗi tải yêu cầu báo giá: ${escapeHtml(error.message)}</div>`;
         return;
       }
 
