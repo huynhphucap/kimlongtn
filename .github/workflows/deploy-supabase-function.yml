@@ -1,0 +1,32 @@
+# Deploy Edge Function admin-users lên Supabase khi có thay đổi, không cần
+# cài Supabase CLI / npm trên máy — GitHub Actions tự làm hết.
+#
+# Cần thiết lập 1 lần trước khi dùng: vào Settings -> Secrets and variables
+# -> Actions của repo này, thêm secret tên SUPABASE_ACCESS_TOKEN (lấy từ
+# Supabase Dashboard -> bấm avatar góc trên phải -> Access Tokens -> Generate
+# new token).
+name: Deploy Supabase Edge Function
+
+on:
+  push:
+    branches: ["main"]
+    paths:
+      - "supabase/functions/**"
+  workflow_dispatch:
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Supabase CLI
+        uses: supabase/setup-cli@v1
+        with:
+          version: latest
+
+      - name: Deploy admin-users function
+        run: supabase functions deploy admin-users --project-ref tvqiphlmvcbmpwexihby
+        env:
+          SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
