@@ -269,16 +269,77 @@
                   class="focus-ring bg-ember hover:bg-ember-dark text-white font-display font-700 text-sm px-6 py-3 rounded-xl shadow-[0_10px_20px_-8px_rgba(249,115,22,0.5)] transition-colors flex items-center justify-center gap-2 disabled:opacity-60 disabled:cursor-not-allowed">
             Đăng Nhập
           </button>
+          <button type="button" id="btn-show-forgot" class="focus-ring self-center text-xs font-body font-medium text-navy-900/50 hover:text-brand transition-colors">
+            Quên mật khẩu?
+          </button>
+        </form>
+
+        <!-- Form quên mật khẩu -->
+        <form id="forgot-password-form" class="hidden flex-col gap-4">
+          <div>
+            <h2 class="font-display font-700 text-lg text-navy-950">Quên Mật Khẩu</h2>
+            <p class="font-body text-xs text-navy-900/50 mt-1">Nhập email tài khoản, chúng tôi sẽ gửi link đặt lại mật khẩu.</p>
+          </div>
+          <div class="flex flex-col gap-1.5">
+            <label class="text-xs font-medium text-navy-900/60">Email</label>
+            <input type="email" id="forgot-email" required placeholder="ban@email.com" autocomplete="username"
+                   class="form-input border border-slate-200 rounded-lg px-3.5 py-2.5 text-sm w-full">
+          </div>
+          <p id="forgot-error" class="hidden text-sm text-red-600 bg-red-50 border border-red-200 rounded-lg px-3 py-2"></p>
+          <p id="forgot-success" class="hidden text-sm text-emerald-700 bg-emerald-50 border border-emerald-200 rounded-lg px-3 py-2"></p>
+          <button type="submit" id="forgot-submit"
+                  class="focus-ring bg-ember hover:bg-ember-dark text-white font-display font-700 text-sm px-6 py-3 rounded-xl shadow-[0_10px_20px_-8px_rgba(249,115,22,0.5)] transition-colors flex items-center justify-center gap-2 disabled:opacity-60 disabled:cursor-not-allowed">
+            Gửi Email Khôi Phục
+          </button>
+          <button type="button" id="btn-back-to-login" class="focus-ring self-center text-xs font-body font-medium text-navy-900/50 hover:text-brand transition-colors">
+            ← Quay lại đăng nhập
+          </button>
         </form>
 
         <p id="login-config-warning" class="hidden mt-5 text-xs text-amber-700 bg-amber-50 border border-amber-200 rounded-lg px-3 py-2">
           Chưa cấu hình Supabase trong file này. Xem <code>huong-dan-supabase.md</code>.
         </p>
 
-        <p class="mt-5 flex items-center justify-center gap-1.5 text-[11px] text-navy-900/35 font-body">
+        <p id="login-lockout-hint" class="mt-5 flex items-center justify-center gap-1.5 text-[11px] text-navy-900/35 font-body">
           <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
           Đăng nhập sai nhiều lần sẽ bị tạm khóa
         </p>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ RESET PASSWORD VIEW (mở từ link trong email) ============ -->
+  <section id="reset-password-view" class="hidden login-bg relative min-h-[calc(100vh-73px)] flex items-center overflow-hidden">
+    <span class="login-glow w-72 h-72 bg-brand -top-10 -left-10"></span>
+    <span class="login-glow w-72 h-72 bg-ember bottom-0 right-0"></span>
+
+    <div class="relative max-w-md w-full mx-auto px-5 py-16">
+      <div class="flex flex-col items-center mb-6">
+        <span class="w-14 h-14 rounded-2xl bg-gradient-to-br from-brand to-brand-light flex items-center justify-center text-white font-display font-800 text-lg shadow-[0_12px_24px_-8px_rgba(37,99,235,.6)] mb-3">KL</span>
+        <p class="text-white/50 text-xs font-body tracking-wide uppercase">Kim Long · Bảng Quản Trị</p>
+      </div>
+
+      <div class="bg-white rounded-2xl border border-slate-200 p-8 shadow-[0_24px_48px_-20px_rgba(0,0,0,.45)]">
+        <h1 class="font-display font-800 text-2xl text-navy-950 mb-1">Đặt Mật Khẩu Mới</h1>
+        <p class="font-body text-sm text-navy-900/60 mb-6">Nhập mật khẩu mới cho tài khoản của bạn.</p>
+
+        <form id="reset-password-form" class="flex flex-col gap-4">
+          <div class="flex flex-col gap-1.5">
+            <label class="text-xs font-medium text-navy-900/60">Mật khẩu mới (tối thiểu 6 ký tự)</label>
+            <input type="password" id="reset-password" required placeholder="••••••••" autocomplete="new-password"
+                   class="form-input border border-slate-200 rounded-lg px-3.5 py-2.5 text-sm w-full">
+          </div>
+          <div class="flex flex-col gap-1.5">
+            <label class="text-xs font-medium text-navy-900/60">Xác nhận mật khẩu mới</label>
+            <input type="password" id="reset-password-confirm" required placeholder="••••••••" autocomplete="new-password"
+                   class="form-input border border-slate-200 rounded-lg px-3.5 py-2.5 text-sm w-full">
+          </div>
+          <p id="reset-error" class="hidden text-sm text-red-600 bg-red-50 border border-red-200 rounded-lg px-3 py-2"></p>
+          <button type="submit" id="reset-submit"
+                  class="focus-ring bg-ember hover:bg-ember-dark text-white font-display font-700 text-sm px-6 py-3 rounded-xl shadow-[0_10px_20px_-8px_rgba(249,115,22,0.5)] transition-colors flex items-center justify-center gap-2 disabled:opacity-60 disabled:cursor-not-allowed">
+            Lưu Mật Khẩu Mới
+          </button>
+        </form>
       </div>
     </div>
   </section>
@@ -732,9 +793,13 @@
     // ---------- DOM refs ----------
     const loginView = document.getElementById('login-view');
     const dashboardView = document.getElementById('dashboard-view');
+    const resetPasswordView = document.getElementById('reset-password-view');
     const loginForm = document.getElementById('login-form');
     const loginError = document.getElementById('login-error');
     const loginConfigWarning = document.getElementById('login-config-warning');
+    const forgotPasswordForm = document.getElementById('forgot-password-form');
+    const forgotError = document.getElementById('forgot-error');
+    const forgotSuccess = document.getElementById('forgot-success');
     const userEmailEl = document.getElementById('user-email');
     const btnLogout = document.getElementById('btn-logout');
     const btnNew = document.getElementById('btn-new');
@@ -838,8 +903,104 @@
     function showLogin() {
       loginView.classList.remove('hidden');
       dashboardView.classList.add('hidden');
+      resetPasswordView.classList.add('hidden');
       btnLogout.classList.add('hidden');
       userEmailEl.classList.add('hidden');
+      loginForm.classList.remove('hidden');
+      forgotPasswordForm.classList.add('hidden');
+      forgotPasswordForm.classList.remove('flex');
+    }
+
+    function showResetPasswordView() {
+      loginView.classList.add('hidden');
+      dashboardView.classList.add('hidden');
+      resetPasswordView.classList.remove('hidden');
+    }
+
+    // ---------- Quên mật khẩu ----------
+    document.getElementById('btn-show-forgot').addEventListener('click', () => {
+      loginError.classList.add('hidden');
+      loginForm.classList.add('hidden');
+      forgotError.classList.add('hidden');
+      forgotSuccess.classList.add('hidden');
+      document.getElementById('forgot-email').value = document.getElementById('login-email').value;
+      forgotPasswordForm.classList.remove('hidden');
+      forgotPasswordForm.classList.add('flex');
+    });
+    document.getElementById('btn-back-to-login').addEventListener('click', () => {
+      forgotPasswordForm.classList.add('hidden');
+      forgotPasswordForm.classList.remove('flex');
+      loginForm.classList.remove('hidden');
+    });
+
+    forgotPasswordForm.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      forgotError.classList.add('hidden');
+      forgotSuccess.classList.add('hidden');
+
+      const email = document.getElementById('forgot-email').value.trim();
+      const submitBtn = document.getElementById('forgot-submit');
+      submitBtn.disabled = true;
+      submitBtn.innerHTML = '<span class="spinner" style="border-top-color:#fff;border-color:rgba(255,255,255,.35)"></span> Đang gửi...';
+
+      const redirectTo = window.location.origin + window.location.pathname;
+      const { error } = await sb.auth.resetPasswordForEmail(email, { redirectTo });
+
+      submitBtn.disabled = false;
+      submitBtn.textContent = 'Gửi Email Khôi Phục';
+
+      if (error) {
+        forgotError.textContent = 'Lỗi: ' + error.message;
+        forgotError.classList.remove('hidden');
+        return;
+      }
+
+      forgotSuccess.textContent = `Đã gửi email khôi phục tới ${email}. Kiểm tra hộp thư (kể cả mục Spam) và bấm vào link trong email để đặt mật khẩu mới.`;
+      forgotSuccess.classList.remove('hidden');
+    });
+
+    document.getElementById('reset-password-form').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const resetError = document.getElementById('reset-error');
+      resetError.classList.add('hidden');
+
+      const pwd = document.getElementById('reset-password').value;
+      const pwdConfirm = document.getElementById('reset-password-confirm').value;
+      const submitBtn = document.getElementById('reset-submit');
+
+      if (pwd.length < 6) {
+        resetError.textContent = 'Mật khẩu phải có ít nhất 6 ký tự.';
+        resetError.classList.remove('hidden');
+        return;
+      }
+      if (pwd !== pwdConfirm) {
+        resetError.textContent = 'Mật khẩu xác nhận không khớp.';
+        resetError.classList.remove('hidden');
+        return;
+      }
+
+      submitBtn.disabled = true;
+      submitBtn.innerHTML = '<span class="spinner" style="border-top-color:#fff;border-color:rgba(255,255,255,.35)"></span> Đang lưu...';
+
+      const { data, error } = await sb.auth.updateUser({ password: pwd });
+
+      submitBtn.disabled = false;
+      submitBtn.textContent = 'Lưu Mật Khẩu Mới';
+
+      if (error) {
+        resetError.textContent = 'Lỗi: ' + error.message;
+        resetError.classList.remove('hidden');
+        return;
+      }
+
+      showToast('Đổi mật khẩu thành công!');
+      showDashboard(data.user);
+    });
+
+    if (isConfigured) {
+      sb.auth.onAuthStateChange((event) => {
+        if (event === 'PASSWORD_RECOVERY') showResetPasswordView();
+      });
     }
 
     // ---------- Hiện/ẩn mật khẩu ----------
