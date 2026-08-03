@@ -1,0 +1,135 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>404 - Không Tìm Thấy Trang - Cửa Hàng Kim Long</title>
+<meta name="robots" content="noindex">
+<link rel="icon" href="icon-192.png">
+<link rel="apple-touch-icon" href="icon-192.png">
+
+<script src="https://cdn.tailwindcss.com"></script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Sora:wght@400;600;700;800&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet">
+
+<script>
+  tailwind.config = {
+    theme: {
+      extend: {
+        colors: {
+          navy: { 950: '#0B1220', 900: '#0F1B33', 800: '#152A4D' },
+          brand: { DEFAULT: '#2563EB', light: '#5B8DFF' },
+          ember: { DEFAULT: '#F97316', dark: '#C2540A' },
+          slate: { 150: '#EEF1F6' }
+        },
+        fontFamily: {
+          display: ['Sora', 'sans-serif'],
+          body: ['Inter', 'sans-serif'],
+          mono: ['JetBrains Mono', 'monospace']
+        }
+      }
+    }
+  }
+</script>
+
+<style>
+  body { font-family: 'Inter', sans-serif; }
+  @keyframes page-in { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: translateY(0); } }
+  body { animation: page-in .35s ease-out; }
+
+  .keypad-texture {
+    background-image: radial-gradient(circle, rgba(255,255,255,0.09) 1.6px, transparent 1.6px);
+    background-size: 22px 22px;
+  }
+
+  .led-price {
+    font-family: 'JetBrains Mono', monospace;
+    background: #0B1220;
+    color: #5CF2A0;
+    text-shadow: 0 0 8px rgba(92, 242, 160, 0.6);
+    letter-spacing: 0.03em;
+  }
+
+  .focus-ring:focus-visible {
+    outline: 2px solid #F97316;
+    outline-offset: 2px;
+  }
+
+  @keyframes flicker {
+    0%, 100% { opacity: 1; }
+    92% { opacity: 1; }
+    93% { opacity: .4; }
+    94% { opacity: 1; }
+    96% { opacity: .6; }
+    97% { opacity: 1; }
+  }
+  .flicker { animation: flicker 4s ease-in-out infinite; }
+</style>
+</head>
+
+<body class="bg-slate-150 text-navy-950">
+
+  <!-- ============ NAVBAR ============ -->
+  <header class="sticky top-0 z-50 bg-navy-950/95 backdrop-blur border-b border-white/10">
+    <nav class="max-w-6xl mx-auto flex items-center justify-between px-5 py-4">
+      <a href="index.html" class="flex items-center gap-2 shrink-0">
+        <span class="w-9 h-9 rounded-lg bg-brand flex items-center justify-center text-white font-display font-800 text-sm">KL</span>
+        <span class="font-display font-800 text-lg tracking-tight text-white">Kim Long</span>
+      </a>
+
+      <ul class="hidden sm:flex items-center gap-8 font-body font-medium text-sm text-white/70">
+        <li><a href="san-pham.html" class="hover:text-brand-light transition-colors focus-ring rounded">Sản Phẩm</a></li>
+        <li><a href="khuyen-mai.html" class="hover:text-brand-light transition-colors focus-ring rounded">Khuyến Mãi</a></li>
+        <li><a href="lien-he.html" class="hover:text-brand-light transition-colors focus-ring rounded">Liên Hệ</a></li>
+      </ul>
+
+      <ul class="flex sm:hidden items-center gap-4 font-body text-xs font-medium text-white/70">
+        <li><a href="san-pham.html" class="focus-ring rounded">Sản Phẩm</a></li>
+        <li><a href="khuyen-mai.html" class="focus-ring rounded">Khuyến Mãi</a></li>
+        <li><a href="lien-he.html" class="focus-ring rounded">Liên Hệ</a></li>
+      </ul>
+    </nav>
+  </header>
+
+  <!-- ============ 404 ============ -->
+  <main class="keypad-texture bg-gradient-to-br from-navy-950 via-navy-900 to-navy-800 text-white min-h-[calc(100vh-73px)] flex items-center">
+    <div class="max-w-3xl mx-auto px-5 py-20 text-center flex flex-col items-center gap-6">
+      <span class="inline-flex items-center gap-1.5 text-xs font-display font-700 tracking-wide uppercase bg-white/10 border border-white/20 rounded-full px-3 py-1.5 text-white/70">
+        Cửa Hàng Kim Long
+      </span>
+
+      <div class="led-price flicker inline-flex text-6xl sm:text-8xl font-display font-800 rounded-2xl px-8 py-5 sm:px-10 sm:py-6">
+        404
+      </div>
+
+      <h1 class="font-display font-800 text-2xl sm:text-3xl">Trang Bạn Tìm Không Tồn Tại</h1>
+      <p class="font-body text-sm sm:text-base text-white/60 max-w-md">
+        Có thể đường dẫn đã bị gõ sai, hoặc trang đã được di chuyển/xóa. Bạn thử quay về trang chủ hoặc xem sản phẩm bên dưới nhé.
+      </p>
+
+      <div class="flex flex-wrap items-center justify-center gap-3 mt-2">
+        <a href="index.html"
+           class="focus-ring inline-flex items-center gap-2 bg-ember hover:bg-ember-dark text-white font-display font-700 text-sm px-6 py-3 rounded-xl shadow-[0_10px_25px_-8px_rgba(249,115,22,0.6)] transition-colors">
+          <span aria-hidden="true">←</span> Về Trang Chủ
+        </a>
+        <a href="san-pham.html"
+           class="focus-ring inline-flex items-center gap-2 border border-white/20 hover:border-brand-light hover:text-brand-light text-white font-display font-700 text-sm px-6 py-3 rounded-xl transition-colors">
+          Xem Sản Phẩm →
+        </a>
+      </div>
+
+      <p class="font-body text-xs text-white/40 mt-4">
+        Cần hỗ trợ? <a href="lien-he.html" class="underline hover:text-white transition-colors">Liên hệ với chúng tôi</a> · Hotline 0364.878.771
+      </p>
+    </div>
+  </main>
+
+  <!-- ============ FOOTER ============ -->
+  <footer class="border-t border-slate-200 bg-white">
+    <div class="max-w-6xl mx-auto px-5 py-8 text-center text-xs sm:text-sm text-navy-900/50 font-body">
+      © 2026 Cửa Hàng Kim Long · Hotline 0364.878.771 · <a href="admin.html" class="hover:text-navy-900/70 transition-colors">Quản trị</a>
+    </div>
+  </footer>
+
+</body>
+</html>
