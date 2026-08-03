@@ -6,7 +6,7 @@
 // toàn trong biến môi trường (Supabase tự inject sẵn, không cần cấu hình thêm),
 // và chỉ cho phép người gọi đã đăng nhập hợp lệ (Authorization Bearer là access
 // token thật từ sb.auth.signInWithPassword) thực hiện thao tác.
-import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+import { createClient } from "npm:@supabase/supabase-js@2";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
