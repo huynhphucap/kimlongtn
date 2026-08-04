@@ -312,6 +312,7 @@
     <a href="tel:0364878771" title="Gọi ngay: 0364.878.771" class="focus-ring w-12 h-12 rounded-full bg-ember text-white flex items-center justify-center shadow-lg hover:bg-ember-dark transition-colors">📞</a>
   </div>
 
+  <script src="js/shared.js"></script>
   <script>
     // Đếm ngược tới nửa đêm mỗi ngày để tạo cảm giác flash sale hằng ngày
     function updateCountdown() {
@@ -326,27 +327,12 @@
       document.getElementById('cd-m').textContent = String(m).padStart(2, '0');
       document.getElementById('cd-s').textContent = String(s).padStart(2, '0');
     }
-    function initScrollReveal() {
-      const els = document.querySelectorAll('.reveal:not(.reveal-visible)');
-      if (!('IntersectionObserver' in window)) { els.forEach(el => el.classList.add('reveal-visible')); return; }
-      const io = new IntersectionObserver((entries) => {
-        entries.forEach(entry => {
-          if (entry.isIntersecting) {
-            entry.target.classList.add('reveal-visible');
-            io.unobserve(entry.target);
-          }
-        });
-      }, { threshold: 0.15 });
-      els.forEach(el => io.observe(el));
-    }
     initScrollReveal();
 
     updateCountdown();
     setInterval(updateCountdown, 1000);
 
-    if ('serviceWorker' in navigator) {
-      navigator.serviceWorker.register('service-worker.js').catch(() => {});
-    }
+    registerServiceWorker();
   </script>
 </body>
 </html>

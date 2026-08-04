@@ -132,6 +132,11 @@
   }
   @keyframes spin { to { transform: rotate(360deg); } }
 
+  @keyframes toast-in { from { opacity: 0; transform: translateX(24px) scale(.96); } to { opacity: 1; transform: translateX(0) scale(1); } }
+  @keyframes toast-out { from { opacity: 1; transform: translateX(0) scale(1); } to { opacity: 0; transform: translateX(24px) scale(.96); } }
+  .toast { animation: toast-in .25s ease-out; }
+  .toast.toast-leaving { animation: toast-out .25s ease-in forwards; }
+
   /* Khung xám nhấp nháy khi đang tải dữ liệu */
   @keyframes skeleton-shimmer { 0% { background-position: 200% 0; } 100% { background-position: -200% 0; } }
   .skeleton {
@@ -258,14 +263,8 @@
     </div>
   </div>
 
+  <script src="js/shared.js"></script>
   <script>
-    // ====== CẤU HÌNH SUPABASE ======
-    // Xem hướng dẫn lấy 2 giá trị này trong file huong-dan-supabase.md
-    const SUPABASE_URL = "https://tvqiphlmvcbmpwexihby.supabase.co";
-    const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InR2cWlwaGxtdmNibXB3ZXhpaGJ5Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODUyMTc2NzIsImV4cCI6MjEwMDc5MzY3Mn0.oz5-F_1UCM0aXf9T9bFd7cpDgKAa0ReZfG1kfxp5ni0";
-    const isConfigured = SUPABASE_URL.startsWith('https://') && SUPABASE_ANON_KEY.startsWith('eyJ');
-    const sb = isConfigured ? window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY) : null;
-
     // Số sản phẩm hiển thị mỗi trang
     const PAGE_SIZE = 10;
     let currentPage = 1;
@@ -341,48 +340,7 @@
         img: "https://images.unsplash.com/photo-1556819132-52350b2a7836?w=300&h=300&fit=crop" }
     ];
 
-    function escapeHtml(str) {
-      const map = { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' };
-      return String(str ?? '').replace(/[&<>"']/g, ch => map[ch]);
-    }
-
-    // ---------- Toast thông báo ----------
-    function showToast(message, type = 'success') {
-      const container = document.getElementById('toast-container');
-      const toast = document.createElement('div');
-      const styles = {
-        success: { bg: 'bg-emerald-600', icon: '✓' },
-        error: { bg: 'bg-red-600', icon: '✕' }
-      };
-      const s = styles[type] || styles.success;
-      toast.className = `${s.bg} text-white font-body text-sm font-medium rounded-xl px-4 py-3 flex items-center gap-2.5 max-w-xs shadow-[0_12px_28px_-12px_rgba(15,27,51,.35)]`;
-      toast.innerHTML = `<span class="font-display font-800">${s.icon}</span><span>${escapeHtml(message)}</span>`;
-      container.appendChild(toast);
-      setTimeout(() => toast.remove(), 3000);
-    }
-
     // ---------- Gửi yêu cầu báo giá trực tiếp (không qua giỏ hàng) ----------
-    const CONTACT_INFO_KEY = 'kl_contact_info';
-    const QUOTE_SENT_KEY = 'kl_quote_sent';
-    const QUOTE_PREFIX = 'Yêu cầu báo giá cho:';
-
-    function getContactInfo() {
-      try { return JSON.parse(localStorage.getItem(CONTACT_INFO_KEY)); } catch { return null; }
-    }
-    function saveContactInfo(info) {
-      localStorage.setItem(CONTACT_INFO_KEY, JSON.stringify(info));
-    }
-    function getSentQuoteIds() {
-      try { return JSON.parse(localStorage.getItem(QUOTE_SENT_KEY)) || []; } catch { return []; }
-    }
-    function isQuoteSent(id) {
-      return getSentQuoteIds().some(x => String(x) === String(id));
-    }
-    function markQuoteSent(id) {
-      const ids = getSentQuoteIds();
-      if (!isQuoteSent(id)) { ids.push(id); localStorage.setItem(QUOTE_SENT_KEY, JSON.stringify(ids)); }
-    }
-
     async function submitQuoteRequest(product, name, phone) {
       const message = `${QUOTE_PREFIX}\n- ${product.name}${product.new_price ? ` (${product.new_price})` : ''}`;
       const { error } = await sb.from('contacts').insert({ name, phone, message });
@@ -495,30 +453,30 @@
 
       grid.innerHTML = products.map((p, i) => `
         <div class="card-enter hover-lift bg-white border border-slate-200 rounded-2xl overflow-hidden flex flex-col relative" style="animation-delay:${i * 60}ms">
-          ${p.badge ? `<span class="absolute top-2 left-2 bg-white text-ember text-xs font-display font-700 px-2.5 py-1 rounded-full z-10 shadow-[0_2px_4px_rgba(0,0,0,.15)] border border-ember/20">${p.badge}</span>` : ''}
+          ${p.badge ? `<span class="absolute top-2 left-2 bg-white text-ember text-xs font-display font-700 px-2.5 py-1 rounded-full z-10 shadow-[0_2px_4px_rgba(0,0,0,.15)] border border-ember/20">${escapeHtml(p.badge)}</span>` : ''}
           <button type="button" data-quote-id="${p.id}"
                   class="quote-toggle-btn focus-ring absolute top-2 right-2 z-10 w-7 h-7 rounded-full flex items-center justify-center shadow-[0_2px_4px_rgba(0,0,0,.15)] transition-colors ${isQuoteSent(p.id) ? 'quote-done' : ''}"
                   title="${isQuoteSent(p.id) ? 'Đã gửi yêu cầu báo giá' : 'Yêu cầu báo giá'}" ${isQuoteSent(p.id) ? 'disabled' : ''}>
             ${quoteButtonIcon(isQuoteSent(p.id))}
           </button>
-          <a href="chi-tiet-san-pham.html?id=${p.id}" class="aspect-square bg-slate-100 flex items-center justify-center overflow-hidden">
-            <img src="${p.img}" alt="${p.name}" class="object-cover w-full h-full">
+          <a href="chi-tiet-san-pham.html?id=${encodeURIComponent(p.id)}" class="aspect-square bg-slate-100 flex items-center justify-center overflow-hidden">
+            <img src="${escapeHtml(p.img)}" alt="${escapeHtml(p.name)}" class="object-cover w-full h-full">
           </a>
           <div class="relative h-5">
             <div class="absolute -top-4 left-0 right-0 flex items-stretch drop-shadow-md">
               <span class="promo-ribbon text-white text-[11px] font-display font-800 uppercase px-3 py-1.5 flex-1 flex items-center justify-center rounded-l-sm">Khuyến Mãi Đặc Biệt</span>
-              <span class="promo-badge-3d text-amber-900 text-xs font-display font-800 px-2.5 py-1.5 flex items-center rounded-r-sm">${p.discount}</span>
+              <span class="promo-badge-3d text-amber-900 text-xs font-display font-800 px-2.5 py-1.5 flex items-center rounded-r-sm">${escapeHtml(p.discount)}</span>
             </div>
           </div>
           <div class="p-3 pt-6 flex flex-col gap-1 flex-1 font-body">
-            <a href="chi-tiet-san-pham.html?id=${p.id}" class="focus-ring text-sm font-display font-700 text-navy-950 hover:text-brand transition-colors leading-snug line-clamp-2 min-h-[2.5em]">${p.name}</a>
-            <div class="price-strike text-navy-900/40 text-sm">${p.old_price}</div>
+            <a href="chi-tiet-san-pham.html?id=${encodeURIComponent(p.id)}" class="focus-ring text-sm font-display font-700 text-navy-950 hover:text-brand transition-colors leading-snug line-clamp-2 min-h-[2.5em]">${escapeHtml(p.name)}</a>
+            <div class="price-strike text-navy-900/40 text-sm">${escapeHtml(p.old_price)}</div>
             <div class="flex items-center gap-2">
-              <span class="text-ember-dark font-display font-800 text-lg">${p.new_price}</span>
-              <span class="price-badge-3d text-white text-xs font-display font-700 px-1.5 py-0.5 rounded">${p.discount}</span>
+              <span class="text-ember-dark font-display font-800 text-lg">${escapeHtml(p.new_price)}</span>
+              <span class="price-badge-3d text-white text-xs font-display font-700 px-1.5 py-0.5 rounded">${escapeHtml(p.discount)}</span>
             </div>
             <div class="flex flex-wrap gap-1 mt-1">
-              ${(p.tags || []).map(t => `<span class="border border-slate-200 rounded px-2 py-0.5 text-[11px] text-navy-900/50">${t}</span>`).join('')}
+              ${(p.tags || []).map(t => `<span class="border border-slate-200 rounded px-2 py-0.5 text-[11px] text-navy-900/50">${escapeHtml(t)}</span>`).join('')}
             </div>
           </div>
         </div>
@@ -670,10 +628,7 @@
     });
 
     loadProducts(1);
-
-    if ('serviceWorker' in navigator) {
-      navigator.serviceWorker.register('service-worker.js').catch(() => {});
-    }
+    registerServiceWorker();
   </script>
 </body>
 </html>

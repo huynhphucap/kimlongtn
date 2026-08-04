@@ -92,6 +92,11 @@
   }
   @keyframes spin { to { transform: rotate(360deg); } }
 
+  @keyframes toast-in { from { opacity: 0; transform: translateX(24px) scale(.96); } to { opacity: 1; transform: translateX(0) scale(1); } }
+  @keyframes toast-out { from { opacity: 1; transform: translateX(0) scale(1); } to { opacity: 0; transform: translateX(24px) scale(.96); } }
+  .toast { animation: toast-in .25s ease-out; }
+  .toast.toast-leaving { animation: toast-out .25s ease-in forwards; }
+
   @media (prefers-reduced-motion: no-preference) {
     .hover-lift { transition: transform .25s ease, box-shadow .25s ease; }
     .hover-lift:hover { transform: translateY(-4px); box-shadow: 0 16px 30px -12px rgba(15,27,51,0.35); }
@@ -229,10 +234,8 @@
     <span id="lightbox-counter" class="hidden absolute bottom-4 left-1/2 -translate-x-1/2 text-white/80 text-xs font-body bg-white/10 rounded-full px-3 py-1"></span>
   </div>
 
+  <script src="js/shared.js"></script>
   <script>
-    const SUPABASE_URL = "https://tvqiphlmvcbmpwexihby.supabase.co";
-    const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InR2cWlwaGxtdmNibXB3ZXhpaGJ5Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODUyMTc2NzIsImV4cCI6MjEwMDc5MzY3Mn0.oz5-F_1UCM0aXf9T9bFd7cpDgKAa0ReZfG1kfxp5ni0";
-
     const params = new URLSearchParams(window.location.search);
     const productId = params.get('id');
 
@@ -254,51 +257,6 @@
         old_price: "890.000 đ", new_price: "690.000 đ", tags: ["Mâm Từ Đơn", "Hẹn Giờ", "Cảm Ứng"],
         img: "https://images.unsplash.com/photo-1556819132-52350b2a7836?w=700&h=700&fit=crop" }
     ];
-
-    const isConfigured = SUPABASE_URL.startsWith('https://') && SUPABASE_ANON_KEY.startsWith('eyJ');
-    const sb = isConfigured ? window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY) : null;
-
-    function escapeHtml(str) {
-      const map = { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' };
-      return String(str ?? '').replace(/[&<>"']/g, ch => map[ch]);
-    }
-
-    // ---------- Toast thông báo ----------
-    function showToast(message, type = 'success') {
-      const container = document.getElementById('toast-container');
-      const toast = document.createElement('div');
-      const styles = {
-        success: { bg: 'bg-emerald-600', icon: '✓' },
-        error: { bg: 'bg-red-600', icon: '✕' }
-      };
-      const s = styles[type] || styles.success;
-      toast.className = `${s.bg} text-white font-body text-sm font-medium rounded-xl px-4 py-3 flex items-center gap-2.5 max-w-xs shadow-[0_12px_28px_-12px_rgba(15,27,51,.35)]`;
-      toast.innerHTML = `<span class="font-display font-800">${s.icon}</span><span>${escapeHtml(message)}</span>`;
-      container.appendChild(toast);
-      setTimeout(() => toast.remove(), 3000);
-    }
-
-    // ---------- Gửi yêu cầu báo giá trực tiếp (không qua giỏ hàng) ----------
-    const CONTACT_INFO_KEY = 'kl_contact_info';
-    const QUOTE_SENT_KEY = 'kl_quote_sent';
-    const QUOTE_PREFIX = 'Yêu cầu báo giá cho:';
-
-    function getContactInfo() {
-      try { return JSON.parse(localStorage.getItem(CONTACT_INFO_KEY)); } catch { return null; }
-    }
-    function saveContactInfo(info) {
-      localStorage.setItem(CONTACT_INFO_KEY, JSON.stringify(info));
-    }
-    function getSentQuoteIds() {
-      try { return JSON.parse(localStorage.getItem(QUOTE_SENT_KEY)) || []; } catch { return []; }
-    }
-    function isQuoteSent(id) {
-      return getSentQuoteIds().some(x => String(x) === String(id));
-    }
-    function markQuoteSent(id) {
-      const ids = getSentQuoteIds();
-      if (!isQuoteSent(id)) { ids.push(id); localStorage.setItem(QUOTE_SENT_KEY, JSON.stringify(ids)); }
-    }
 
     async function submitQuoteRequest(product, name, phone) {
       const message = `${QUOTE_PREFIX}\n- ${product.name}${product.new_price ? ` (${product.new_price})` : ''}`;
@@ -499,11 +457,11 @@
       document.getElementById('breadcrumb').innerHTML = `
         <a href="index.html" class="hover:text-brand transition-colors">Trang Chủ</a> /
         <a href="san-pham.html" class="hover:text-brand transition-colors">Sản Phẩm</a> /
-        <span class="text-navy-950 font-medium">${p.name}</span>`;
+        <span class="text-navy-950 font-medium">${escapeHtml(p.name)}</span>`;
 
-      const description = p.description
+      const description = escapeHtml(p.description
         ? p.description
-        : `Sản phẩm ${p.name} thuộc danh mục ${p.category || 'Đồ Điện Gia Dụng'}. Đặc điểm nổi bật: ${(p.tags || []).join(', ')}. Hàng chính hãng, có bảo hành, giao lắp tận nơi.`;
+        : `Sản phẩm ${p.name} thuộc danh mục ${p.category || 'Đồ Điện Gia Dụng'}. Đặc điểm nổi bật: ${(p.tags || []).join(', ')}. Hàng chính hãng, có bảo hành, giao lắp tận nơi.`);
 
       const images = Array.isArray(p.images) && p.images.length ? p.images : [p.img];
       currentImages = images;
@@ -515,7 +473,7 @@
           <div class="relative group">
             <div id="main-img-trigger" class="zoom-img-wrap rounded-2xl bg-white border border-slate-200 cursor-zoom-in">
               <div class="aspect-square bg-slate-100 overflow-hidden rounded-2xl">
-                <img id="main-product-img" src="${images[0]}" alt="${p.name}" class="w-full h-full object-cover">
+                <img id="main-product-img" src="${escapeHtml(images[0])}" alt="${escapeHtml(p.name)}" class="w-full h-full object-cover">
               </div>
             </div>
             <span class="absolute top-2 right-2 bg-navy-950/60 text-white text-[11px] font-body px-2.5 py-1 rounded-full flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none">
@@ -536,27 +494,27 @@
           <div class="grid grid-cols-5 gap-2">
             ${images.map((img, i) => `
               <button type="button" data-index="${i}" class="thumb-btn focus-ring aspect-square rounded-lg overflow-hidden border-2 ${i === 0 ? 'border-brand' : 'border-transparent'} bg-slate-100">
-                <img src="${img}" alt="${p.name} - ảnh ${i + 1}" class="w-full h-full object-cover">
+                <img src="${escapeHtml(img)}" alt="${escapeHtml(p.name)} - ảnh ${i + 1}" class="w-full h-full object-cover">
               </button>
             `).join('')}
           </div>` : ''}
         </div>
 
         <div class="flex flex-col gap-4">
-          ${p.category ? `<span class="self-start text-xs font-body font-medium text-brand bg-brand/10 rounded-full px-3 py-1">${p.category}</span>` : ''}
+          ${p.category ? `<span class="self-start text-xs font-body font-medium text-brand bg-brand/10 rounded-full px-3 py-1">${escapeHtml(p.category)}</span>` : ''}
 
-          <h1 class="font-display font-800 text-2xl sm:text-3xl text-navy-950 leading-snug">${p.name}</h1>
+          <h1 class="font-display font-800 text-2xl sm:text-3xl text-navy-950 leading-snug">${escapeHtml(p.name)}</h1>
 
           <div class="flex flex-wrap gap-2">
-            ${(p.tags || []).map(t => `<span class="border border-slate-200 rounded-full px-3 py-1 text-xs text-navy-900/60 font-body">${t}</span>`).join('')}
+            ${(p.tags || []).map(t => `<span class="border border-slate-200 rounded-full px-3 py-1 text-xs text-navy-900/60 font-body">${escapeHtml(t)}</span>`).join('')}
           </div>
 
           <div class="flex items-center gap-3 pt-2">
-            <span class="price-strike text-navy-900/40 text-lg font-body">${p.old_price}</span>
-            <span class="price-badge-3d text-white text-xs font-display font-700 px-2 py-1 rounded">${p.discount}</span>
+            <span class="price-strike text-navy-900/40 text-lg font-body">${escapeHtml(p.old_price)}</span>
+            <span class="price-badge-3d text-white text-xs font-display font-700 px-2 py-1 rounded">${escapeHtml(p.discount)}</span>
           </div>
           <div class="led-price inline-flex self-start text-2xl sm:text-3xl font-display font-800 rounded-xl px-5 py-3">
-            ${p.new_price}
+            ${escapeHtml(p.new_price)}
           </div>
 
           <p class="font-body text-sm text-navy-900/70 leading-relaxed border-t border-slate-200 pt-4 mt-2">
@@ -610,13 +568,13 @@
       section.classList.remove('hidden');
 
       document.getElementById('related-grid').innerHTML = list.slice(0, 4).map((p, i) => `
-        <a href="chi-tiet-san-pham.html?id=${p.id}" class="card-enter hover-lift bg-white border border-slate-200 rounded-2xl overflow-hidden flex flex-col" style="animation-delay:${i * 80}ms">
+        <a href="chi-tiet-san-pham.html?id=${encodeURIComponent(p.id)}" class="card-enter hover-lift bg-white border border-slate-200 rounded-2xl overflow-hidden flex flex-col" style="animation-delay:${i * 80}ms">
           <div class="aspect-square bg-slate-100 overflow-hidden">
-            <img src="${p.img}" alt="${p.name}" class="w-full h-full object-cover">
+            <img src="${escapeHtml(p.img)}" alt="${escapeHtml(p.name)}" class="w-full h-full object-cover">
           </div>
           <div class="p-3 flex flex-col gap-1">
-            <p class="text-sm font-display font-700 text-navy-950 leading-snug line-clamp-2 min-h-[2.5em]">${p.name}</p>
-            <span class="text-ember-dark font-display font-800 text-sm">${p.new_price}</span>
+            <p class="text-sm font-display font-700 text-navy-950 leading-snug line-clamp-2 min-h-[2.5em]">${escapeHtml(p.name)}</p>
+            <span class="text-ember-dark font-display font-800 text-sm">${escapeHtml(p.new_price)}</span>
           </div>
         </a>
       `).join('');
@@ -672,10 +630,7 @@
     }
 
     loadProduct();
-
-    if ('serviceWorker' in navigator) {
-      navigator.serviceWorker.register('service-worker.js').catch(() => {});
-    }
+    registerServiceWorker();
   </script>
 </body>
 </html>

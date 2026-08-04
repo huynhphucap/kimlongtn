@@ -757,23 +757,15 @@
   <!-- Toast thông báo -->
   <div id="toast-container" class="fixed top-20 right-4 z-[100] flex flex-col gap-2 items-end"></div>
 
+  <script src="js/shared.js"></script>
   <script>
-    // ====== CẤU HÌNH SUPABASE ======
-    // Dán CÙNG URL và Key y hệt như trong san-pham.html / index.html
-    const SUPABASE_URL = "https://tvqiphlmvcbmpwexihby.supabase.co";
-    const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InR2cWlwaGxtdmNibXB3ZXhpaGJ5Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODUyMTc2NzIsImV4cCI6MjEwMDc5MzY3Mn0.oz5-F_1UCM0aXf9T9bFd7cpDgKAa0ReZfG1kfxp5ni0";
-
-    const isConfigured = SUPABASE_URL.startsWith('https://') && SUPABASE_ANON_KEY.startsWith('eyJ');
-    const sb = isConfigured ? window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY) : null;
-
     let allProducts = [];
     let allContacts = [];
     let editingId = null;
     let productImages = [];
 
     // Yêu cầu báo giá được gửi chung qua bảng "contacts" (từ giỏ báo giá ở trang Sản Phẩm),
-    // nhận diện bằng tiền tố cố định gắn vào đầu nội dung tin nhắn — xem lien-he.html.
-    const QUOTE_PREFIX = 'Yêu cầu báo giá cho:';
+    // nhận diện bằng QUOTE_PREFIX (định nghĩa trong js/shared.js) — xem san-pham.html/lien-he.html.
     function isQuoteRequest(c) {
       return typeof c.message === 'string' && c.message.startsWith(QUOTE_PREFIX);
     }
@@ -832,11 +824,6 @@
     }
 
     // ---------- Tiện ích ----------
-    function escapeHtml(str) {
-      const map = { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' };
-      return String(str ?? '').replace(/[&<>"']/g, ch => map[ch]);
-    }
-
     async function copyToClipboard(text) {
       try {
         await navigator.clipboard.writeText(text);
@@ -868,30 +855,9 @@
     confirmCancelBtn.addEventListener('click', () => closeConfirmModal(false));
     confirmModal.querySelector('[data-close-confirm]').addEventListener('click', () => closeConfirmModal(false));
 
-    // ---------- Toast thông báo ----------
-    function showToast(message, type = 'success') {
-      const container = document.getElementById('toast-container');
-      const toast = document.createElement('div');
-
-      const styles = {
-        success: { bg: 'bg-emerald-600', icon: '✓' },
-        error: { bg: 'bg-red-600', icon: '✕' }
-      };
-      const s = styles[type] || styles.success;
-
-      toast.className = `toast ${s.bg} text-white font-body text-sm font-medium rounded-xl px-4 py-3 flex items-center gap-2.5 max-w-xs`;
-      toast.innerHTML = `<span class="font-display font-800">${s.icon}</span><span>${message}</span>`;
-      container.appendChild(toast);
-
-      setTimeout(() => {
-        toast.classList.add('toast-leaving');
-        setTimeout(() => toast.remove(), 250);
-      }, 3000);
-    }
-
     // ---------- Auth ----------
     async function checkSession() {
-      if (!isConfigured) return;
+      if (!isConfigured || !sb) return;
       const { data } = await sb.auth.getSession();
       if (data.session) {
         showDashboard(data.session.user);
@@ -1998,22 +1964,28 @@
       if (statCardContacts) statCardContacts.textContent = count || 0;
 
       const badge = document.getElementById('contacts-badge');
-      const { count: unreadCount, error: unreadErr } = await sb.from('contacts').select('*', { count: 'exact', head: true }).eq('is_read', false);
-      const shownCount = unreadErr ? count : unreadCount;
-      if (shownCount && shownCount > 0) {
-        badge.textContent = shownCount;
+      const quotesBadge = document.getElementById('quotes-badge');
+
+      // Bảng "contacts" chứa cả tin nhắn liên hệ thường lẫn yêu cầu báo giá (phân biệt
+      // bằng QUOTE_PREFIX trong message — xem isQuoteRequest). Lấy về message để đếm
+      // riêng từng loại bằng đúng logic đang dùng để lọc danh sách hiển thị, tránh
+      // trường hợp yêu cầu báo giá mới bị cộng nhầm vào badge "Tin Nhắn Liên Hệ".
+      const { data: unreadRows, error: unreadErr } = await sb.from('contacts').select('id, message').eq('is_read', false);
+
+      // Cột "is_read" có thể chưa tồn tại ở bảng contacts cũ — khi đó tạm hiển thị
+      // tổng số tin nhắn cho badge liên hệ, không tách được yêu cầu báo giá.
+      const contactsCount = unreadErr ? count : unreadRows.filter(c => !isQuoteRequest(c)).length;
+      const quotesCount = unreadErr ? 0 : unreadRows.filter(isQuoteRequest).length;
+
+      if (contactsCount && contactsCount > 0) {
+        badge.textContent = contactsCount;
         badge.classList.remove('hidden');
       } else {
         badge.classList.add('hidden');
       }
 
-      const quotesBadge = document.getElementById('quotes-badge');
-      const { count: unreadQuoteCount, error: quoteErr } = await sb.from('contacts')
-        .select('*', { count: 'exact', head: true })
-        .eq('is_read', false)
-        .ilike('message', `${QUOTE_PREFIX}%`);
-      if (!quoteErr && unreadQuoteCount > 0) {
-        quotesBadge.textContent = unreadQuoteCount;
+      if (quotesCount > 0) {
+        quotesBadge.textContent = quotesCount;
         quotesBadge.classList.remove('hidden');
       } else {
         quotesBadge.classList.add('hidden');

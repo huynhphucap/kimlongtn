@@ -295,12 +295,8 @@
     </div>
   </footer>
 
+  <script src="js/shared.js"></script>
   <script>
-    // ====== CẤU HÌNH SUPABASE ======
-    // Dán CÙNG URL và Key y hệt như trong san-pham.html
-    const SUPABASE_URL = "https://tvqiphlmvcbmpwexihby.supabase.co";
-    const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InR2cWlwaGxtdmNibXB3ZXhpaGJ5Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODUyMTc2NzIsImV4cCI6MjEwMDc5MzY3Mn0.oz5-F_1UCM0aXf9T9bFd7cpDgKAa0ReZfG1kfxp5ni0";
-
     // Dữ liệu dự phòng nếu chưa cấu hình Supabase hoặc mất mạng
     const FALLBACK_FEATURED = [
       { id: 1, name: "Nồi Cơm Điện Kim Long 1.8L", new_price: "590.000 đ",
@@ -333,38 +329,24 @@
       grid.innerHTML = products.map((p, i) => `
         <article class="card-enter hover-lift bg-white rounded-2xl border border-slate-200 overflow-hidden flex flex-col" style="animation-delay:${i * 100}ms">
           <div class="aspect-square bg-slate-100 overflow-hidden">
-            <img src="${p.img}" alt="${p.name}" class="w-full h-full object-cover">
+            <img src="${escapeHtml(p.img)}" alt="${escapeHtml(p.name)}" class="w-full h-full object-cover">
           </div>
           <div class="p-5 flex flex-col gap-3 flex-1">
-            <h3 class="font-display font-700 text-base text-navy-950 leading-snug">${p.name}</h3>
-            <p class="font-body text-xs text-navy-900/50">${(p.tags || []).join(' · ')}</p>
+            <h3 class="font-display font-700 text-base text-navy-950 leading-snug">${escapeHtml(p.name)}</h3>
+            <p class="font-body text-xs text-navy-900/50">${(p.tags || []).map(escapeHtml).join(' · ')}</p>
             <div class="mt-auto flex items-center justify-between pt-2">
-              <span class="led-price text-sm font-700 rounded px-3 py-1.5">${p.new_price}</span>
-              <a href="chi-tiet-san-pham.html?id=${p.id}" class="focus-ring text-xs font-display font-700 text-brand hover:text-ember transition-colors">Chi tiết →</a>
+              <span class="led-price text-sm font-700 rounded px-3 py-1.5">${escapeHtml(p.new_price)}</span>
+              <a href="chi-tiet-san-pham.html?id=${encodeURIComponent(p.id)}" class="focus-ring text-xs font-display font-700 text-brand hover:text-ember transition-colors">Chi tiết →</a>
             </div>
           </div>
         </article>
       `).join('');
     }
 
-    function initScrollReveal() {
-      const els = document.querySelectorAll('.reveal:not(.reveal-visible)');
-      if (!('IntersectionObserver' in window)) { els.forEach(el => el.classList.add('reveal-visible')); return; }
-      const io = new IntersectionObserver((entries) => {
-        entries.forEach(entry => {
-          if (entry.isIntersecting) {
-            entry.target.classList.add('reveal-visible');
-            io.unobserve(entry.target);
-          }
-        });
-      }, { threshold: 0.15 });
-      els.forEach(el => io.observe(el));
-    }
     initScrollReveal();
 
     async function loadFeatured() {
       renderFeaturedSkeletons();
-      const isConfigured = SUPABASE_URL.startsWith('https://') && SUPABASE_ANON_KEY.startsWith('eyJ');
 
       if (!isConfigured) {
         console.warn('Chưa cấu hình Supabase — trang chủ đang hiển thị sản phẩm mẫu.');
@@ -373,8 +355,7 @@
       }
 
       try {
-        const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
-        const { data, error } = await supabase.from('products').select('*').order('id').limit(3);
+        const { data, error } = await sb.from('products').select('*').order('id').limit(3);
         if (error || !data || data.length === 0) throw error || new Error('Không có dữ liệu');
         renderFeatured(data);
       } catch (err) {
@@ -384,10 +365,7 @@
     }
 
     loadFeatured();
-
-    if ('serviceWorker' in navigator) {
-      navigator.serviceWorker.register('service-worker.js').catch(() => {});
-    }
+    registerServiceWorker();
   </script>
 </body>
 </html>
