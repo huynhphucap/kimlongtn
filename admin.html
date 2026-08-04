@@ -1964,22 +1964,28 @@
       if (statCardContacts) statCardContacts.textContent = count || 0;
 
       const badge = document.getElementById('contacts-badge');
-      const { count: unreadCount, error: unreadErr } = await sb.from('contacts').select('*', { count: 'exact', head: true }).eq('is_read', false);
-      const shownCount = unreadErr ? count : unreadCount;
-      if (shownCount && shownCount > 0) {
-        badge.textContent = shownCount;
+      const quotesBadge = document.getElementById('quotes-badge');
+
+      // Bảng "contacts" chứa cả tin nhắn liên hệ thường lẫn yêu cầu báo giá (phân biệt
+      // bằng QUOTE_PREFIX trong message — xem isQuoteRequest). Lấy về message để đếm
+      // riêng từng loại bằng đúng logic đang dùng để lọc danh sách hiển thị, tránh
+      // trường hợp yêu cầu báo giá mới bị cộng nhầm vào badge "Tin Nhắn Liên Hệ".
+      const { data: unreadRows, error: unreadErr } = await sb.from('contacts').select('id, message').eq('is_read', false);
+
+      // Cột "is_read" có thể chưa tồn tại ở bảng contacts cũ — khi đó tạm hiển thị
+      // tổng số tin nhắn cho badge liên hệ, không tách được yêu cầu báo giá.
+      const contactsCount = unreadErr ? count : unreadRows.filter(c => !isQuoteRequest(c)).length;
+      const quotesCount = unreadErr ? 0 : unreadRows.filter(isQuoteRequest).length;
+
+      if (contactsCount && contactsCount > 0) {
+        badge.textContent = contactsCount;
         badge.classList.remove('hidden');
       } else {
         badge.classList.add('hidden');
       }
 
-      const quotesBadge = document.getElementById('quotes-badge');
-      const { count: unreadQuoteCount, error: quoteErr } = await sb.from('contacts')
-        .select('*', { count: 'exact', head: true })
-        .eq('is_read', false)
-        .ilike('message', `${QUOTE_PREFIX}%`);
-      if (!quoteErr && unreadQuoteCount > 0) {
-        quotesBadge.textContent = unreadQuoteCount;
+      if (quotesCount > 0) {
+        quotesBadge.textContent = quotesCount;
         quotesBadge.classList.remove('hidden');
       } else {
         quotesBadge.classList.add('hidden');
