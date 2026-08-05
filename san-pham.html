@@ -352,8 +352,13 @@
 
     function toggleCartItem(product, btn) {
       if (isQuoteSent(product.id)) return;
-      if (isInCart(product.id)) removeFromCart(product.id);
-      else addToCart(product);
+      if (isInCart(product.id)) {
+        removeFromCart(product.id);
+        showToast(`Đã bỏ "${product.name}" khỏi giỏ báo giá.`);
+      } else {
+        addToCart(product);
+        showToast(`Đã thêm "${product.name}" vào giỏ báo giá!`);
+      }
       updateQuoteButton(btn, product.id);
       refreshCartUI();
     }
