@@ -195,29 +195,7 @@
   <!-- Toast thông báo -->
   <div id="toast-container" class="fixed top-20 right-4 z-[100] flex flex-col gap-2 items-end"></div>
 
-  <!-- Modal: nhập thông tin liên hệ để gửi yêu cầu báo giá -->
-  <div id="quote-info-modal" class="hidden fixed inset-0 z-[110] flex items-center justify-center p-4">
-    <div class="absolute inset-0 bg-navy-950/60 backdrop-blur-sm" data-close-quote-modal></div>
-    <div class="relative bg-white rounded-2xl border border-slate-200 shadow-[0_24px_48px_-20px_rgba(0,0,0,.4)] w-full max-w-sm p-6">
-      <h3 class="font-display font-700 text-lg text-navy-950 mb-1">Gửi Yêu Cầu Báo Giá</h3>
-      <p id="quote-modal-product" class="font-body text-sm text-navy-900/60 mb-4"></p>
-      <form id="quote-info-form" class="flex flex-col gap-3">
-        <div class="flex flex-col gap-1.5">
-          <label class="font-body text-xs font-medium text-navy-900/60">Họ và tên</label>
-          <input type="text" id="qi-name" required placeholder="Nguyễn Văn A" class="form-input border border-slate-200 rounded-lg px-3.5 py-2.5 text-sm font-body">
-        </div>
-        <div class="flex flex-col gap-1.5">
-          <label class="font-body text-xs font-medium text-navy-900/60">Số điện thoại</label>
-          <input type="tel" id="qi-phone" required placeholder="09xx xxx xxx" class="form-input border border-slate-200 rounded-lg px-3.5 py-2.5 text-sm font-body">
-        </div>
-        <p id="qi-error" class="hidden text-sm text-red-600 bg-red-50 border border-red-200 rounded-lg px-3 py-2"></p>
-        <div class="flex items-center justify-end gap-2 mt-1">
-          <button type="button" data-close-quote-modal class="focus-ring text-sm font-body font-medium text-navy-900/60 px-3 py-2">Hủy</button>
-          <button type="submit" id="qi-submit" class="focus-ring bg-ember hover:bg-ember-dark text-white font-display font-700 text-sm px-5 py-2.5 rounded-xl transition-colors flex items-center gap-2">Gửi Yêu Cầu →</button>
-        </div>
-      </form>
-    </div>
-  </div>
+  <!-- Nút giỏ báo giá nổi, khay giỏ và modal nhập thông tin liên hệ: xem initQuoteCartUI() trong js/shared.js -->
 
   <!-- ============ LIGHTBOX: XEM TOÀN ẢNH ============ -->
   <div id="lightbox" class="hidden fixed inset-0 z-[100] items-center justify-center bg-navy-950/90 backdrop-blur-sm p-4">
@@ -258,93 +236,34 @@
         img: "https://images.unsplash.com/photo-1556819132-52350b2a7836?w=700&h=700&fit=crop" }
     ];
 
-    async function submitQuoteRequest(product, name, phone) {
-      const message = `${QUOTE_PREFIX}\n- ${product.name}${product.new_price ? ` (${product.new_price})` : ''}`;
-      const { error } = await sb.from('contacts').insert({ name, phone, message });
-      return error;
-    }
-
+    // ---------- Nút "Thêm vào giỏ báo giá" ----------
+    // Sản phẩm được gộp vào giỏ (chung với san-pham.html qua js/shared.js), rồi gửi 1 yêu
+    // cầu báo giá duy nhất cho toàn giỏ qua nút giỏ nổi (xem initQuoteCartUI()).
     function updateQuoteButton() {
       const btn = document.getElementById('btn-add-quote');
       if (!btn || !window.currentProduct) return;
-      const sent = isQuoteSent(window.currentProduct.id);
-      btn.classList.toggle('bg-navy-950', sent);
-      btn.classList.toggle('text-white', sent);
-      btn.classList.toggle('border-2', !sent);
-      btn.classList.toggle('border-navy-950', !sent);
-      btn.classList.toggle('text-navy-950', !sent);
-      btn.classList.toggle('hover:bg-navy-950', !sent);
-      btn.classList.toggle('hover:text-white', !sent);
+      const id = window.currentProduct.id;
+      const sent = isQuoteSent(id);
+      const inCart = !sent && isInCart(id);
+      btn.classList.toggle('bg-navy-950', sent || inCart);
+      btn.classList.toggle('text-white', sent || inCart);
+      btn.classList.toggle('border-2', !sent && !inCart);
+      btn.classList.toggle('border-navy-950', !sent && !inCart);
+      btn.classList.toggle('text-navy-950', !sent && !inCart);
+      btn.classList.toggle('hover:bg-navy-950', !sent && !inCart);
+      btn.classList.toggle('hover:text-white', !sent && !inCart);
       btn.disabled = sent;
-      btn.textContent = sent ? '✓ Đã gửi yêu cầu báo giá' : '+ Yêu cầu báo giá';
+      btn.textContent = sent ? '✓ Đã gửi yêu cầu báo giá' : inCart ? '✓ Đã thêm vào giỏ báo giá' : '+ Thêm vào giỏ báo giá';
     }
 
-    const quoteInfoModal = document.getElementById('quote-info-modal');
-    const quoteInfoForm = document.getElementById('quote-info-form');
-    const quoteModalProduct = document.getElementById('quote-modal-product');
-    const qiError = document.getElementById('qi-error');
-    const qiSubmit = document.getElementById('qi-submit');
-    let pendingQuoteProduct = null;
+    const refreshCartUI = initQuoteCartUI(updateQuoteButton);
 
-    function openQuoteInfoModal(product) {
-      pendingQuoteProduct = product;
-      quoteModalProduct.textContent = `Cho sản phẩm: ${product.name}`;
-      qiError.classList.add('hidden');
-      quoteInfoForm.reset();
-      quoteInfoModal.classList.remove('hidden');
-      document.getElementById('qi-name').focus();
-    }
-    function closeQuoteInfoModal() {
-      quoteInfoModal.classList.add('hidden');
-      pendingQuoteProduct = null;
-    }
-    quoteInfoModal.querySelectorAll('[data-close-quote-modal]').forEach(el => el.addEventListener('click', closeQuoteInfoModal));
-
-    quoteInfoForm.addEventListener('submit', async (e) => {
-      e.preventDefault();
-      qiError.classList.add('hidden');
-      const name = document.getElementById('qi-name').value.trim();
-      const phone = document.getElementById('qi-phone').value.trim();
-      if (!name || !phone) {
-        qiError.textContent = 'Vui lòng nhập đầy đủ Họ tên và Số điện thoại.';
-        qiError.classList.remove('hidden');
-        return;
-      }
-      qiSubmit.disabled = true;
-      qiSubmit.innerHTML = '<span class="spinner"></span> Đang gửi...';
-      const error = await submitQuoteRequest(pendingQuoteProduct, name, phone);
-      qiSubmit.disabled = false;
-      qiSubmit.innerHTML = 'Gửi Yêu Cầu →';
-      if (error) {
-        qiError.textContent = 'Gửi thất bại: ' + error.message;
-        qiError.classList.remove('hidden');
-        return;
-      }
-      saveContactInfo({ name, phone });
-      markQuoteSent(pendingQuoteProduct.id);
+    function toggleCartItem(product) {
+      if (isQuoteSent(product.id)) return;
+      if (isInCart(product.id)) removeFromCart(product.id);
+      else addToCart(product);
       updateQuoteButton();
-      showToast(`Đã gửi yêu cầu báo giá cho "${pendingQuoteProduct.name}" thành công!`);
-      closeQuoteInfoModal();
-    });
-
-    async function requestQuote(product) {
-      if (!isConfigured) { showToast('Chưa cấu hình Supabase — không thể gửi yêu cầu lúc này.', 'error'); return; }
-      if (isQuoteSent(product.id)) { showToast('Bạn đã gửi yêu cầu báo giá cho sản phẩm này rồi.'); return; }
-
-      const info = getContactInfo();
-      if (!info || !info.name || !info.phone) {
-        openQuoteInfoModal(product);
-        return;
-      }
-
-      const btn = document.getElementById('btn-add-quote');
-      if (btn) btn.disabled = true;
-      const error = await submitQuoteRequest(product, info.name, info.phone);
-      if (btn) btn.disabled = false;
-      if (error) { showToast('Gửi yêu cầu thất bại: ' + error.message, 'error'); return; }
-      markQuoteSent(product.id);
-      updateQuoteButton();
-      showToast(`Đã gửi yêu cầu báo giá cho "${product.name}" thành công!`);
+      refreshCartUI();
     }
 
     // ---------- Slider ảnh + xem toàn ảnh (lightbox) ----------
@@ -534,7 +453,7 @@
 
           <button type="button" id="btn-add-quote"
                   class="focus-ring border-2 border-navy-950 text-navy-950 hover:bg-navy-950 hover:text-white font-display font-700 text-sm px-6 py-3 rounded-xl transition-colors">
-            + Yêu Cầu Báo Giá
+            + Thêm Vào Giỏ Báo Giá
           </button>
 
           <div class="flex items-center gap-2 text-xs text-navy-900/50 font-body pt-1">
@@ -558,7 +477,7 @@
       }
 
       updateQuoteButton();
-      document.getElementById('btn-add-quote').addEventListener('click', () => requestQuote(p));
+      document.getElementById('btn-add-quote').addEventListener('click', () => toggleCartItem(p));
     }
 
     function renderRelated(products, currentId) {

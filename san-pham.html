@@ -114,6 +114,8 @@
 
   .quote-toggle-btn { background: #fff; color: rgba(15,27,51,.5); }
   .quote-toggle-btn:hover { color: #2563EB; }
+  .quote-toggle-btn.quote-in-cart { background: #2563EB; color: #fff; }
+  .quote-toggle-btn.quote-in-cart:hover { background: #DC2626; color: #fff; }
   .quote-toggle-btn.quote-done { background: #F97316; color: #fff; cursor: default; }
   .quote-toggle-btn.quote-done:hover { color: #fff; }
 
@@ -230,7 +232,7 @@
   </footer>
 
   <!-- Floating contact buttons -->
-  <div class="fixed right-4 bottom-24 flex flex-col gap-3 z-40">
+  <div id="floating-actions" class="fixed right-4 bottom-24 flex flex-col gap-3 z-40">
     <button class="focus-ring w-12 h-12 rounded-full bg-brand text-white flex items-center justify-center shadow-lg hover:bg-brand-light transition-colors">💬</button>
     <a href="https://zalo.me/0364878771" target="_blank" rel="noopener" title="Nhắn Zalo" class="focus-ring w-12 h-12 rounded-full bg-sky-400 text-white flex items-center justify-center shadow-lg hover:bg-sky-500 transition-colors">Z</a>
     <a href="tel:0364878771" title="Gọi ngay: 0364.878.771" class="focus-ring w-12 h-12 rounded-full bg-ember text-white flex items-center justify-center shadow-lg hover:bg-ember-dark transition-colors">📞</a>
@@ -239,29 +241,7 @@
   <!-- Toast thông báo -->
   <div id="toast-container" class="fixed top-20 right-4 z-[100] flex flex-col gap-2 items-end"></div>
 
-  <!-- Modal: nhập thông tin liên hệ để gửi yêu cầu báo giá -->
-  <div id="quote-info-modal" class="hidden fixed inset-0 z-[110] flex items-center justify-center p-4">
-    <div class="absolute inset-0 bg-navy-950/60 backdrop-blur-sm" data-close-quote-modal></div>
-    <div class="relative bg-white rounded-2xl border border-slate-200 shadow-[0_24px_48px_-20px_rgba(0,0,0,.4)] w-full max-w-sm p-6">
-      <h3 class="font-display font-700 text-lg text-navy-950 mb-1">Gửi Yêu Cầu Báo Giá</h3>
-      <p id="quote-modal-product" class="font-body text-sm text-navy-900/60 mb-4"></p>
-      <form id="quote-info-form" class="flex flex-col gap-3">
-        <div class="flex flex-col gap-1.5">
-          <label class="font-body text-xs font-medium text-navy-900/60">Họ và tên</label>
-          <input type="text" id="qi-name" required placeholder="Nguyễn Văn A" class="form-input border border-slate-200 rounded-lg px-3.5 py-2.5 text-sm font-body">
-        </div>
-        <div class="flex flex-col gap-1.5">
-          <label class="font-body text-xs font-medium text-navy-900/60">Số điện thoại</label>
-          <input type="tel" id="qi-phone" required placeholder="09xx xxx xxx" class="form-input border border-slate-200 rounded-lg px-3.5 py-2.5 text-sm font-body">
-        </div>
-        <p id="qi-error" class="hidden text-sm text-red-600 bg-red-50 border border-red-200 rounded-lg px-3 py-2"></p>
-        <div class="flex items-center justify-end gap-2 mt-1">
-          <button type="button" data-close-quote-modal class="focus-ring text-sm font-body font-medium text-navy-900/60 px-3 py-2">Hủy</button>
-          <button type="submit" id="qi-submit" class="focus-ring bg-ember hover:bg-ember-dark text-white font-display font-700 text-sm px-5 py-2.5 rounded-xl transition-colors flex items-center gap-2">Gửi Yêu Cầu →</button>
-        </div>
-      </form>
-    </div>
-  </div>
+  <!-- Nút giỏ báo giá nổi, khay giỏ và modal nhập thông tin liên hệ: xem initQuoteCartUI() trong js/shared.js -->
 
   <script src="js/shared.js"></script>
   <script>
@@ -340,91 +320,42 @@
         img: "https://images.unsplash.com/photo-1556819132-52350b2a7836?w=300&h=300&fit=crop" }
     ];
 
-    // ---------- Gửi yêu cầu báo giá trực tiếp (không qua giỏ hàng) ----------
-    async function submitQuoteRequest(product, name, phone) {
-      const message = `${QUOTE_PREFIX}\n- ${product.name}${product.new_price ? ` (${product.new_price})` : ''}`;
-      const { error } = await sb.from('contacts').insert({ name, phone, message });
-      return error;
+    // ---------- Nút "Thêm vào giỏ báo giá" trên mỗi thẻ sản phẩm ----------
+    // Nhiều sản phẩm được gộp vào 1 giỏ, sau đó gửi 1 yêu cầu báo giá duy nhất cho toàn
+    // giỏ (xem initQuoteCartUI() trong js/shared.js). Mỗi nút có 3 trạng thái: chưa thêm
+    // (default), đã thêm vào giỏ (in-cart) và đã gửi yêu cầu (sent — không thêm lại được).
+    function quoteButtonState(id) {
+      if (isQuoteSent(id)) return 'sent';
+      if (isInCart(id)) return 'in-cart';
+      return 'default';
     }
-
-    function quoteButtonIcon(sent) {
-      return `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">${sent ? '<path d="M20 6 9 17l-5-5"/>' : '<path d="M12 5v14M5 12h14"/>'}</svg>`;
+    function quoteButtonIcon(state) {
+      const paths = {
+        sent: '<path d="M20 6 9 17l-5-5"/>',
+        'in-cart': '<path d="M5 12h14"/>',
+        default: '<path d="M12 5v14M5 12h14"/>'
+      };
+      return `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">${paths[state]}</svg>`;
     }
-    function updateQuoteButtonState(btn, sent) {
-      btn.classList.toggle('quote-done', sent);
-      btn.disabled = sent;
-      btn.title = sent ? 'Đã gửi yêu cầu báo giá' : 'Yêu cầu báo giá';
-      btn.innerHTML = quoteButtonIcon(sent);
+    function updateQuoteButton(btn, id) {
+      const state = quoteButtonState(id);
+      btn.classList.toggle('quote-done', state === 'sent');
+      btn.classList.toggle('quote-in-cart', state === 'in-cart');
+      btn.disabled = state === 'sent';
+      btn.title = state === 'sent' ? 'Đã gửi yêu cầu báo giá' : state === 'in-cart' ? 'Bỏ khỏi giỏ báo giá' : 'Thêm vào giỏ báo giá';
+      btn.innerHTML = quoteButtonIcon(state);
     }
-
-    const quoteInfoModal = document.getElementById('quote-info-modal');
-    const quoteInfoForm = document.getElementById('quote-info-form');
-    const quoteModalProduct = document.getElementById('quote-modal-product');
-    const qiError = document.getElementById('qi-error');
-    const qiSubmit = document.getElementById('qi-submit');
-    let pendingQuoteProduct = null;
-    let pendingQuoteBtn = null;
-
-    function openQuoteInfoModal(product, btn) {
-      pendingQuoteProduct = product;
-      pendingQuoteBtn = btn;
-      quoteModalProduct.textContent = `Cho sản phẩm: ${product.name}`;
-      qiError.classList.add('hidden');
-      quoteInfoForm.reset();
-      quoteInfoModal.classList.remove('hidden');
-      document.getElementById('qi-name').focus();
+    function refreshAllQuoteButtons() {
+      document.querySelectorAll('.quote-toggle-btn').forEach(btn => updateQuoteButton(btn, btn.dataset.quoteId));
     }
-    function closeQuoteInfoModal() {
-      quoteInfoModal.classList.add('hidden');
-      pendingQuoteProduct = null;
-      pendingQuoteBtn = null;
-    }
-    quoteInfoModal.querySelectorAll('[data-close-quote-modal]').forEach(el => el.addEventListener('click', closeQuoteInfoModal));
+    const refreshCartUI = initQuoteCartUI(refreshAllQuoteButtons);
 
-    quoteInfoForm.addEventListener('submit', async (e) => {
-      e.preventDefault();
-      qiError.classList.add('hidden');
-      const name = document.getElementById('qi-name').value.trim();
-      const phone = document.getElementById('qi-phone').value.trim();
-      if (!name || !phone) {
-        qiError.textContent = 'Vui lòng nhập đầy đủ Họ tên và Số điện thoại.';
-        qiError.classList.remove('hidden');
-        return;
-      }
-      qiSubmit.disabled = true;
-      qiSubmit.innerHTML = '<span class="spinner"></span> Đang gửi...';
-      const error = await submitQuoteRequest(pendingQuoteProduct, name, phone);
-      qiSubmit.disabled = false;
-      qiSubmit.innerHTML = 'Gửi Yêu Cầu →';
-      if (error) {
-        qiError.textContent = 'Gửi thất bại: ' + error.message;
-        qiError.classList.remove('hidden');
-        return;
-      }
-      saveContactInfo({ name, phone });
-      markQuoteSent(pendingQuoteProduct.id);
-      updateQuoteButtonState(pendingQuoteBtn, true);
-      showToast(`Đã gửi yêu cầu báo giá cho "${pendingQuoteProduct.name}" thành công!`);
-      closeQuoteInfoModal();
-    });
-
-    async function requestQuote(product, btn) {
-      if (!isConfigured) { showToast('Chưa cấu hình Supabase — không thể gửi yêu cầu lúc này.', 'error'); return; }
-      if (isQuoteSent(product.id)) { showToast('Bạn đã gửi yêu cầu báo giá cho sản phẩm này rồi.'); return; }
-
-      const info = getContactInfo();
-      if (!info || !info.name || !info.phone) {
-        openQuoteInfoModal(product, btn);
-        return;
-      }
-
-      btn.disabled = true;
-      const error = await submitQuoteRequest(product, info.name, info.phone);
-      btn.disabled = false;
-      if (error) { showToast('Gửi yêu cầu thất bại: ' + error.message, 'error'); return; }
-      markQuoteSent(product.id);
-      updateQuoteButtonState(btn, true);
-      showToast(`Đã gửi yêu cầu báo giá cho "${product.name}" thành công!`);
+    function toggleCartItem(product, btn) {
+      if (isQuoteSent(product.id)) return;
+      if (isInCart(product.id)) removeFromCart(product.id);
+      else addToCart(product);
+      updateQuoteButton(btn, product.id);
+      refreshCartUI();
     }
 
     function renderSkeletons(count) {
@@ -455,9 +386,9 @@
         <div class="card-enter hover-lift bg-white border border-slate-200 rounded-2xl overflow-hidden flex flex-col relative" style="animation-delay:${i * 60}ms">
           ${p.badge ? `<span class="absolute top-2 left-2 bg-white text-ember text-xs font-display font-700 px-2.5 py-1 rounded-full z-10 shadow-[0_2px_4px_rgba(0,0,0,.15)] border border-ember/20">${escapeHtml(p.badge)}</span>` : ''}
           <button type="button" data-quote-id="${p.id}"
-                  class="quote-toggle-btn focus-ring absolute top-2 right-2 z-10 w-7 h-7 rounded-full flex items-center justify-center shadow-[0_2px_4px_rgba(0,0,0,.15)] transition-colors ${isQuoteSent(p.id) ? 'quote-done' : ''}"
-                  title="${isQuoteSent(p.id) ? 'Đã gửi yêu cầu báo giá' : 'Yêu cầu báo giá'}" ${isQuoteSent(p.id) ? 'disabled' : ''}>
-            ${quoteButtonIcon(isQuoteSent(p.id))}
+                  class="quote-toggle-btn focus-ring absolute top-2 right-2 z-10 w-7 h-7 rounded-full flex items-center justify-center shadow-[0_2px_4px_rgba(0,0,0,.15)] transition-colors ${quoteButtonState(p.id) === 'sent' ? 'quote-done' : ''} ${quoteButtonState(p.id) === 'in-cart' ? 'quote-in-cart' : ''}"
+                  title="${quoteButtonState(p.id) === 'sent' ? 'Đã gửi yêu cầu báo giá' : quoteButtonState(p.id) === 'in-cart' ? 'Bỏ khỏi giỏ báo giá' : 'Thêm vào giỏ báo giá'}" ${quoteButtonState(p.id) === 'sent' ? 'disabled' : ''}>
+            ${quoteButtonIcon(quoteButtonState(p.id))}
           </button>
           <a href="chi-tiet-san-pham.html?id=${encodeURIComponent(p.id)}" class="aspect-square bg-slate-100 flex items-center justify-center overflow-hidden">
             <img src="${escapeHtml(p.img)}" alt="${escapeHtml(p.name)}" class="object-cover w-full h-full">
@@ -485,7 +416,7 @@
       grid.querySelectorAll('.quote-toggle-btn').forEach(btn => {
         btn.addEventListener('click', () => {
           const p = products.find(x => String(x.id) === btn.dataset.quoteId);
-          if (p) requestQuote(p, btn);
+          if (p) toggleCartItem(p, btn);
         });
       });
     }
