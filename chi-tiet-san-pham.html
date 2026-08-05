@@ -266,6 +266,7 @@
       } else {
         addToCart(product);
         showToast(`Đã thêm "${product.name}" vào giỏ báo giá!`);
+        flyToCart(document.getElementById('btn-add-quote'));
       }
       updateQuoteButton();
       refreshCartUI();

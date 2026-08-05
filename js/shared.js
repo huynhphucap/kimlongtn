@@ -87,6 +87,61 @@ function buildCartQuoteMessage(cart) {
   return `${QUOTE_PREFIX}\n` + cart.map(item => `- ${item.name}${item.price ? ` (${item.price})` : ''}`).join('\n');
 }
 
+// ---------- Hiệu ứng "bay vào giỏ" khi thêm sản phẩm ----------
+// Tạo 1 chấm tròn bay từ vị trí bấm (sourceEl) tới nút giỏ nổi theo đường vòng cung,
+// rồi làm nút giỏ + số đếm "nảy" lên khi chấm tới đích — cho người dùng thấy rõ ràng
+// sản phẩm đã được thêm, thay vì chỉ đổi số đếm một cách âm thầm.
+function flyToCart(sourceEl) {
+  const cartBtn = document.getElementById('cart-fab-btn');
+  if (!cartBtn || !sourceEl || !cartBtn.animate) return;
+
+  const startRect = sourceEl.getBoundingClientRect();
+  const endRect = cartBtn.getBoundingClientRect();
+  const startX = startRect.left + startRect.width / 2;
+  const startY = startRect.top + startRect.height / 2;
+  const endX = endRect.left + endRect.width / 2;
+  const endY = endRect.top + endRect.height / 2;
+  const dx = endX - startX;
+  const dy = endY - startY;
+  const arcLift = -Math.max(60, Math.abs(dy) * 0.6);
+
+  const dot = document.createElement('div');
+  dot.className = 'fixed z-[200] pointer-events-none rounded-full bg-ember shadow-[0_4px_10px_rgba(194,84,10,.5)] flex items-center justify-center text-white';
+  dot.style.width = '26px';
+  dot.style.height = '26px';
+  dot.style.left = `${startX - 13}px`;
+  dot.style.top = `${startY - 13}px`;
+  dot.innerHTML = '<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg>';
+  document.body.appendChild(dot);
+
+  const anim = dot.animate([
+    { transform: 'translate(0px, 0px) scale(1)', opacity: 1, offset: 0 },
+    { transform: `translate(${dx * 0.5}px, ${dy * 0.5 + arcLift}px) scale(0.9)`, opacity: 1, offset: 0.55 },
+    { transform: `translate(${dx}px, ${dy}px) scale(0.25)`, opacity: 0.4, offset: 1 }
+  ], { duration: 600, easing: 'cubic-bezier(.4,0,.2,1)' });
+
+  const cleanup = () => dot.remove();
+  anim.onfinish = () => { cleanup(); bumpCartFab(); };
+  anim.oncancel = cleanup;
+}
+
+function bumpCartFab() {
+  const cartBtn = document.getElementById('cart-fab-btn');
+  const badge = document.getElementById('cart-fab-badge');
+  if (cartBtn?.animate) {
+    cartBtn.animate(
+      [{ transform: 'scale(1)' }, { transform: 'scale(1.3)' }, { transform: 'scale(1)' }],
+      { duration: 320, easing: 'ease-out' }
+    );
+  }
+  if (badge?.animate) {
+    badge.animate(
+      [{ transform: 'scale(1)' }, { transform: 'scale(1.6)' }, { transform: 'scale(1)' }],
+      { duration: 320, easing: 'ease-out' }
+    );
+  }
+}
+
 // ---------- Giỏ báo giá: UI dùng chung (nút giỏ nổi + khay giỏ + modal nhập thông tin) ----------
 // Cả san-pham.html và chi-tiet-san-pham.html trước đây tự vẽ modal "nhập thông tin liên hệ"
 // giống nhau. Giờ initQuoteCartUI() tự chèn toàn bộ UI này vào trang (chỉ 1 lần) — trang gọi
