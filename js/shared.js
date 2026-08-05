@@ -97,7 +97,7 @@ function initQuoteCartUI(onCartChange) {
   const floatingActions = document.getElementById('floating-actions');
   const cartBtnHtml = `
     <button id="cart-fab-btn" type="button" title="Giỏ báo giá"
-      class="hidden focus-ring w-12 h-12 rounded-full bg-navy-950 text-white flex items-center justify-center shadow-lg hover:bg-navy-900 transition-colors relative">
+      class="focus-ring w-12 h-12 rounded-full bg-navy-950 text-white flex items-center justify-center shadow-lg hover:bg-navy-900 transition-colors relative">
       <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="8" cy="21" r="1"/><circle cx="19" cy="21" r="1"/><path d="M2.05 2.05h2l2.66 12.42a2 2 0 0 0 2 1.58h9.78a2 2 0 0 0 2-1.58l1.65-7.42H5.12"/></svg>
       <span id="cart-fab-badge" class="hidden absolute -top-1.5 -right-1.5 bg-ember text-white text-[10px] font-display font-800 rounded-full min-w-[18px] h-[18px] flex items-center justify-center px-1">0</span>
     </button>`;
@@ -165,8 +165,9 @@ function initQuoteCartUI(onCartChange) {
   const qiSubmit = document.getElementById('qi-submit');
 
   function renderFab() {
+    // Nút giỏ luôn hiện sẵn (để người dùng biết tính năng này tồn tại), chỉ số đếm
+    // (badge) mới ẩn/hiện theo số sản phẩm trong giỏ.
     const count = getCart().length;
-    fabBtn.classList.toggle('hidden', count === 0);
     fabBadge.classList.toggle('hidden', count === 0);
     fabBadge.textContent = count;
   }
