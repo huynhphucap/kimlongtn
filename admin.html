@@ -269,9 +269,15 @@
                   class="focus-ring bg-ember hover:bg-ember-dark text-white font-display font-700 text-sm px-6 py-3 rounded-xl shadow-[0_10px_20px_-8px_rgba(249,115,22,0.5)] transition-colors flex items-center justify-center gap-2 disabled:opacity-60 disabled:cursor-not-allowed">
             Đăng Nhập
           </button>
-          <button type="button" id="btn-show-forgot" class="focus-ring self-center text-xs font-body font-medium text-navy-900/50 hover:text-brand transition-colors">
-            Quên mật khẩu?
-          </button>
+          <div class="flex items-center justify-center gap-3">
+            <button type="button" id="btn-show-forgot" class="focus-ring text-xs font-body font-medium text-navy-900/50 hover:text-brand transition-colors">
+              Quên mật khẩu?
+            </button>
+            <span class="text-navy-900/20">·</span>
+            <button type="button" id="btn-show-register" class="focus-ring text-xs font-body font-medium text-navy-900/50 hover:text-brand transition-colors">
+              Đăng ký tài khoản mới
+            </button>
+          </div>
         </form>
 
         <!-- Form quên mật khẩu -->
@@ -292,6 +298,43 @@
             Gửi Email Khôi Phục
           </button>
           <button type="button" id="btn-back-to-login" class="focus-ring self-center text-xs font-body font-medium text-navy-900/50 hover:text-brand transition-colors">
+            ← Quay lại đăng nhập
+          </button>
+        </form>
+
+        <!-- Form đăng ký tài khoản mới (chờ duyệt) -->
+        <form id="register-form" class="hidden flex-col gap-4">
+          <div>
+            <h2 class="font-display font-700 text-lg text-navy-950">Đăng Ký Tài Khoản</h2>
+            <p class="font-body text-xs text-navy-900/50 mt-1">Tài khoản sẽ ở trạng thái "chờ duyệt" cho đến khi quản trị viên hiện tại phê duyệt.</p>
+          </div>
+          <div class="flex flex-col gap-1.5">
+            <label class="text-xs font-medium text-navy-900/60">Họ và tên</label>
+            <input type="text" id="register-name" required placeholder="Nguyễn Văn A" autocomplete="name"
+                   class="form-input border border-slate-200 rounded-lg px-3.5 py-2.5 text-sm w-full">
+          </div>
+          <div class="flex flex-col gap-1.5">
+            <label class="text-xs font-medium text-navy-900/60">Email</label>
+            <input type="email" id="register-email" required placeholder="ban@email.com" autocomplete="username"
+                   class="form-input border border-slate-200 rounded-lg px-3.5 py-2.5 text-sm w-full">
+          </div>
+          <div class="flex flex-col gap-1.5">
+            <label class="text-xs font-medium text-navy-900/60">Mật khẩu (tối thiểu 6 ký tự)</label>
+            <input type="password" id="register-password" required placeholder="••••••••" autocomplete="new-password"
+                   class="form-input border border-slate-200 rounded-lg px-3.5 py-2.5 text-sm w-full">
+          </div>
+          <div class="flex flex-col gap-1.5">
+            <label class="text-xs font-medium text-navy-900/60">Xác nhận mật khẩu</label>
+            <input type="password" id="register-password-confirm" required placeholder="••••••••" autocomplete="new-password"
+                   class="form-input border border-slate-200 rounded-lg px-3.5 py-2.5 text-sm w-full">
+          </div>
+          <p id="register-error" class="hidden text-sm text-red-600 bg-red-50 border border-red-200 rounded-lg px-3 py-2"></p>
+          <p id="register-success" class="hidden text-sm text-emerald-700 bg-emerald-50 border border-emerald-200 rounded-lg px-3 py-2"></p>
+          <button type="submit" id="register-submit"
+                  class="focus-ring bg-ember hover:bg-ember-dark text-white font-display font-700 text-sm px-6 py-3 rounded-xl shadow-[0_10px_20px_-8px_rgba(249,115,22,0.5)] transition-colors flex items-center justify-center gap-2 disabled:opacity-60 disabled:cursor-not-allowed">
+            Đăng Ký
+          </button>
+          <button type="button" id="btn-back-to-login-from-register" class="focus-ring self-center text-xs font-body font-medium text-navy-900/50 hover:text-brand transition-colors">
             ← Quay lại đăng nhập
           </button>
         </form>
@@ -340,6 +383,33 @@
             Lưu Mật Khẩu Mới
           </button>
         </form>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ PENDING APPROVAL VIEW (đã đăng nhập nhưng chưa được duyệt) ============ -->
+  <section id="pending-view" class="hidden login-bg relative min-h-[calc(100vh-73px)] flex items-center overflow-hidden">
+    <span class="login-glow w-72 h-72 bg-brand -top-10 -left-10"></span>
+    <span class="login-glow w-72 h-72 bg-ember bottom-0 right-0"></span>
+
+    <div class="relative max-w-md w-full mx-auto px-5 py-16">
+      <div class="flex flex-col items-center mb-6">
+        <span class="w-14 h-14 rounded-2xl bg-gradient-to-br from-brand to-brand-light flex items-center justify-center text-white font-display font-800 text-lg shadow-[0_12px_24px_-8px_rgba(37,99,235,.6)] mb-3">KL</span>
+        <p class="text-white/50 text-xs font-body tracking-wide uppercase">Kim Long · Bảng Quản Trị</p>
+      </div>
+
+      <div class="bg-white rounded-2xl border border-slate-200 p-8 shadow-[0_24px_48px_-20px_rgba(0,0,0,.45)] text-center">
+        <div class="w-12 h-12 rounded-full bg-amber-50 border border-amber-200 flex items-center justify-center mx-auto mb-4">
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#B45309" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></svg>
+        </div>
+        <h1 class="font-display font-800 text-xl text-navy-950 mb-2">Đang Chờ Duyệt</h1>
+        <p class="font-body text-sm text-navy-900/60 leading-relaxed">
+          Tài khoản <span id="pending-view-email" class="font-medium text-navy-900"></span> đã đăng ký thành công nhưng chưa được quản trị viên phê duyệt. Vui lòng chờ hoặc liên hệ quản trị viên hiện tại.
+        </p>
+        <button type="button" id="btn-logout-pending"
+                class="focus-ring mt-6 text-sm font-display font-700 text-navy-900/70 border border-slate-200 rounded-xl px-5 py-2.5 hover:bg-slate-150 transition-colors">
+          Đăng Xuất
+        </button>
       </div>
     </div>
   </section>
@@ -394,7 +464,7 @@
       </button>
       <button id="tab-btn-users" data-active="false" class="tab-btn focus-ring font-display font-700 text-sm px-4 py-2.5 transition-colors">
         <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
-        Tài Khoản Quản Trị
+        Tài Khoản Quản Trị <span id="users-pending-badge" class="hidden ml-0.5 bg-ember text-white text-[10px] rounded-full px-1.5 py-0.5"></span>
       </button>
     </div>
 
@@ -786,12 +856,16 @@
     const loginView = document.getElementById('login-view');
     const dashboardView = document.getElementById('dashboard-view');
     const resetPasswordView = document.getElementById('reset-password-view');
+    const pendingView = document.getElementById('pending-view');
     const loginForm = document.getElementById('login-form');
     const loginError = document.getElementById('login-error');
     const loginConfigWarning = document.getElementById('login-config-warning');
     const forgotPasswordForm = document.getElementById('forgot-password-form');
     const forgotError = document.getElementById('forgot-error');
     const forgotSuccess = document.getElementById('forgot-success');
+    const registerForm = document.getElementById('register-form');
+    const registerError = document.getElementById('register-error');
+    const registerSuccess = document.getElementById('register-success');
     const userEmailEl = document.getElementById('user-email');
     const btnLogout = document.getElementById('btn-logout');
     const btnNew = document.getElementById('btn-new');
@@ -856,11 +930,18 @@
     confirmModal.querySelector('[data-close-confirm]').addEventListener('click', () => closeConfirmModal(false));
 
     // ---------- Auth ----------
+    // Tài khoản mới đăng ký công khai bắt đầu ở app_metadata.status = "pending".
+    // Tài khoản cũ (tạo trước khi có tính năng duyệt) không có trường này, coi như đã duyệt.
+    function isUserApproved(user) {
+      return user?.app_metadata?.status !== 'pending';
+    }
+
     async function checkSession() {
       if (!isConfigured || !sb) return;
       const { data } = await sb.auth.getSession();
       if (data.session) {
-        showDashboard(data.session.user);
+        if (isUserApproved(data.session.user)) showDashboard(data.session.user);
+        else showPendingApproval(data.session.user);
       } else {
         showLogin();
       }
@@ -870,23 +951,40 @@
       loginView.classList.remove('hidden');
       dashboardView.classList.add('hidden');
       resetPasswordView.classList.add('hidden');
+      pendingView.classList.add('hidden');
       btnLogout.classList.add('hidden');
       userEmailEl.classList.add('hidden');
       loginForm.classList.remove('hidden');
       forgotPasswordForm.classList.add('hidden');
       forgotPasswordForm.classList.remove('flex');
+      registerForm.classList.add('hidden');
+      registerForm.classList.remove('flex');
     }
 
     function showResetPasswordView() {
       loginView.classList.add('hidden');
       dashboardView.classList.add('hidden');
+      pendingView.classList.add('hidden');
       resetPasswordView.classList.remove('hidden');
+    }
+
+    function showPendingApproval(user) {
+      loginView.classList.add('hidden');
+      dashboardView.classList.add('hidden');
+      resetPasswordView.classList.add('hidden');
+      pendingView.classList.remove('hidden');
+      btnLogout.classList.remove('hidden');
+      userEmailEl.classList.remove('hidden');
+      userEmailEl.textContent = user.email;
+      document.getElementById('pending-view-email').textContent = user.email;
     }
 
     // ---------- Quên mật khẩu ----------
     document.getElementById('btn-show-forgot').addEventListener('click', () => {
       loginError.classList.add('hidden');
       loginForm.classList.add('hidden');
+      registerForm.classList.add('hidden');
+      registerForm.classList.remove('flex');
       forgotError.classList.add('hidden');
       forgotSuccess.classList.add('hidden');
       document.getElementById('forgot-email').value = document.getElementById('login-email').value;
@@ -923,6 +1021,78 @@
 
       forgotSuccess.textContent = `Đã gửi email khôi phục tới ${email}. Kiểm tra hộp thư (kể cả mục Spam) và bấm vào link trong email để đặt mật khẩu mới.`;
       forgotSuccess.classList.remove('hidden');
+    });
+
+    // ---------- Đăng ký tài khoản mới (chờ duyệt) ----------
+    document.getElementById('btn-show-register').addEventListener('click', () => {
+      loginError.classList.add('hidden');
+      loginForm.classList.add('hidden');
+      registerError.classList.add('hidden');
+      registerSuccess.classList.add('hidden');
+      registerForm.reset();
+      registerForm.classList.remove('hidden');
+      registerForm.classList.add('flex');
+    });
+    document.getElementById('btn-back-to-login-from-register').addEventListener('click', () => {
+      registerForm.classList.add('hidden');
+      registerForm.classList.remove('flex');
+      loginForm.classList.remove('hidden');
+    });
+
+    registerForm.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      registerError.classList.add('hidden');
+      registerSuccess.classList.add('hidden');
+
+      const full_name = document.getElementById('register-name').value.trim();
+      const email = document.getElementById('register-email').value.trim();
+      const password = document.getElementById('register-password').value;
+      const passwordConfirm = document.getElementById('register-password-confirm').value;
+      const submitBtn = document.getElementById('register-submit');
+
+      if (!full_name || !email || !password) {
+        registerError.textContent = 'Vui lòng nhập đầy đủ thông tin.';
+        registerError.classList.remove('hidden');
+        return;
+      }
+      if (password.length < 6) {
+        registerError.textContent = 'Mật khẩu phải có ít nhất 6 ký tự.';
+        registerError.classList.remove('hidden');
+        return;
+      }
+      if (password !== passwordConfirm) {
+        registerError.textContent = 'Mật khẩu xác nhận không khớp.';
+        registerError.classList.remove('hidden');
+        return;
+      }
+
+      submitBtn.disabled = true;
+      submitBtn.innerHTML = '<span class="spinner" style="border-top-color:#fff;border-color:rgba(255,255,255,.35)"></span> Đang đăng ký...';
+
+      try {
+        const res = await fetch(ADMIN_USERS_FN_URL, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${SUPABASE_ANON_KEY}`,
+            'apikey': SUPABASE_ANON_KEY
+          },
+          body: JSON.stringify({ selfRegister: true, email, password, full_name })
+        });
+        const json = await res.json();
+        if (!res.ok) throw new Error(json.message || 'Đăng ký thất bại');
+
+        registerSuccess.textContent = `Đăng ký thành công! Tài khoản ${email} đang chờ quản trị viên duyệt. Bạn sẽ đăng nhập được sau khi được duyệt.`;
+        registerSuccess.classList.remove('hidden');
+        registerForm.reset();
+        document.getElementById('login-email').value = email;
+      } catch (err) {
+        registerError.textContent = 'Lỗi: ' + err.message;
+        registerError.classList.remove('hidden');
+      }
+
+      submitBtn.disabled = false;
+      submitBtn.textContent = 'Đăng Ký';
     });
 
     document.getElementById('reset-password-form').addEventListener('submit', async (e) => {
@@ -1059,6 +1229,7 @@
       userEmailEl.textContent = user.email;
       loadProducts();
       loadContactsBadgeCount();
+      loadUsers();
     }
 
     loginForm.addEventListener('submit', async (e) => {
@@ -1104,11 +1275,16 @@
       }
 
       clearLoginLockState();
+      if (!isUserApproved(data.user)) {
+        showToast('Tài khoản của bạn đang chờ quản trị viên duyệt.', 'error');
+        showPendingApproval(data.user);
+        return;
+      }
       showToast(`Đăng nhập thành công! Chào ${data.user.email}`);
       showDashboard(data.user);
     });
 
-    btnLogout.addEventListener('click', async () => {
+    async function doLogout() {
       const { error } = await sb.auth.signOut();
       if (error) {
         showToast('Đăng xuất thất bại: ' + error.message, 'error');
@@ -1116,7 +1292,9 @@
       }
       showToast('Đã đăng xuất thành công!');
       showLogin();
-    });
+    }
+    btnLogout.addEventListener('click', doLogout);
+    document.getElementById('btn-logout-pending').addEventListener('click', doLogout);
 
     // ---------- Live preview ----------
     function currentFormData() {
@@ -1837,6 +2015,10 @@
       };
     }
 
+    function isPendingUser(u) {
+      return u.app_metadata?.status === 'pending';
+    }
+
     async function loadUsers() {
       const list = document.getElementById('users-list');
       const empty = document.getElementById('users-empty');
@@ -1855,42 +2037,74 @@
         const users = json.users || [];
         const statCardUsers = document.getElementById('stat-card-users');
         if (statCardUsers) statCardUsers.textContent = users.length;
+
+        const pendingBadge = document.getElementById('users-pending-badge');
+        const pendingUsers = users.filter(isPendingUser);
+        pendingBadge.classList.toggle('hidden', pendingUsers.length === 0);
+        pendingBadge.textContent = pendingUsers.length;
+
         if (users.length === 0) { empty.classList.remove('hidden'); return; }
 
         // Lấy email của user đang đăng nhập để đánh dấu
         const { data: { user: me } } = await sb.auth.getUser();
 
-        list.innerHTML = users.map(u => {
+        // Tài khoản chờ duyệt hiện lên đầu danh sách để admin dễ xử lý.
+        const sortedUsers = [...pendingUsers, ...users.filter(u => !isPendingUser(u))];
+
+        list.innerHTML = sortedUsers.map(u => {
           const isMe = u.id === me?.id;
+          const pending = isPendingUser(u);
           const date = new Date(u.created_at).toLocaleDateString('vi-VN');
           const lastSign = u.last_sign_in_at
             ? new Date(u.last_sign_in_at).toLocaleString('vi-VN', { day:'2-digit', month:'2-digit', year:'numeric', hour:'2-digit', minute:'2-digit' })
             : 'Chưa đăng nhập';
+          const fullName = u.user_metadata?.full_name;
           return `
-          <div class="row-hover flex items-center gap-4 px-5 py-4">
+          <div class="row-hover flex items-center gap-4 px-5 py-4 ${pending ? 'bg-amber-50/50' : ''}">
             <div class="w-9 h-9 rounded-full bg-brand/10 flex items-center justify-center shrink-0">
-              <span class="text-brand font-display font-700 text-sm">${u.email.charAt(0).toUpperCase()}</span>
+              <span class="text-brand font-display font-700 text-sm">${escapeHtml(u.email.charAt(0).toUpperCase())}</span>
             </div>
             <div class="flex-1 min-w-0">
               <div class="flex items-center gap-2 flex-wrap">
-                <p class="font-display font-700 text-sm text-navy-950 truncate">${u.email}</p>
+                <p class="font-display font-700 text-sm text-navy-950 truncate">${escapeHtml(fullName || u.email)}</p>
                 ${isMe ? '<span class="text-[10px] font-body font-medium text-emerald-700 bg-emerald-50 border border-emerald-200 rounded-full px-2 py-0.5">Bạn</span>' : ''}
-                ${u.confirmed_at ? '<span class="text-[10px] font-body font-medium text-brand bg-brand/10 rounded-full px-2 py-0.5">Đã xác nhận</span>' : '<span class="text-[10px] font-body text-amber-700 bg-amber-50 border border-amber-200 rounded-full px-2 py-0.5">Chưa xác nhận</span>'}
+                ${pending ? '<span class="text-[10px] font-body font-700 text-amber-700 bg-amber-100 border border-amber-300 rounded-full px-2 py-0.5">Chờ duyệt</span>' : (u.confirmed_at ? '<span class="text-[10px] font-body font-medium text-brand bg-brand/10 rounded-full px-2 py-0.5">Đã xác nhận</span>' : '<span class="text-[10px] font-body text-amber-700 bg-amber-50 border border-amber-200 rounded-full px-2 py-0.5">Chưa xác nhận</span>')}
               </div>
               <p class="font-body text-xs text-navy-900/50 mt-0.5">
-                Tạo: ${date} · Đăng nhập lần cuối: ${lastSign}
+                ${fullName ? escapeHtml(u.email) + ' · ' : ''}Tạo: ${date} · Đăng nhập lần cuối: ${lastSign}
               </p>
             </div>
-            ${!isMe ? `<button data-id="${u.id}" data-email="${u.email}" class="btn-delete-user focus-ring shrink-0 text-xs font-display font-700 text-red-600 border border-red-200 hover:bg-red-600 hover:text-white rounded-lg px-3 py-1.5 transition-colors">Xóa</button>` : ''}
+            <div class="flex items-center gap-2 shrink-0">
+              ${pending ? `<button data-id="${u.id}" data-email="${escapeHtml(u.email)}" class="btn-approve-user focus-ring text-xs font-display font-700 text-white bg-emerald-600 hover:bg-emerald-700 rounded-lg px-3 py-1.5 transition-colors">Duyệt</button>` : ''}
+              ${!isMe ? `<button data-id="${u.id}" data-email="${escapeHtml(u.email)}" class="btn-delete-user focus-ring text-xs font-display font-700 text-red-600 border border-red-200 hover:bg-red-600 hover:text-white rounded-lg px-3 py-1.5 transition-colors">${pending ? 'Từ chối' : 'Xóa'}</button>` : ''}
+            </div>
           </div>`;
         }).join('');
 
+        list.querySelectorAll('.btn-approve-user').forEach(btn => {
+          btn.addEventListener('click', () => approveUser(btn.dataset.id, btn.dataset.email));
+        });
         list.querySelectorAll('.btn-delete-user').forEach(btn => {
           btn.addEventListener('click', () => deleteUser(btn.dataset.id, btn.dataset.email));
         });
       } catch (err) {
         loading.classList.add('hidden');
         list.innerHTML = `<div class="text-center py-10 text-sm text-red-600 px-6">Lỗi: ${err.message}</div>`;
+      }
+    }
+
+    async function approveUser(id, email) {
+      try {
+        const headers = await getAdminHeaders();
+        const res = await fetch(ADMIN_USERS_FN_URL, {
+          method: 'PATCH', headers, body: JSON.stringify({ id, status: 'approved' })
+        });
+        const json = await res.json();
+        if (!res.ok) throw new Error(json.message || 'Duyệt thất bại');
+        showToast(`Đã duyệt tài khoản ${email}!`);
+        loadUsers();
+      } catch (err) {
+        showToast('Duyệt thất bại: ' + err.message, 'error');
       }
     }
 
