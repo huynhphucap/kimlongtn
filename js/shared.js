@@ -19,7 +19,8 @@ function showToast(message, type = 'success') {
   const toast = document.createElement('div');
   const styles = {
     success: { bg: 'bg-emerald-600', icon: '✓' },
-    error: { bg: 'bg-red-600', icon: '✕' }
+    error: { bg: 'bg-red-600', icon: '✕' },
+    info: { bg: 'bg-navy-900', icon: 'ℹ' }
   };
   const s = styles[type] || styles.success;
   toast.className = `toast ${s.bg} text-white font-body text-sm font-medium rounded-xl px-4 py-3 flex items-center gap-2.5 max-w-xs shadow-[0_12px_28px_-12px_rgba(15,27,51,.35)]`;
