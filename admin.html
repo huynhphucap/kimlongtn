@@ -2503,6 +2503,12 @@
       return digits ? parseInt(digits, 10) : 0;
     }
 
+    // Hiển thị số có dấu chấm ngăn cách hàng nghìn khi gõ đơn giá (vd: 590000 -> 590.000).
+    function formatThousands(value) {
+      const digits = String(value ?? '').replace(/[^\d]/g, '');
+      return digits ? Number(digits).toLocaleString('vi-VN') : '';
+    }
+
     async function applyStockDelta(productId, delta) {
       if (!productId) return;
       const { error } = await sb.rpc('adjust_product_stock', { p_product_id: productId, p_delta: delta });
@@ -2586,12 +2592,22 @@
               <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M18 6 6 18M6 6l12 12"/></svg>
             </button>
           </div>
-          ${item.mode === 'custom' ? `<input type="text" data-idx="${i}" data-field="product_name" value="${escapeHtml(item.product_name)}" placeholder="Tên sản phẩm/dịch vụ" class="acc-line-input form-input border border-slate-200 rounded-lg px-2 py-1.5 text-sm">` : ''}
-          <div class="flex items-center gap-2">
-            <input type="number" data-idx="${i}" data-field="quantity" value="${item.quantity}" min="0" step="1" placeholder="SL" class="acc-line-input form-input border border-slate-200 rounded-lg px-2 py-1.5 text-sm w-20 shrink-0">
-            <span class="text-navy-900/30 text-xs shrink-0">×</span>
-            <input type="number" data-idx="${i}" data-field="unit_price" value="${item.unit_price}" min="0" step="1000" placeholder="Đơn giá" class="acc-line-input form-input border border-slate-200 rounded-lg px-2 py-1.5 text-sm flex-1 min-w-0">
-            ${stock !== null ? `<span class="text-[11px] font-body shrink-0 whitespace-nowrap text-navy-900/40">Tồn: ${stock}</span>` : ''}
+          ${item.mode === 'custom' ? `
+          <div class="flex flex-col gap-0.5">
+            <label class="text-[10px] font-body text-navy-900/40">Tên sản phẩm / dịch vụ</label>
+            <input type="text" data-idx="${i}" data-field="product_name" value="${escapeHtml(item.product_name)}" placeholder="VD: Phí lắp đặt" class="acc-line-input form-input border border-slate-200 rounded-lg px-2 py-1.5 text-sm">
+          </div>` : ''}
+          <div class="flex items-end gap-2">
+            <div class="flex flex-col gap-0.5 w-20 shrink-0">
+              <label class="text-[10px] font-body text-navy-900/40">Số lượng</label>
+              <input type="number" data-idx="${i}" data-field="quantity" value="${item.quantity}" min="0" step="1" class="acc-line-input form-input border border-slate-200 rounded-lg px-2 py-1.5 text-sm w-full">
+            </div>
+            <span class="text-navy-900/30 text-xs shrink-0 pb-2">×</span>
+            <div class="flex flex-col gap-0.5 flex-1 min-w-0">
+              <label class="text-[10px] font-body text-navy-900/40">Đơn giá (đ)</label>
+              <input type="text" inputmode="numeric" data-idx="${i}" data-field="unit_price" value="${formatThousands(item.unit_price)}" placeholder="0" class="acc-line-price-input form-input border border-slate-200 rounded-lg px-2 py-1.5 text-sm w-full">
+            </div>
+            ${stock !== null ? `<span class="text-[11px] font-body shrink-0 whitespace-nowrap text-navy-900/40 pb-2">Tồn: ${stock}</span>` : ''}
           </div>
         </div>
       `;
@@ -2625,6 +2641,15 @@
           const idx = Number(inp.dataset.idx);
           const field = inp.dataset.field;
           accDraftItems[idx][field] = field === 'product_name' ? inp.value : Number(inp.value);
+          recalcDraftOrder();
+        });
+      });
+      wrap.querySelectorAll('.acc-line-price-input').forEach(inp => {
+        inp.addEventListener('input', () => {
+          const idx = Number(inp.dataset.idx);
+          const raw = inp.value.replace(/[^\d]/g, '');
+          accDraftItems[idx].unit_price = raw ? Number(raw) : 0;
+          inp.value = formatThousands(raw);
           recalcDraftOrder();
         });
       });
@@ -2842,6 +2867,7 @@
             </div>
             <p class="font-display font-800 text-sm text-brand shrink-0">${formatVnd(o.total)}</p>
             <button data-id="${o.id}" class="acc-btn-toggle-items focus-ring text-xs font-body font-medium text-navy-900/50 hover:text-navy-900 underline shrink-0">Chi tiết</button>
+            <button data-id="${o.id}" class="acc-btn-print-order focus-ring text-xs font-display font-700 text-navy-900/60 border border-slate-200 hover:bg-slate-150 rounded-lg px-3 py-1.5 transition-colors shrink-0">In hóa đơn</button>
             <button data-id="${o.id}" class="acc-btn-edit-order focus-ring text-xs font-display font-700 text-brand border border-brand/30 hover:bg-brand hover:text-white rounded-lg px-3 py-1.5 transition-colors shrink-0">Sửa</button>
             <button data-id="${o.id}" data-label="${escapeHtml(o.customer_name || 'Khách lẻ')}" class="acc-btn-delete-order focus-ring text-xs font-display font-700 text-red-600 border border-red-200 hover:bg-red-600 hover:text-white rounded-lg px-3 py-1.5 transition-colors shrink-0">Xóa</button>
           </div>
@@ -2851,6 +2877,9 @@
 
       list.querySelectorAll('.acc-btn-toggle-items').forEach(btn => {
         btn.addEventListener('click', () => toggleOrderItems(btn.dataset.id));
+      });
+      list.querySelectorAll('.acc-btn-print-order').forEach(btn => {
+        btn.addEventListener('click', () => printInvoice(Number(btn.dataset.id)));
       });
       list.querySelectorAll('.acc-btn-edit-order').forEach(btn => {
         btn.addEventListener('click', () => startEditOrder(Number(btn.dataset.id)));
@@ -2877,6 +2906,100 @@
       panel.innerHTML = (data && data.length)
         ? data.map(it => `<p class="font-body text-xs text-navy-900/60">${escapeHtml(it.product_name)} — ${it.quantity} × ${formatVnd(it.unit_price)} = ${formatVnd(it.line_total)}</p>`).join('')
         : '<p class="font-body text-xs text-navy-900/40">Không có dòng sản phẩm.</p>';
+    }
+
+    // ----- In / xuất PDF hóa đơn bán lẻ -----
+    // Mở 1 tab mới với hóa đơn thuần HTML rồi gọi window.print() — khách chọn
+    // "Lưu dưới dạng PDF" trong hộp thoại in của trình duyệt là có file PDF,
+    // hoặc in thẳng ra giấy. Không cần thư viện PDF ngoài.
+    function invoiceHtml(order, items) {
+      const rows = items.length
+        ? items.map((it, i) => `
+          <tr>
+            <td>${i + 1}</td>
+            <td>${escapeHtml(it.product_name)}</td>
+            <td class="num">${it.quantity}</td>
+            <td class="num">${formatVnd(it.unit_price)}</td>
+            <td class="num">${formatVnd(it.line_total)}</td>
+          </tr>`).join('')
+        : '<tr><td colspan="5" style="text-align:center;color:#999;">Không có dòng sản phẩm</td></tr>';
+
+      return `<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="UTF-8">
+<title>Hóa đơn bán lẻ #${order.id} - Cửa Hàng Kim Long</title>
+<style>
+  * { box-sizing: border-box; }
+  body { font-family: Arial, Helvetica, sans-serif; color: #1a1a2e; padding: 32px; max-width: 720px; margin: 0 auto; }
+  .header { text-align: center; margin-bottom: 12px; }
+  .shop-name { font-size: 22px; font-weight: 800; letter-spacing: .5px; }
+  .shop-info { font-size: 12px; color: #555; margin-top: 4px; }
+  .invoice-title { font-size: 16px; font-weight: 700; margin-top: 14px; letter-spacing: 1px; }
+  .meta { display: flex; justify-content: space-between; gap: 16px; font-size: 13px; margin: 18px 0 14px; border-top: 1px dashed #999; border-bottom: 1px dashed #999; padding: 10px 0; }
+  .meta div div { line-height: 1.7; }
+  table { width: 100%; border-collapse: collapse; font-size: 13px; }
+  th, td { border: 1px solid #ccc; padding: 6px 8px; }
+  th { background: #f2f2f2; text-align: left; }
+  td.num, th.num { text-align: right; }
+  .totals { margin-top: 12px; width: 100%; font-size: 13px; }
+  .totals td { border: none; padding: 3px 8px; }
+  .totals .grand td { font-weight: 800; font-size: 15px; border-top: 1px solid #333; padding-top: 6px; }
+  .note { margin-top: 16px; font-size: 12px; color: #555; }
+  .footer { margin-top: 32px; text-align: center; font-size: 12px; color: #777; }
+  @media print { body { padding: 0; } }
+</style>
+</head>
+<body>
+  <div class="header">
+    <div class="shop-name">CỬA HÀNG KIM LONG</div>
+    <div class="shop-info">Hotline / Zalo: 0364.878.771</div>
+    <div class="invoice-title">HÓA ĐƠN BÁN LẺ</div>
+  </div>
+
+  <div class="meta">
+    <div>
+      <div><strong>Mã đơn:</strong> #${order.id}</div>
+      <div><strong>Ngày bán:</strong> ${new Date(order.order_date).toLocaleDateString('vi-VN')}</div>
+    </div>
+    <div>
+      <div><strong>Khách hàng:</strong> ${escapeHtml(order.customer_name || 'Khách lẻ')}</div>
+      ${order.customer_phone ? `<div><strong>SĐT:</strong> ${escapeHtml(order.customer_phone)}</div>` : ''}
+    </div>
+  </div>
+
+  <table>
+    <thead>
+      <tr><th>#</th><th>Sản phẩm</th><th class="num">SL</th><th class="num">Đơn giá</th><th class="num">Thành tiền</th></tr>
+    </thead>
+    <tbody>${rows}</tbody>
+  </table>
+
+  <table class="totals">
+    <tr><td style="text-align:right;width:82%;">Tạm tính</td><td class="num">${formatVnd(order.subtotal)}</td></tr>
+    <tr><td style="text-align:right;">Thuế (${order.tax_rate}%)</td><td class="num">${formatVnd(order.tax_amount)}</td></tr>
+    <tr class="grand"><td style="text-align:right;">Tổng cộng</td><td class="num">${formatVnd(order.total)}</td></tr>
+  </table>
+
+  ${order.note ? `<div class="note"><strong>Ghi chú:</strong> ${escapeHtml(order.note)}</div>` : ''}
+
+  <div class="footer">Cảm ơn quý khách đã mua hàng tại Cửa Hàng Kim Long!</div>
+</body>
+</html>`;
+    }
+
+    async function printInvoice(id) {
+      const order = accOrdersCache.find(o => o.id === id);
+      if (!order) return;
+      const { data: items, error } = await sb.from('sales_order_items').select('*').eq('order_id', id).order('id');
+      if (error) { showToast('Không tải được chi tiết đơn: ' + error.message, 'error'); return; }
+
+      const win = window.open('', '_blank');
+      if (!win) { showToast('Trình duyệt đang chặn cửa sổ in — vui lòng cho phép popup rồi thử lại.', 'error'); return; }
+      win.document.write(invoiceHtml(order, items || []));
+      win.document.close();
+      win.focus();
+      setTimeout(() => win.print(), 300);
     }
 
     async function deleteOrder(id, label) {
