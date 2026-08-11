@@ -2524,7 +2524,13 @@
 
     async function loadAccountingProducts() {
       const { data, error } = await sb.from('products').select('id,name,new_price,stock').order('name');
-      if (!error) accProductsCache = data || [];
+      if (error) {
+        console.error('Không tải được danh sách sản phẩm:', error);
+        showToast('Không tải được danh sách sản phẩm: ' + error.message, 'error');
+        accProductsCache = [];
+        return;
+      }
+      accProductsCache = data || [];
     }
 
     function setActiveTaxRate(rate) {
