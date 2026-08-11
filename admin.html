@@ -2912,11 +2912,17 @@
     // Mở 1 tab mới với hóa đơn thuần HTML rồi gọi window.print() — khách chọn
     // "Lưu dưới dạng PDF" trong hộp thoại in của trình duyệt là có file PDF,
     // hoặc in thẳng ra giấy. Không cần thư viện PDF ngoài.
+    // Mẫu dựa theo phiếu "Hóa Đơn Bán Lẻ" giấy than 3 liên phổ biến ở tiệm
+    // tạp hóa/cửa hàng (logo góc trái, tên+liên hệ shop ở giữa, dòng khách
+    // hàng viết tay, bảng STT/Tên sản phẩm/SL/Đơn giá/Thành tiền, dòng chiết
+    // khấu để trống cho thu ngân ghi tay, chữ ký người lập phiếu + ngày).
+    // Chưa có địa chỉ cửa hàng trong dữ liệu web nên tạm không in dòng ĐC —
+    // cho tôi biết địa chỉ nếu muốn thêm vào.
     function invoiceHtml(order, items) {
       const rows = items.length
         ? items.map((it, i) => `
           <tr>
-            <td>${i + 1}</td>
+            <td class="stt">${i + 1}</td>
             <td>${escapeHtml(it.product_name)}</td>
             <td class="num">${it.quantity}</td>
             <td class="num">${formatVnd(it.unit_price)}</td>
@@ -2924,66 +2930,105 @@
           </tr>`).join('')
         : '<tr><td colspan="5" style="text-align:center;color:#999;">Không có dòng sản phẩm</td></tr>';
 
+      const saleDate = new Date(order.order_date);
+
       return `<!DOCTYPE html>
 <html lang="vi">
 <head>
 <meta charset="UTF-8">
 <title>Hóa đơn bán lẻ #${order.id} - Cửa Hàng Kim Long</title>
 <style>
-  * { box-sizing: border-box; }
-  body { font-family: Arial, Helvetica, sans-serif; color: #1a1a2e; padding: 32px; max-width: 720px; margin: 0 auto; }
-  .header { text-align: center; margin-bottom: 12px; }
-  .shop-name { font-size: 22px; font-weight: 800; letter-spacing: .5px; }
-  .shop-info { font-size: 12px; color: #555; margin-top: 4px; }
-  .invoice-title { font-size: 16px; font-weight: 700; margin-top: 14px; letter-spacing: 1px; }
-  .meta { display: flex; justify-content: space-between; gap: 16px; font-size: 13px; margin: 18px 0 14px; border-top: 1px dashed #999; border-bottom: 1px dashed #999; padding: 10px 0; }
-  .meta div div { line-height: 1.7; }
-  table { width: 100%; border-collapse: collapse; font-size: 13px; }
-  th, td { border: 1px solid #ccc; padding: 6px 8px; }
-  th { background: #f2f2f2; text-align: left; }
-  td.num, th.num { text-align: right; }
-  .totals { margin-top: 12px; width: 100%; font-size: 13px; }
-  .totals td { border: none; padding: 3px 8px; }
-  .totals .grand td { font-weight: 800; font-size: 15px; border-top: 1px solid #333; padding-top: 6px; }
-  .note { margin-top: 16px; font-size: 12px; color: #555; }
-  .footer { margin-top: 32px; text-align: center; font-size: 12px; color: #777; }
-  @media print { body { padding: 0; } }
+  * { box-sizing: border-box; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+  body { position: relative; font-family: Arial, Helvetica, sans-serif; color: #1a1a2e; padding: 30px 36px; max-width: 720px; margin: 0 auto; }
+  .watermark { position: fixed; top: 50%; left: 50%; width: 320px; height: 320px; transform: translate(-50%, -50%) rotate(-18deg); opacity: .05; z-index: -1; }
+  .header-row { display: flex; align-items: center; gap: 14px; border-bottom: 3px solid #2563EB; padding-bottom: 12px; }
+  .logo-badge { width: 52px; height: 52px; border-radius: 14px; background: linear-gradient(155deg, #2563EB, #5B8DFF); display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
+  .shop-block { flex: 1; text-align: center; }
+  .shop-name { font-size: 21px; font-weight: 800; letter-spacing: .5px; color: #1e3a8a; }
+  .shop-info { font-size: 11.5px; color: #555; margin-top: 3px; line-height: 1.6; }
+  .invoice-title { text-align: center; font-size: 18px; font-weight: 800; letter-spacing: 2px; color: #1a1a2e; margin: 16px 0 14px; }
+  .customer-line { font-size: 13px; margin-bottom: 6px; display: flex; gap: 24px; }
+  .customer-line span.label { color: #555; }
+  .meta-right { text-align: right; font-size: 12px; color: #555; margin-bottom: 14px; }
+  table.items { width: 100%; border-collapse: collapse; font-size: 13px; margin-top: 6px; }
+  table.items th, table.items td { border: 1px solid #ccc; padding: 6px 8px; }
+  table.items th { background: #eef2ff; text-align: left; color: #1e3a8a; }
+  table.items td.stt { text-align: center; color: #777; }
+  table.items td.num, table.items th.num { text-align: right; }
+  table.items tbody tr:nth-child(even) { background: #fafafa; }
+  .totals { margin-top: 4px; width: 100%; font-size: 13px; }
+  .totals td { border: none; padding: 4px 8px; }
+  .totals .blank-line td { color: #999; }
+  .totals .grand td { font-weight: 800; font-size: 16px; border-top: 1.5px solid #1a1a2e; padding-top: 8px; color: #1e3a8a; }
+  .note { margin-top: 14px; font-size: 12px; color: #555; }
+  .sign-row { display: flex; justify-content: space-between; margin-top: 40px; font-size: 13px; text-align: center; }
+  .sign-row .sign-box { width: 44%; }
+  .sign-row .sign-hint { font-size: 11px; color: #999; margin-top: 44px; }
+  .footer-thanks { margin-top: 28px; text-align: center; font-size: 12px; color: #777; font-style: italic; }
+  @media print { body { padding: 0 16px; } }
 </style>
 </head>
 <body>
-  <div class="header">
-    <div class="shop-name">CỬA HÀNG KIM LONG</div>
-    <div class="shop-info">Hotline / Zalo: 0364.878.771</div>
-    <div class="invoice-title">HÓA ĐƠN BÁN LẺ</div>
+  <svg class="watermark" viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
+    <g stroke-linecap="round" stroke-linejoin="round" fill="none">
+      <g stroke="#2563EB" stroke-width="10"><line x1="20" y1="24" x2="20" y2="76"/><line x1="20" y1="50" x2="44" y2="24"/><line x1="20" y1="50" x2="46" y2="76"/></g>
+      <g stroke="#F97316" stroke-width="10"><line x1="66" y1="24" x2="66" y2="76"/><line x1="66" y1="76" x2="88" y2="76"/></g>
+    </g>
+  </svg>
+
+  <div class="header-row">
+    <span class="logo-badge">
+      <svg viewBox="0 0 100 100" width="30" height="30" xmlns="http://www.w3.org/2000/svg">
+        <g stroke-linecap="round" stroke-linejoin="round" fill="none">
+          <g stroke="#FFFFFF" stroke-width="12"><line x1="20" y1="24" x2="20" y2="76"/><line x1="20" y1="50" x2="44" y2="24"/><line x1="20" y1="50" x2="46" y2="76"/></g>
+          <g stroke="#FFC756" stroke-width="12"><line x1="66" y1="24" x2="66" y2="76"/><line x1="66" y1="76" x2="88" y2="76"/></g>
+        </g>
+      </svg>
+    </span>
+    <div class="shop-block">
+      <div class="shop-name">CỬA HÀNG KIM LONG</div>
+      <div class="shop-info">Điện thoại / Zalo: 0364.878.771 &nbsp;·&nbsp; Email: cskh@kimlong.vn</div>
+    </div>
+    <span style="width:52px;flex-shrink:0;"></span>
   </div>
 
-  <div class="meta">
-    <div>
-      <div><strong>Mã đơn:</strong> #${order.id}</div>
-      <div><strong>Ngày bán:</strong> ${new Date(order.order_date).toLocaleDateString('vi-VN')}</div>
-    </div>
-    <div>
-      <div><strong>Khách hàng:</strong> ${escapeHtml(order.customer_name || 'Khách lẻ')}</div>
-      ${order.customer_phone ? `<div><strong>SĐT:</strong> ${escapeHtml(order.customer_phone)}</div>` : ''}
-    </div>
-  </div>
+  <div class="invoice-title">HÓA ĐƠN BÁN LẺ</div>
 
-  <table>
+  <div class="customer-line">
+    <span><span class="label">Tên khách hàng:</span> <strong>${escapeHtml(order.customer_name || 'Khách lẻ')}</strong></span>
+    <span><span class="label">ĐT:</span> ${order.customer_phone ? escapeHtml(order.customer_phone) : '.....................'}</span>
+  </div>
+  <div class="meta-right">Mã đơn: #${order.id} &nbsp;·&nbsp; Ngày bán: ${saleDate.toLocaleDateString('vi-VN')}</div>
+
+  <table class="items">
     <thead>
-      <tr><th>#</th><th>Sản phẩm</th><th class="num">SL</th><th class="num">Đơn giá</th><th class="num">Thành tiền</th></tr>
+      <tr><th style="width:34px;">STT</th><th>Tên sản phẩm</th><th class="num" style="width:50px;">SL</th><th class="num" style="width:100px;">Đơn giá</th><th class="num" style="width:110px;">Thành tiền</th></tr>
     </thead>
     <tbody>${rows}</tbody>
   </table>
 
   <table class="totals">
-    <tr><td style="text-align:right;width:82%;">Tạm tính</td><td class="num">${formatVnd(order.subtotal)}</td></tr>
+    <tr><td style="text-align:right;width:78%;">Tạm tính</td><td class="num">${formatVnd(order.subtotal)}</td></tr>
     <tr><td style="text-align:right;">Thuế (${order.tax_rate}%)</td><td class="num">${formatVnd(order.tax_amount)}</td></tr>
-    <tr class="grand"><td style="text-align:right;">Tổng cộng</td><td class="num">${formatVnd(order.total)}</td></tr>
+    <tr class="blank-line"><td style="text-align:right;">Chiết khấu</td><td class="num">.....................</td></tr>
+    <tr class="grand"><td style="text-align:right;">Tổng tiền</td><td class="num">${formatVnd(order.total)}</td></tr>
   </table>
 
   ${order.note ? `<div class="note"><strong>Ghi chú:</strong> ${escapeHtml(order.note)}</div>` : ''}
 
-  <div class="footer">Cảm ơn quý khách đã mua hàng tại Cửa Hàng Kim Long!</div>
+  <div class="sign-row">
+    <div class="sign-box">
+      <strong>Người lập phiếu</strong>
+      <div class="sign-hint">(Ký, ghi rõ họ tên)</div>
+    </div>
+    <div class="sign-box">
+      <strong>Khách hàng</strong>
+      <div class="sign-hint">(Ký, ghi rõ họ tên)</div>
+    </div>
+  </div>
+  <div class="meta-right" style="margin-top:8px;">Ngày ${saleDate.getDate()} tháng ${saleDate.getMonth() + 1} năm ${saleDate.getFullYear()}</div>
+
+  <div class="footer-thanks">Cảm ơn quý khách đã mua hàng tại Cửa Hàng Kim Long!</div>
 </body>
 </html>`;
     }
