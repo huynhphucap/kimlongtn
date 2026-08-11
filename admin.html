@@ -3184,24 +3184,35 @@
     // ----- Nhập hàng nhiều sản phẩm 1 lần (1 "phiếu nhập kho") -----
     let invReceiptItems = [{ product_id: null, product_name: '', quantity: 1 }];
 
-    function receiptProductOptionsHtml(selectedId) {
-      return invProductsCache.map(p => `<option value="${p.id}" ${String(p.id) === String(selectedId) ? 'selected' : ''}>${escapeHtml(p.name)} (Tồn: ${Number(p.stock) || 0})</option>`).join('');
+    // excludeIds: sản phẩm đã được chọn ở DÒNG KHÁC trong cùng phiếu nhập —
+    // ẩn khỏi dropdown để không lỡ chọn trùng 1 sản phẩm ở 2 dòng (muốn nhập
+    // thêm số lượng cho sản phẩm đã có thì sửa số lượng ngay dòng đó).
+    function receiptProductOptionsHtml(selectedId, excludeIds) {
+      return invProductsCache
+        .filter(p => p.id === selectedId || !excludeIds.has(p.id))
+        .map(p => `<option value="${p.id}" ${String(p.id) === String(selectedId) ? 'selected' : ''}>${escapeHtml(p.name)} (Tồn: ${Number(p.stock) || 0})</option>`)
+        .join('');
     }
 
     function renderReceiptItems() {
       const wrap = document.getElementById('inv-receipt-items');
-      wrap.innerHTML = invReceiptItems.map((item, i) => `
+      wrap.innerHTML = invReceiptItems.map((item, i) => {
+        const usedElsewhere = new Set(
+          invReceiptItems.filter((it, j) => j !== i && it.product_id).map(it => it.product_id)
+        );
+        return `
         <div class="flex items-center gap-2">
           <select data-idx="${i}" class="inv-receipt-select focus-ring form-input border border-slate-200 rounded-lg px-2 py-1.5 text-xs flex-1 min-w-0 bg-white">
             <option value="">— Chọn sản phẩm —</option>
-            ${receiptProductOptionsHtml(item.product_id)}
+            ${receiptProductOptionsHtml(item.product_id, usedElsewhere)}
           </select>
           <input type="number" data-idx="${i}" min="1" step="1" value="${item.quantity}" placeholder="SL" class="inv-receipt-qty focus-ring form-input border border-slate-200 rounded-lg px-2 py-1.5 text-sm w-24 shrink-0">
           <button type="button" data-idx="${i}" class="inv-btn-remove-receipt-line focus-ring icon-btn w-7 h-7 shrink-0 hover:text-red-600" title="Xóa dòng">
             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M18 6 6 18M6 6l12 12"/></svg>
           </button>
         </div>
-      `).join('');
+      `;
+      }).join('');
 
       wrap.querySelectorAll('.inv-receipt-select').forEach(sel => {
         sel.addEventListener('change', () => {
@@ -3209,6 +3220,7 @@
           const product = invProductsCache.find(p => String(p.id) === sel.value);
           invReceiptItems[idx].product_id = product ? product.id : null;
           invReceiptItems[idx].product_name = product ? product.name : '';
+          renderReceiptItems(); // các dòng khác cần ẩn/hiện lại sản phẩm vừa chọn
         });
       });
       wrap.querySelectorAll('.inv-receipt-qty').forEach(inp => {
@@ -3244,6 +3256,18 @@
       const validItems = invReceiptItems.filter(it => it.product_id && Number(it.quantity) > 0);
       if (validItems.length === 0) {
         errEl.textContent = 'Chọn ít nhất 1 sản phẩm và nhập số lượng > 0 cho từng dòng.';
+        errEl.classList.remove('hidden');
+        return;
+      }
+
+      const seen = new Set();
+      const dupeNames = new Set();
+      validItems.forEach(it => {
+        if (seen.has(it.product_id)) dupeNames.add(it.product_name);
+        seen.add(it.product_id);
+      });
+      if (dupeNames.size > 0) {
+        errEl.textContent = `Sản phẩm bị chọn trùng ở nhiều dòng: ${[...dupeNames].join(', ')}. Gộp lại thành 1 dòng (cộng số lượng) rồi lưu.`;
         errEl.classList.remove('hidden');
         return;
       }
