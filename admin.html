@@ -1037,6 +1037,36 @@
       </div>
     </div>
 
+    <!-- Nhập hàng nhiều sản phẩm 1 lần (vd: nhập theo 1 hóa đơn của nhà cung
+         cấp có nhiều mặt hàng) — khỏi phải mở "Điều chỉnh" từng sản phẩm ở
+         danh sách bên dưới. -->
+    <div class="card-surface card-accent-top border-brand/15 rounded-2xl p-6 flex flex-col gap-4 mb-8">
+      <h2 class="font-display font-700 text-lg text-navy-950 flex items-center gap-2">
+        <span class="icon-chip w-7 h-7 rounded-lg">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg>
+        </span>
+        Nhập Hàng (Nhiều Sản Phẩm 1 Lần)
+      </h2>
+      <p class="font-body text-xs text-navy-900/50 -mt-2">Gộp cả hóa đơn nhập hàng vào 1 lần lưu — chọn nhiều sản phẩm + số lượng rồi bấm Lưu 1 lần, không cần điều chỉnh từng cái.</p>
+
+      <div class="flex flex-col gap-1.5">
+        <label class="text-xs font-medium text-navy-900/60">Lý do / Ghi chú chung <span class="text-navy-900/35 font-normal">(áp dụng cho tất cả dòng bên dưới)</span></label>
+        <input type="text" id="inv-receipt-reason" placeholder="VD: Nhập hàng từ NCC ABC - hóa đơn số 00123" class="focus-ring form-input border border-slate-200 rounded-lg px-3 py-2 text-sm">
+      </div>
+
+      <div class="flex flex-col gap-2">
+        <label class="text-xs font-medium text-navy-900/60">Sản phẩm nhập về</label>
+        <div id="inv-receipt-items" class="flex flex-col gap-2"><!-- JS render --></div>
+        <button type="button" id="inv-btn-add-receipt-line" class="focus-ring self-start text-xs font-display font-700 text-brand hover:text-ember transition-colors">+ Thêm dòng sản phẩm</button>
+      </div>
+
+      <p id="inv-receipt-error" class="hidden text-sm text-red-600 bg-red-50 border border-red-200 rounded-lg px-3 py-2"></p>
+
+      <button type="button" id="inv-btn-save-receipt" class="focus-ring self-start bg-ember hover:bg-ember-dark text-white font-display font-700 text-sm px-5 py-2.5 rounded-xl shadow-[0_10px_20px_-8px_rgba(249,115,22,0.5)] transition-colors">
+        Lưu Phiếu Nhập Kho
+      </button>
+    </div>
+
     <div class="grid grid-cols-1 lg:grid-cols-5 gap-8 items-start">
 
       <div class="lg:col-span-3 flex flex-col gap-4">
@@ -3147,8 +3177,99 @@
       document.getElementById('inv-product-search').value = '';
       invSearchQuery = '';
       await loadInventoryProducts();
+      resetReceiptForm();
       await loadInventoryMovements();
     }
+
+    // ----- Nhập hàng nhiều sản phẩm 1 lần (1 "phiếu nhập kho") -----
+    let invReceiptItems = [{ product_id: null, product_name: '', quantity: 1 }];
+
+    function receiptProductOptionsHtml(selectedId) {
+      return invProductsCache.map(p => `<option value="${p.id}" ${String(p.id) === String(selectedId) ? 'selected' : ''}>${escapeHtml(p.name)} (Tồn: ${Number(p.stock) || 0})</option>`).join('');
+    }
+
+    function renderReceiptItems() {
+      const wrap = document.getElementById('inv-receipt-items');
+      wrap.innerHTML = invReceiptItems.map((item, i) => `
+        <div class="flex items-center gap-2">
+          <select data-idx="${i}" class="inv-receipt-select focus-ring form-input border border-slate-200 rounded-lg px-2 py-1.5 text-xs flex-1 min-w-0 bg-white">
+            <option value="">— Chọn sản phẩm —</option>
+            ${receiptProductOptionsHtml(item.product_id)}
+          </select>
+          <input type="number" data-idx="${i}" min="1" step="1" value="${item.quantity}" placeholder="SL" class="inv-receipt-qty focus-ring form-input border border-slate-200 rounded-lg px-2 py-1.5 text-sm w-24 shrink-0">
+          <button type="button" data-idx="${i}" class="inv-btn-remove-receipt-line focus-ring icon-btn w-7 h-7 shrink-0 hover:text-red-600" title="Xóa dòng">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M18 6 6 18M6 6l12 12"/></svg>
+          </button>
+        </div>
+      `).join('');
+
+      wrap.querySelectorAll('.inv-receipt-select').forEach(sel => {
+        sel.addEventListener('change', () => {
+          const idx = Number(sel.dataset.idx);
+          const product = invProductsCache.find(p => String(p.id) === sel.value);
+          invReceiptItems[idx].product_id = product ? product.id : null;
+          invReceiptItems[idx].product_name = product ? product.name : '';
+        });
+      });
+      wrap.querySelectorAll('.inv-receipt-qty').forEach(inp => {
+        inp.addEventListener('input', () => {
+          invReceiptItems[Number(inp.dataset.idx)].quantity = Number(inp.value);
+        });
+      });
+      wrap.querySelectorAll('.inv-btn-remove-receipt-line').forEach(btn => {
+        btn.addEventListener('click', () => {
+          invReceiptItems.splice(Number(btn.dataset.idx), 1);
+          if (invReceiptItems.length === 0) invReceiptItems.push({ product_id: null, product_name: '', quantity: 1 });
+          renderReceiptItems();
+        });
+      });
+    }
+
+    document.getElementById('inv-btn-add-receipt-line').addEventListener('click', () => {
+      invReceiptItems.push({ product_id: null, product_name: '', quantity: 1 });
+      renderReceiptItems();
+    });
+
+    function resetReceiptForm() {
+      invReceiptItems = [{ product_id: null, product_name: '', quantity: 1 }];
+      renderReceiptItems();
+      document.getElementById('inv-receipt-reason').value = '';
+      document.getElementById('inv-receipt-error').classList.add('hidden');
+    }
+
+    document.getElementById('inv-btn-save-receipt').addEventListener('click', async () => {
+      const errEl = document.getElementById('inv-receipt-error');
+      errEl.classList.add('hidden');
+
+      const validItems = invReceiptItems.filter(it => it.product_id && Number(it.quantity) > 0);
+      if (validItems.length === 0) {
+        errEl.textContent = 'Chọn ít nhất 1 sản phẩm và nhập số lượng > 0 cho từng dòng.';
+        errEl.classList.remove('hidden');
+        return;
+      }
+
+      const reason = document.getElementById('inv-receipt-reason').value.trim() || 'Nhập kho (nhiều sản phẩm)';
+      const btn = document.getElementById('inv-btn-save-receipt');
+      btn.disabled = true;
+
+      let failCount = 0;
+      for (const it of validItems) {
+        const { error } = await sb.rpc('adjust_product_stock', { p_product_id: it.product_id, p_delta: Number(it.quantity), p_reason: reason });
+        if (error) { failCount++; console.warn('Không nhập được', it.product_name, error.message); }
+      }
+
+      if (failCount === 0) {
+        showToast(`Đã nhập kho ${validItems.length} sản phẩm!`);
+        resetReceiptForm();
+      } else {
+        showToast(`Nhập kho xong nhưng ${failCount}/${validItems.length} dòng bị lỗi — kiểm tra lại tồn kho.`, 'error');
+      }
+
+      await loadAccountingProducts();
+      await loadInventoryProducts();
+      await loadInventoryMovements();
+      btn.disabled = false;
+    });
 
     // Bỏ dấu để gõ không cần dấu vẫn tìm ra (vd "den" khớp "Đèn", "quat" khớp "Quạt").
     function stripDiacritics(str) {
