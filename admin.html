@@ -2705,8 +2705,17 @@
     // ----- Form thêm/sửa đơn: dòng sản phẩm động -----
     // Mỗi dòng có mode: 'unset' (chưa chọn) | 'catalog' (chọn từ sản phẩm có
     // sẵn, có product_id + theo dõi tồn kho) | 'custom' (nhập tay, không trừ kho).
+    // Sản phẩm hết hàng (tồn = 0) bị khóa, không chọn được để bán — trừ khi
+    // đó là sản phẩm ĐANG được chọn sẵn ở đúng dòng này (giữ nguyên khi sửa
+    // đơn cũ, lỡ sản phẩm đó hết hàng sau khi đơn đã tạo).
     function productSelectOptionsHtml(selectedId) {
-      return accProductsCache.map(p => `<option value="${p.id}" ${String(p.id) === String(selectedId) ? 'selected' : ''}>${escapeHtml(p.name)} (Tồn: ${Number(p.stock) || 0} ${escapeHtml(p.unit || 'Cái')})</option>`).join('');
+      return accProductsCache.map(p => {
+        const outOfStock = (Number(p.stock) || 0) <= 0 && p.id !== selectedId;
+        const label = outOfStock
+          ? `${escapeHtml(p.name)} — Hết hàng`
+          : `${escapeHtml(p.name)} (Tồn: ${Number(p.stock) || 0} ${escapeHtml(p.unit || 'Cái')})`;
+        return `<option value="${p.id}" ${String(p.id) === String(selectedId) ? 'selected' : ''} ${outOfStock ? 'disabled' : ''}>${label}</option>`;
+      }).join('');
     }
 
     function renderDraftLineItems() {
@@ -2904,6 +2913,8 @@
           if (it.product_id) restoreMap.set(it.product_id, (restoreMap.get(it.product_id) || 0) + Number(it.quantity));
         });
       }
+      // Không cho bán vượt quá tồn kho hiện có (kể cả hết hàng, tồn = 0) —
+      // chặn hẳn, không cho lưu đơn, thay vì chỉ cảnh báo rồi cho qua.
       const overStock = items.filter(it => {
         if (!it.product_id) return false;
         const p = accProductsCache.find(x => x.id === it.product_id);
@@ -2912,8 +2923,14 @@
         return it.quantity > available;
       });
       if (overStock.length > 0) {
-        const ok = await askConfirm('Vượt tồn kho?', `Số lượng vượt tồn kho hiện có cho: ${overStock.map(it => it.product_name).join(', ')}. Bạn vẫn muốn lưu đơn?`);
-        if (!ok) return;
+        const details = overStock.map(it => {
+          const p = accProductsCache.find(x => x.id === it.product_id);
+          const available = (Number(p && p.stock) || 0) + (restoreMap.get(it.product_id) || 0);
+          return `${it.product_name} (còn ${available}, cần ${it.quantity})`;
+        }).join('; ');
+        errEl.textContent = `Không đủ tồn kho để bán: ${details}. Vào tab Kho để nhập thêm hàng hoặc giảm số lượng lại.`;
+        errEl.classList.remove('hidden');
+        return;
       }
 
       const { subtotal, taxAmount, total } = recalcDraftOrder();
