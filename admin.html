@@ -1101,6 +1101,10 @@
           <div id="inv-products-loading" class="flex items-center justify-center gap-2 py-16 text-sm text-navy-900/50">
             <span class="spinner"></span> Đang tải tồn kho...
           </div>
+          <div id="inv-products-pagination" class="hidden items-center justify-between gap-3 flex-wrap px-5 py-3.5 border-t border-slate-100">
+            <p id="inv-products-pagination-info" class="text-xs text-navy-900/50 font-body"></p>
+            <div id="inv-products-pagination-controls" class="flex items-center gap-1"></div>
+          </div>
         </div>
       </div>
 
@@ -1110,6 +1114,13 @@
           <div id="inv-movements-list" class="divide-y divide-slate-100"></div>
           <div id="inv-movements-empty" class="hidden text-center py-16 px-6 font-body text-sm text-navy-900/50">
             Chưa có thay đổi tồn kho nào.
+          </div>
+          <div id="inv-movements-loading" class="flex items-center justify-center gap-2 py-16 text-sm text-navy-900/50">
+            <span class="spinner"></span> Đang tải lịch sử...
+          </div>
+          <div id="inv-movements-pagination" class="hidden items-center justify-between gap-3 flex-wrap px-5 py-3.5 border-t border-slate-100">
+            <p id="inv-movements-pagination-info" class="text-xs text-navy-900/50 font-body"></p>
+            <div id="inv-movements-pagination-controls" class="flex items-center gap-1"></div>
           </div>
         </div>
       </div>
@@ -3223,6 +3234,8 @@
     async function loadInventoryTab() {
       document.getElementById('inv-product-search').value = '';
       invSearchQuery = '';
+      invProductsPaginator.page = 1;
+      invMovementsPaginator.page = 1;
       await loadUnitConversions();
       await loadInventoryProducts();
       resetReceiptForm();
@@ -3416,7 +3429,9 @@
       }
 
       await loadAccountingProducts();
+      invProductsPaginator.page = 1;
       await loadInventoryProducts();
+      invMovementsPaginator.page = 1;
       await loadInventoryMovements();
       btn.disabled = false;
     });
@@ -3432,6 +3447,7 @@
 
     document.getElementById('inv-product-search').addEventListener('input', (e) => {
       invSearchQuery = e.target.value;
+      invProductsPaginator.page = 1;
       renderInventoryProducts();
     });
 
@@ -3446,6 +3462,87 @@
       const n = Number(qty) || 0;
       return Number.isInteger(n) ? n.toLocaleString('vi-VN') : n.toLocaleString('vi-VN', { maximumFractionDigits: 2 });
     }
+
+    // Phân trang dùng chung cho các danh sách ở tab Kho (tồn kho + lịch sử
+    // nhập/xuất) — cùng kiểu số trang có "…" như tab Sản Phẩm.
+    function createPaginator({ pageSize, containerId, infoId, controlsId, itemLabel, onPageChange }) {
+      let page = 1;
+      const container = document.getElementById(containerId);
+      const info = document.getElementById(infoId);
+      const controls = document.getElementById(controlsId);
+
+      function pageBtn(label, p, opts = {}) {
+        const disabled = opts.disabled ? 'disabled' : '';
+        const activeClasses = opts.active
+          ? 'bg-navy-950 text-white'
+          : 'text-navy-900/60 hover:bg-slate-150 disabled:opacity-30 disabled:hover:bg-transparent';
+        return `<button type="button" ${disabled} data-page="${p}" class="focus-ring pagination-btn w-7 h-7 rounded-lg text-xs font-display font-700 transition-colors ${activeClasses}">${label}</button>`;
+      }
+
+      function render(totalItems) {
+        const totalPages = Math.max(1, Math.ceil(totalItems / pageSize));
+        if (page > totalPages) page = totalPages;
+        if (page < 1) page = 1;
+
+        if (totalItems === 0) {
+          container.classList.add('hidden');
+          container.classList.remove('flex');
+          return;
+        }
+        container.classList.remove('hidden');
+        container.classList.add('flex');
+
+        const from = (page - 1) * pageSize + 1;
+        const to = Math.min(page * pageSize, totalItems);
+        info.textContent = `Hiển thị ${from}-${to} trong ${totalItems} ${itemLabel}`;
+
+        let html = pageBtn('‹', page - 1, { disabled: page === 1 });
+        const windowSize = 1;
+        for (let p = 1; p <= totalPages; p++) {
+          const withinWindow = p === 1 || p === totalPages || Math.abs(p - page) <= windowSize;
+          if (withinWindow) {
+            html += pageBtn(String(p), p, { active: p === page });
+          } else if (p === page - windowSize - 1 || p === page + windowSize + 1) {
+            html += `<span class="w-7 h-7 flex items-center justify-center text-xs text-navy-900/30">…</span>`;
+          }
+        }
+        html += pageBtn('›', page + 1, { disabled: page === totalPages });
+        controls.innerHTML = html;
+
+        controls.querySelectorAll('.pagination-btn:not([disabled])').forEach(btn => {
+          btn.addEventListener('click', () => {
+            page = Number(btn.dataset.page);
+            onPageChange(page);
+          });
+        });
+      }
+
+      return {
+        get page() { return page; },
+        set page(p) { page = p; },
+        render,
+      };
+    }
+
+    const INV_PRODUCTS_PAGE_SIZE = 10;
+    const invProductsPaginator = createPaginator({
+      pageSize: INV_PRODUCTS_PAGE_SIZE,
+      containerId: 'inv-products-pagination',
+      infoId: 'inv-products-pagination-info',
+      controlsId: 'inv-products-pagination-controls',
+      itemLabel: 'sản phẩm',
+      onPageChange: () => renderInventoryProducts(),
+    });
+
+    const INV_MOVEMENTS_PAGE_SIZE = 10;
+    const invMovementsPaginator = createPaginator({
+      pageSize: INV_MOVEMENTS_PAGE_SIZE,
+      containerId: 'inv-movements-pagination',
+      infoId: 'inv-movements-pagination-info',
+      controlsId: 'inv-movements-pagination-controls',
+      itemLabel: 'lượt thay đổi',
+      onPageChange: () => loadInventoryMovements(),
+    });
 
     async function loadInventoryProducts() {
       const list = document.getElementById('inv-products-list');
@@ -3486,6 +3583,7 @@
         list.innerHTML = '';
         noMatch.classList.add('hidden');
         empty.classList.remove('hidden');
+        invProductsPaginator.render(0);
         return;
       }
       empty.classList.add('hidden');
@@ -3496,11 +3594,15 @@
       if (filtered.length === 0) {
         list.innerHTML = '';
         noMatch.classList.remove('hidden');
+        invProductsPaginator.render(0);
         return;
       }
       noMatch.classList.add('hidden');
 
-      list.innerHTML = filtered.map(p => {
+      invProductsPaginator.render(filtered.length);
+      const pageItems = filtered.slice((invProductsPaginator.page - 1) * INV_PRODUCTS_PAGE_SIZE, invProductsPaginator.page * INV_PRODUCTS_PAGE_SIZE);
+
+      list.innerHTML = pageItems.map(p => {
         const status = stockStatus(p.stock);
         const units = unitOptionsForProduct(p);
         const conversions = invConversionsByProduct.get(p.id) || [];
@@ -3646,19 +3748,35 @@
 
       showToast('Đã cập nhật tồn kho!');
       await loadAccountingProducts(); // đồng bộ cache dùng khi chọn sản phẩm ở tab Kế Toán
+      invProductsPaginator.page = 1;
       await loadInventoryProducts();
+      invMovementsPaginator.page = 1;
       await loadInventoryMovements();
     }
 
     async function loadInventoryMovements() {
       const list = document.getElementById('inv-movements-list');
       const empty = document.getElementById('inv-movements-empty');
-      const { data, error } = await sb.from('inventory_movements').select('*').order('created_at', { ascending: false }).limit(50);
+      const loading = document.getElementById('inv-movements-loading');
+      loading.classList.remove('hidden');
+      list.innerHTML = '';
+      empty.classList.add('hidden');
+
+      const page = invMovementsPaginator.page;
+      const from = (page - 1) * INV_MOVEMENTS_PAGE_SIZE;
+      const to = from + INV_MOVEMENTS_PAGE_SIZE - 1;
+      const { data, error, count } = await sb.from('inventory_movements')
+        .select('*', { count: 'exact' })
+        .order('created_at', { ascending: false })
+        .range(from, to);
+      loading.classList.add('hidden');
       if (error) {
         list.innerHTML = `<div class="text-center py-10 text-sm text-red-600 px-6">Lỗi: ${escapeHtml(error.message)}</div>`;
+        invMovementsPaginator.render(0);
         return;
       }
       const movements = data || [];
+      invMovementsPaginator.render(count || 0);
       if (movements.length === 0) { list.innerHTML = ''; empty.classList.remove('hidden'); return; }
       empty.classList.add('hidden');
 
