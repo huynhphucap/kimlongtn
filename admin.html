@@ -8,7 +8,7 @@
 
 <script src="https://cdn.tailwindcss.com"></script>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-<script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/exceljs@4.4.0/dist/exceljs.min.js"></script>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Sora:wght@400;600;700;800&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet">
 
@@ -195,6 +195,10 @@
   .img-tab[data-active="true"] { background: #fff; color: #2563EB; box-shadow: 0 1px 2px rgba(15,27,51,.08); }
   .img-tab[data-active="false"] { color: rgba(15,27,51,.45); }
   .img-tab[data-active="false"]:hover { color: #0F1B33; }
+
+  .report-mode-btn[data-active="true"] { background: #fff; color: #2563EB; box-shadow: 0 1px 2px rgba(15,27,51,.08); }
+  .report-mode-btn[data-active="false"] { color: rgba(15,27,51,.45); }
+  .report-mode-btn[data-active="false"]:hover { color: #0F1B33; }
 </style>
 </head>
 
@@ -996,20 +1000,37 @@
         </div>
 
         <div class="flex items-center justify-between gap-3 mt-4 flex-wrap">
-          <h2 class="font-display font-700 text-sm text-navy-950">Báo Cáo Doanh Thu &amp; Thuế Theo Tháng</h2>
+          <h2 id="acc-report-title" class="font-display font-700 text-sm text-navy-950">Báo Cáo Doanh Thu &amp; Thuế Theo Tháng</h2>
           <div class="flex items-center gap-2">
             <button type="button" id="acc-btn-export-report" class="focus-ring text-xs font-display font-700 text-navy-900/60 border border-slate-200 rounded-lg px-3 py-1.5 hover:bg-slate-150 transition-colors">Xuất CSV</button>
-            <button type="button" id="acc-btn-export-s1hkd" title="Xuất theo Mẫu S1-HKD, Thông tư 88/2021/TT-BTC — 1 trang tính (sheet) cho mỗi tháng có đơn hàng" class="focus-ring text-xs font-display font-700 text-white bg-brand hover:bg-ember rounded-lg px-3 py-1.5 transition-colors">Xuất Sổ S1-HKD (Excel)</button>
+            <button type="button" id="acc-btn-export-s1hkd" title="Xuất theo Mẫu S1-HKD, Thông tư 88/2021/TT-BTC — 1 trang tính (sheet) cho mỗi kỳ" class="focus-ring text-xs font-display font-700 text-white bg-brand hover:bg-ember rounded-lg px-3 py-1.5 transition-colors">Xuất Sổ S1-HKD (Excel)</button>
           </div>
         </div>
+
+        <!-- Chọn kỳ báo cáo: theo tháng/quý, hoặc tự chọn khoảng thời gian -->
+        <div class="flex flex-wrap items-center gap-2">
+          <div class="inline-flex gap-0.5 p-0.5 rounded-lg border border-slate-200 bg-slate-100">
+            <button type="button" id="acc-report-mode-month" data-active="true" class="report-mode-btn font-display font-700 text-xs px-3 py-1.5 rounded-md transition-colors">Theo tháng</button>
+            <button type="button" id="acc-report-mode-quarter" data-active="false" class="report-mode-btn font-display font-700 text-xs px-3 py-1.5 rounded-md transition-colors">Theo quý</button>
+          </div>
+          <span class="text-xs text-navy-900/40">Từ</span>
+          <input type="date" id="acc-report-from" class="focus-ring form-input border border-slate-200 rounded-lg px-2 py-1.5 text-xs">
+          <span class="text-xs text-navy-900/40">đến</span>
+          <input type="date" id="acc-report-to" class="focus-ring form-input border border-slate-200 rounded-lg px-2 py-1.5 text-xs">
+          <button type="button" id="acc-btn-report-clear-range" class="focus-ring text-xs font-body text-navy-900/40 hover:text-navy-900 underline">Xóa lọc thời gian</button>
+        </div>
+
+        <!-- Thuế phải nộp tách riêng thành 1 dòng tính: Doanh thu kỳ đã lọc x Thuế suất hiện tại -->
+        <div id="acc-tax-calc-summary" class="card-surface rounded-2xl px-5 py-4 flex flex-wrap items-center gap-2 text-sm font-body"></div>
+
         <div class="card-surface rounded-2xl overflow-hidden overflow-x-auto">
           <table class="w-full text-sm font-body">
             <thead>
               <tr class="text-left text-xs text-navy-900/40 border-b border-slate-100">
-                <th class="px-4 py-2.5">Tháng</th>
+                <th id="acc-report-col-period" class="px-4 py-2.5">Tháng</th>
                 <th class="px-4 py-2.5 text-right">Số đơn</th>
                 <th class="px-4 py-2.5 text-right">Doanh thu</th>
-                <th class="px-4 py-2.5 text-right">Thuế phải nộp</th>
+                <th class="px-4 py-2.5 text-right">Thuế đã ghi nhận</th>
                 <th class="px-4 py-2.5 text-right">Tổng cộng</th>
               </tr>
             </thead>
@@ -2661,6 +2682,54 @@
       return (dateStr || '').slice(0, 7); // YYYY-MM
     }
 
+    function orderQuarterKey(dateStr) {
+      const d = (dateStr || '').slice(0, 10);
+      if (!d) return '';
+      const [y, m] = d.split('-');
+      const q = Math.ceil(Number(m) / 3);
+      return `${y}-Q${q}`; // vd 2026-Q3
+    }
+
+    function formatPeriodLabel(key, mode) {
+      if (mode === 'quarter') {
+        const [y, q] = key.split('-Q');
+        return `Quý ${q}/${y}`;
+      }
+      const [y, m] = key.split('-');
+      return `Tháng ${Number(m)}/${y}`;
+    }
+
+    // ----- Bộ lọc kỳ báo cáo: theo tháng/quý, và tùy chọn khoảng thời gian -----
+    let accReportMode = 'month'; // 'month' | 'quarter'
+
+    function getReportFilteredOrders() {
+      const from = document.getElementById('acc-report-from').value;
+      const to = document.getElementById('acc-report-to').value;
+      return accOrdersCache.filter(o => {
+        if (from && o.order_date < from) return false;
+        if (to && o.order_date > to) return false;
+        return true;
+      });
+    }
+
+    function setReportMode(mode) {
+      accReportMode = mode;
+      document.getElementById('acc-report-mode-month').dataset.active = mode === 'month' ? 'true' : 'false';
+      document.getElementById('acc-report-mode-quarter').dataset.active = mode === 'quarter' ? 'true' : 'false';
+      document.getElementById('acc-report-title').textContent = `Báo Cáo Doanh Thu & Thuế Theo ${mode === 'quarter' ? 'Quý' : 'Tháng'}`;
+      document.getElementById('acc-report-col-period').textContent = mode === 'quarter' ? 'Quý' : 'Tháng';
+      renderMonthlyReport();
+    }
+    document.getElementById('acc-report-mode-month').addEventListener('click', () => setReportMode('month'));
+    document.getElementById('acc-report-mode-quarter').addEventListener('click', () => setReportMode('quarter'));
+    document.getElementById('acc-report-from').addEventListener('change', () => renderMonthlyReport());
+    document.getElementById('acc-report-to').addEventListener('change', () => renderMonthlyReport());
+    document.getElementById('acc-btn-report-clear-range').addEventListener('click', () => {
+      document.getElementById('acc-report-from').value = '';
+      document.getElementById('acc-report-to').value = '';
+      renderMonthlyReport();
+    });
+
     // Giá sản phẩm trong bảng "products" là chuỗi tự do kiểu "590.000 đ"
     // (nhập tay ở tab Sản Phẩm) — lấy phần số ra để dùng tính toán.
     function parsePriceToNumber(str) {
@@ -3853,33 +3922,52 @@
     }
 
     // ----- Báo cáo theo tháng + thống kê nhanh -----
-    function groupOrdersByMonth() {
-      const byMonth = new Map();
-      accOrdersCache.forEach(o => {
-        const key = orderMonthKey(o.order_date);
-        const cur = byMonth.get(key) || { subtotal: 0, tax: 0, total: 0, count: 0 };
+    function groupOrdersByPeriod(orders, mode) {
+      const byPeriod = new Map();
+      const keyFn = mode === 'quarter' ? orderQuarterKey : orderMonthKey;
+      orders.forEach(o => {
+        const key = keyFn(o.order_date);
+        const cur = byPeriod.get(key) || { subtotal: 0, tax: 0, total: 0, count: 0 };
         cur.subtotal += Number(o.subtotal) || 0;
         cur.tax += Number(o.tax_amount) || 0;
         cur.total += Number(o.total) || 0;
         cur.count += 1;
-        byMonth.set(key, cur);
+        byPeriod.set(key, cur);
       });
-      return Array.from(byMonth.entries()).sort((a, b) => b[0].localeCompare(a[0]));
+      return Array.from(byPeriod.entries()).sort((a, b) => b[0].localeCompare(a[0]));
     }
 
     function renderMonthlyReport() {
       const body = document.getElementById('acc-report-body');
       const empty = document.getElementById('acc-report-empty');
-      const rows = groupOrdersByMonth();
+      const filtered = getReportFilteredOrders();
+      const rows = groupOrdersByPeriod(filtered, accReportMode);
+
+      // Thuế phải nộp tách thành 1 dòng tính riêng: Doanh thu (của toàn bộ kỳ
+      // đang lọc) x thuế suất ĐANG áp dụng hiện tại — khác với cột "Thuế đã
+      // ghi nhận" trong bảng bên dưới (là số thuế thực tế lưu theo từng đơn,
+      // có thể dùng thuế suất cũ nếu thuế suất chung đã đổi sau đó).
+      const revenueInRange = filtered.reduce((s, o) => s + (Number(o.subtotal) || 0), 0);
+      const taxCalc = revenueInRange * accTaxRate / 100;
+      document.getElementById('acc-tax-calc-summary').innerHTML = filtered.length ? `
+        <span class="font-body text-navy-900/60">Thuế phải nộp (kỳ đang lọc)</span>
+        <span class="font-display font-700 text-navy-950">${formatVnd(revenueInRange)}</span>
+        <span class="text-navy-900/30">×</span>
+        <span class="font-display font-700 text-navy-950">${accTaxRate}%</span>
+        <span class="text-navy-900/30">=</span>
+        <span class="font-display font-800 text-brand text-base">${formatVnd(taxCalc)}</span>
+        <span class="text-[11px] text-navy-900/35 w-full mt-0.5">Tính theo thuế suất đang áp dụng hiện tại (${accTaxRate}%) trên tổng doanh thu của các đơn trong khoảng thời gian đã lọc — có thể khác tổng cột "Thuế đã ghi nhận" nếu thuế suất từng thay đổi.</span>
+      ` : '';
+
       if (rows.length === 0) {
         body.innerHTML = '';
         empty.classList.remove('hidden');
         return;
       }
       empty.classList.add('hidden');
-      body.innerHTML = rows.map(([month, r]) => `
+      body.innerHTML = rows.map(([key, r]) => `
         <tr class="border-t border-slate-100">
-          <td class="px-4 py-2.5 font-display font-700 text-navy-950">${month}</td>
+          <td class="px-4 py-2.5 font-display font-700 text-navy-950">${formatPeriodLabel(key, accReportMode)}</td>
           <td class="px-4 py-2.5 text-right text-navy-900/60">${r.count}</td>
           <td class="px-4 py-2.5 text-right text-navy-900/60">${formatVnd(r.subtotal)}</td>
           <td class="px-4 py-2.5 text-right text-navy-900/60">${formatVnd(r.tax)}</td>
@@ -3917,93 +4005,155 @@
     });
 
     document.getElementById('acc-btn-export-report').addEventListener('click', () => {
-      const rows = [['Tháng', 'Số đơn', 'Doanh thu', 'Thuế phải nộp', 'Tổng cộng']];
-      const grouped = groupOrdersByMonth();
+      const rows = [[accReportMode === 'quarter' ? 'Quý' : 'Tháng', 'Số đơn', 'Doanh thu', 'Thuế đã ghi nhận', 'Tổng cộng']];
+      const grouped = groupOrdersByPeriod(getReportFilteredOrders(), accReportMode);
       if (grouped.length === 0) { showToast('Chưa có dữ liệu để xuất.', 'error'); return; }
-      grouped.forEach(([m, r]) => rows.push([m, r.count, r.subtotal, r.tax, r.total]));
+      grouped.forEach(([key, r]) => rows.push([formatPeriodLabel(key, accReportMode), r.count, r.subtotal, r.tax, r.total]));
       downloadCsv(`bao-cao-doanh-thu-thue_${new Date().toISOString().slice(0, 10)}.csv`, rows);
     });
 
     // ----- Xuất Sổ S1-HKD (Sổ chi tiết doanh thu bán hàng hóa, dịch vụ) -----
     // Theo khung mẫu S1-HKD, Thông tư 88/2021/TT-BTC — 1 sheet Excel cho mỗi
-    // tháng có đơn hàng, mỗi đơn hàng là 1 dòng chứng từ. Giả định toàn bộ
-    // doanh thu thuộc diện chịu thuế GTGT (cột "không chịu thuế" luôn = 0) vì
-    // module hiện chỉ theo dõi 1 mức thuế suất chung cho mọi đơn hàng — nếu
-    // hộ kinh doanh của bạn có hàng hóa/dịch vụ không chịu thuế thì cần tự
-    // tách dòng đó ra sau khi xuất file.
-    document.getElementById('acc-btn-export-s1hkd').addEventListener('click', () => {
-      if (typeof XLSX === 'undefined') {
+    // kỳ (tháng hoặc quý, theo lựa chọn ở trên báo cáo) có đơn hàng trong
+    // khoảng thời gian đang lọc, mỗi đơn hàng là 1 dòng chứng từ. Thuế phải
+    // nộp được tách thành 1 dòng tính riêng (Doanh thu x thuế suất hiện tại)
+    // bên cạnh dòng cộng tổng thuế đã ghi nhận theo từng đơn. Giả định toàn
+    // bộ doanh thu thuộc diện chịu thuế GTGT (cột "không chịu thuế" luôn = 0)
+    // vì module hiện chỉ theo dõi 1 mức thuế suất chung — nếu hộ kinh doanh
+    // của bạn có hàng hóa/dịch vụ không chịu thuế thì cần tự tách dòng đó ra
+    // sau khi xuất file.
+    document.getElementById('acc-btn-export-s1hkd').addEventListener('click', async () => {
+      if (typeof ExcelJS === 'undefined') {
         showToast('Không tải được thư viện xuất Excel — kiểm tra kết nối mạng rồi thử lại.', 'error');
         return;
       }
-      if (accOrdersCache.length === 0) {
-        showToast('Chưa có đơn hàng để xuất.', 'error');
+      const filteredOrders = getReportFilteredOrders();
+      if (filteredOrders.length === 0) {
+        showToast('Không có đơn hàng nào trong khoảng thời gian đang lọc để xuất.', 'error');
         return;
       }
 
-      const byMonth = new Map();
-      [...accOrdersCache]
+      const isQuarter = accReportMode === 'quarter';
+      const keyFn = isQuarter ? orderQuarterKey : orderMonthKey;
+      const byPeriod = new Map();
+      [...filteredOrders]
         .sort((a, b) => a.order_date.localeCompare(b.order_date) || a.id - b.id)
         .forEach(o => {
-          const key = orderMonthKey(o.order_date);
-          if (!byMonth.has(key)) byMonth.set(key, []);
-          byMonth.get(key).push(o);
+          const key = keyFn(o.order_date);
+          if (!byPeriod.has(key)) byPeriod.set(key, []);
+          byPeriod.get(key).push(o);
         });
 
-      const wb = XLSX.utils.book_new();
+      const wb = new ExcelJS.Workbook();
       const hkdName = accHkdName || 'Cửa Hàng Kim Long';
+      const thin = { style: 'thin' };
+      const allBorder = { top: thin, left: thin, bottom: thin, right: thin };
+      const cols = ['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H'];
 
-      Array.from(byMonth.keys()).sort().forEach(monthKey => {
-        const orders = byMonth.get(monthKey);
-        const [y, m] = monthKey.split('-');
-
-        const aoa = [
-          [`Hộ kinh doanh: ${hkdName}`],
-          [`Địa chỉ: ${accHkdAddress || ''}`],
-          [],
-          ['SỔ CHI TIẾT DOANH THU BÁN HÀNG HÓA, DỊCH VỤ'],
-          [`Tháng ${Number(m)} năm ${y}`],
-          [],
-          ['Ngày, tháng ghi sổ', 'Chứng từ', '', 'Diễn giải', 'Doanh thu bán hàng hóa, dịch vụ chịu thuế GTGT', 'Doanh thu bán hàng hóa, dịch vụ không chịu thuế GTGT', 'Thuế GTGT phải nộp', 'Ghi chú'],
-          ['', 'Số hiệu', 'Ngày, tháng', '', '', '', '', ''],
-          ['A', 'B', 'C', 'D', '1', '2', '3', 'E'],
+      Array.from(byPeriod.keys()).sort().forEach(periodKey => {
+        const orders = byPeriod.get(periodKey);
+        const periodLabel = formatPeriodLabel(periodKey, accReportMode); // "Tháng X năm Y" / "Quý X/Y"
+        const sheetName = (isQuarter ? `Quy ${periodKey}` : `Thang ${periodKey}`).slice(0, 31);
+        const ws = wb.addWorksheet(sheetName);
+        ws.columns = [
+          { width: 14 }, { width: 10 }, { width: 12 }, { width: 28 },
+          { width: 18 }, { width: 20 }, { width: 14 }, { width: 22 },
         ];
 
-        let sumTaxable = 0, sumNonTaxable = 0, sumTax = 0;
+        ws.getCell('A1').value = `Hộ kinh doanh: ${hkdName}`;
+        ws.getCell('A2').value = `Địa chỉ: ${accHkdAddress || ''}`;
+        ws.getCell('A4').value = 'SỔ CHI TIẾT DOANH THU BÁN HÀNG HÓA, DỊCH VỤ';
+        ws.mergeCells('A4:H4');
+        ws.getCell('A4').font = { bold: true, size: 13 };
+        ws.getCell('A4').alignment = { horizontal: 'center' };
+        ws.getCell('A5').value = periodLabel.replace('/', ' năm '); // "Tháng 7 năm 2026" / "Quý 3 năm 2026"
+        ws.mergeCells('A5:H5');
+        ws.getCell('A5').alignment = { horizontal: 'center' };
+
+        const r1 = 7, r2 = 8, r3 = 9;
+        ws.getCell(`A${r1}`).value = 'Ngày, tháng ghi sổ'; ws.mergeCells(`A${r1}:A${r2}`);
+        ws.getCell(`B${r1}`).value = 'Chứng từ'; ws.mergeCells(`B${r1}:C${r1}`);
+        ws.getCell(`B${r2}`).value = 'Số hiệu';
+        ws.getCell(`C${r2}`).value = 'Ngày, tháng';
+        ws.getCell(`D${r1}`).value = 'Diễn giải'; ws.mergeCells(`D${r1}:D${r2}`);
+        ws.getCell(`E${r1}`).value = 'Doanh thu bán hàng hóa, dịch vụ chịu thuế GTGT'; ws.mergeCells(`E${r1}:E${r2}`);
+        ws.getCell(`F${r1}`).value = 'Doanh thu bán hàng hóa, dịch vụ không chịu thuế GTGT'; ws.mergeCells(`F${r1}:F${r2}`);
+        ws.getCell(`G${r1}`).value = 'Thuế GTGT phải nộp'; ws.mergeCells(`G${r1}:G${r2}`);
+        ws.getCell(`H${r1}`).value = 'Ghi chú'; ws.mergeCells(`H${r1}:H${r2}`);
+        cols.forEach(col => {
+          [r1, r2].forEach(r => {
+            const cell = ws.getCell(`${col}${r}`);
+            cell.font = { bold: true };
+            cell.alignment = { horizontal: 'center', vertical: 'middle', wrapText: true };
+          });
+        });
+        ['A', 'B', 'C', 'D', '1', '2', '3', 'E'].forEach((label, i) => {
+          const cell = ws.getCell(`${cols[i]}${r3}`);
+          cell.value = label;
+          cell.font = { italic: true };
+          cell.alignment = { horizontal: 'center' };
+        });
+
+        let r = r3 + 1;
+        let sumTaxable = 0, sumTax = 0;
         orders.forEach(o => {
           const taxable = Number(o.subtotal) || 0;
           const tax = Number(o.tax_amount) || 0;
           sumTaxable += taxable;
           sumTax += tax;
-          aoa.push([
-            o.order_date,
-            `HD${o.id}`,
-            o.order_date,
+          ws.getRow(r).values = [
+            o.order_date, `HD${o.id}`, o.order_date,
             `Bán hàng cho ${o.customer_name || 'khách lẻ'}`,
-            taxable,
-            0,
-            tax,
-            o.note || '',
-          ]);
+            taxable, 0, tax, o.note || '',
+          ];
+          ws.getCell(`E${r}`).numFmt = '#,##0';
+          ws.getCell(`F${r}`).numFmt = '#,##0';
+          ws.getCell(`G${r}`).numFmt = '#,##0';
+          r++;
         });
 
-        aoa.push(['Cộng tháng', '', '', '', sumTaxable, sumNonTaxable, sumTax, '']);
-        aoa.push([]);
-        aoa.push(['Người ghi sổ', '', '', 'Người đại diện hộ kinh doanh']);
-        aoa.push(['(Ký, ghi rõ họ tên)', '', '', '(Ký, ghi rõ họ tên, đóng dấu nếu có)']);
+        const totalRow = r;
+        ws.getCell(`A${totalRow}`).value = isQuarter ? 'Cộng quý' : 'Cộng tháng';
+        ws.mergeCells(`A${totalRow}:D${totalRow}`);
+        ws.getCell(`E${totalRow}`).value = sumTaxable;
+        ws.getCell(`F${totalRow}`).value = 0;
+        ws.getCell(`G${totalRow}`).value = sumTax;
+        ['E', 'F', 'G'].forEach(col => { ws.getCell(`${col}${totalRow}`).numFmt = '#,##0'; });
+        ws.getRow(totalRow).font = { bold: true };
 
-        const ws = XLSX.utils.aoa_to_sheet(aoa);
-        ws['!cols'] = [{ wch: 14 }, { wch: 10 }, { wch: 12 }, { wch: 28 }, { wch: 16 }, { wch: 18 }, { wch: 14 }, { wch: 20 }];
-        ws['!merges'] = [
-          { s: { r: 3, c: 0 }, e: { r: 3, c: 7 } },
-          { s: { r: 4, c: 0 }, e: { r: 4, c: 7 } },
-          { s: { r: 6, c: 1 }, e: { r: 6, c: 2 } },
-        ];
-        XLSX.utils.book_append_sheet(wb, ws, `Thang ${Number(m)}-${y}`);
+        // Dòng tính thuế phải nộp riêng (tách khỏi cột "Thuế GTGT phải nộp"
+        // đã cộng theo từng đơn ở trên): Doanh thu kỳ x thuế suất hiện tại.
+        const taxCalcRow = totalRow + 1;
+        ws.getCell(`A${taxCalcRow}`).value = `Thuế phải nộp = Doanh thu (${formatVnd(sumTaxable)}) × Thuế suất hiện tại (${accTaxRate}%)`;
+        ws.mergeCells(`A${taxCalcRow}:F${taxCalcRow}`);
+        ws.getCell(`G${taxCalcRow}`).value = sumTaxable * accTaxRate / 100;
+        ws.getCell(`G${taxCalcRow}`).numFmt = '#,##0';
+        ws.getRow(taxCalcRow).font = { italic: true };
+
+        for (let row = r1; row <= taxCalcRow; row++) {
+          cols.forEach(col => { ws.getCell(`${col}${row}`).border = allBorder; });
+        }
+
+        const signRow = taxCalcRow + 2;
+        ws.getCell(`A${signRow}`).value = 'Người ghi sổ';
+        ws.getCell(`E${signRow}`).value = 'Người đại diện hộ kinh doanh';
+        ws.getCell(`A${signRow + 1}`).value = '(Ký, ghi rõ họ tên)';
+        ws.getCell(`E${signRow + 1}`).value = '(Ký, ghi rõ họ tên, đóng dấu nếu có)';
+        [`A${signRow}`, `E${signRow}`].forEach(addr => { ws.getCell(addr).font = { bold: true }; });
+        [`A${signRow}`, `E${signRow}`, `A${signRow + 1}`, `E${signRow + 1}`].forEach(addr => {
+          ws.getCell(addr).alignment = { horizontal: 'center' };
+        });
       });
 
-      XLSX.writeFile(wb, `so-S1-HKD_${new Date().toISOString().slice(0, 10)}.xlsx`);
-      showToast(`Đã xuất Sổ S1-HKD (${byMonth.size} tháng)!`);
+      const buffer = await wb.xlsx.writeBuffer();
+      const blob = new Blob([buffer], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `so-S1-HKD_${new Date().toISOString().slice(0, 10)}.xlsx`;
+      document.body.appendChild(a); a.click(); a.remove();
+      URL.revokeObjectURL(url);
+      showToast(`Đã xuất Sổ S1-HKD (${byPeriod.size} ${isQuarter ? 'quý' : 'tháng'})!`);
     });
 
     // ---------- Tin nhắn liên hệ ----------
