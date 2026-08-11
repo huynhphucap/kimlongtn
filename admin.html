@@ -1040,9 +1040,15 @@
     <div class="grid grid-cols-1 lg:grid-cols-5 gap-8 items-start">
 
       <div class="lg:col-span-3 flex flex-col gap-4">
-        <h2 class="font-display font-700 text-sm text-navy-950">Tồn Kho Theo Sản Phẩm</h2>
+        <div class="flex items-center justify-between gap-3 flex-wrap">
+          <h2 class="font-display font-700 text-sm text-navy-950">Tồn Kho Theo Sản Phẩm</h2>
+          <input type="text" id="inv-product-search" placeholder="Gõ tên để tìm sản phẩm cần nhập/điều chỉnh kho…" class="focus-ring form-input border border-slate-200 rounded-lg px-3 py-2 text-sm w-full sm:w-72">
+        </div>
         <div class="card-surface rounded-2xl overflow-hidden">
           <div id="inv-products-list" class="divide-y divide-slate-100"></div>
+          <div id="inv-products-no-match" class="hidden text-center py-16 px-6 font-body text-sm text-navy-900/50">
+            Không tìm thấy sản phẩm nào khớp với từ khóa.
+          </div>
           <div id="inv-products-empty" class="hidden text-center py-16 px-6 font-body text-sm text-navy-900/50">
             Chưa có sản phẩm nào — thêm sản phẩm ở tab "Sản Phẩm" trước.
           </div>
@@ -3135,11 +3141,28 @@
     // hiển thị làm "Lịch Sử Nhập/Xuất Kho" ở đây.
     const LOW_STOCK_THRESHOLD = 5;
     let invProductsCache = [];
+    let invSearchQuery = '';
 
     async function loadInventoryTab() {
+      document.getElementById('inv-product-search').value = '';
+      invSearchQuery = '';
       await loadInventoryProducts();
       await loadInventoryMovements();
     }
+
+    // Bỏ dấu để gõ không cần dấu vẫn tìm ra (vd "den" khớp "Đèn", "quat" khớp "Quạt").
+    function stripDiacritics(str) {
+      return String(str || '')
+        .normalize('NFD')
+        .replace(/[̀-ͯ]/g, '')
+        .replace(/đ/g, 'd').replace(/Đ/g, 'D')
+        .toLowerCase();
+    }
+
+    document.getElementById('inv-product-search').addEventListener('input', (e) => {
+      invSearchQuery = e.target.value;
+      renderInventoryProducts();
+    });
 
     function stockStatus(stock) {
       const s = Number(stock) || 0;
@@ -3181,10 +3204,27 @@
     function renderInventoryProducts() {
       const list = document.getElementById('inv-products-list');
       const empty = document.getElementById('inv-products-empty');
-      if (invProductsCache.length === 0) { list.innerHTML = ''; empty.classList.remove('hidden'); return; }
+      const noMatch = document.getElementById('inv-products-no-match');
+
+      if (invProductsCache.length === 0) {
+        list.innerHTML = '';
+        noMatch.classList.add('hidden');
+        empty.classList.remove('hidden');
+        return;
+      }
       empty.classList.add('hidden');
 
-      list.innerHTML = invProductsCache.map(p => {
+      const q = stripDiacritics(invSearchQuery.trim());
+      const filtered = q ? invProductsCache.filter(p => stripDiacritics(p.name).includes(q)) : invProductsCache;
+
+      if (filtered.length === 0) {
+        list.innerHTML = '';
+        noMatch.classList.remove('hidden');
+        return;
+      }
+      noMatch.classList.add('hidden');
+
+      list.innerHTML = filtered.map(p => {
         const status = stockStatus(p.stock);
         return `
         <div class="px-5 py-3.5">
