@@ -518,6 +518,10 @@
         <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>
         Kế Toán &amp; Thuế
       </button>
+      <button id="tab-btn-inventory" data-active="false" class="tab-btn focus-ring font-display font-700 text-sm px-4 py-2.5 transition-colors">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 8V7l-3-4H6L3 7v1"/><path d="M3 8h18v11a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1V8Z"/><path d="M10 12h4"/></svg>
+        Kho <span id="inv-low-stock-badge" class="hidden ml-0.5 bg-ember text-white text-[10px] rounded-full px-1.5 py-0.5"></span>
+      </button>
     </div>
 
     <!-- ===== TAB: SẢN PHẨM ===== -->
@@ -983,6 +987,77 @@
           </table>
           <div id="acc-report-empty" class="hidden text-center py-10 px-6 font-body text-sm text-navy-900/50">
             Chưa có dữ liệu để báo cáo.
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- ===== TAB: KHO ===== -->
+  <!-- Xem tồn kho tất cả sản phẩm 1 chỗ, nhập/xuất kho không qua đơn bán
+       hàng (nhập hàng mới, kiểm kê, hàng hỏng...), và nhật ký thay đổi tồn
+       kho (bán hàng + điều chỉnh tay đều ghi vào đây qua adjust_product_stock).
+       Cùng quyền truy cập với tab Kế Toán & Thuế (admin + accountant). -->
+  <div id="tab-inventory" class="hidden max-w-7xl mx-auto px-5 pb-16">
+    <div class="flex flex-wrap items-center justify-between gap-3 mb-8">
+      <div>
+        <h1 class="font-display font-800 text-2xl text-navy-950">Kho Hàng</h1>
+        <p class="font-body text-sm text-navy-900/60 mt-1">Tồn kho tất cả sản phẩm, nhập/xuất kho thủ công và lịch sử thay đổi</p>
+      </div>
+    </div>
+
+    <div class="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-8">
+      <div class="stat-card rounded-2xl px-5 py-4 flex items-center gap-4">
+        <span class="icon-chip">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 8V7l-3-4H6L3 7v1"/><path d="M3 8h18v11a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1V8Z"/></svg>
+        </span>
+        <div>
+          <p id="inv-stat-total" class="font-display font-800 text-xl text-navy-950 leading-none">0</p>
+          <p class="text-xs text-navy-900/50 font-body mt-1">Loại sản phẩm</p>
+        </div>
+      </div>
+      <div class="stat-card rounded-2xl px-5 py-4 flex items-center gap-4">
+        <span class="icon-chip" style="background:linear-gradient(155deg, rgba(249,115,22,.14), rgba(249,115,22,.05)); color:#C2540A;">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10.29 3.86 1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0Z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+        </span>
+        <div>
+          <p id="inv-stat-low" class="font-display font-800 text-xl text-navy-950 leading-none">0</p>
+          <p class="text-xs text-navy-900/50 font-body mt-1">Sắp hết / hết hàng (≤ 5)</p>
+        </div>
+      </div>
+      <div class="stat-card rounded-2xl px-5 py-4 flex items-center gap-4">
+        <span class="icon-chip" style="background:linear-gradient(155deg, rgba(16,185,129,.14), rgba(16,185,129,.05)); color:#059669;">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 7 12 3 4 7l8 4 8-4Z"/><path d="M4 7v10l8 4 8-4V7"/><path d="M12 11v10"/></svg>
+        </span>
+        <div>
+          <p id="inv-stat-units" class="font-display font-800 text-xl text-navy-950 leading-none">0</p>
+          <p class="text-xs text-navy-900/50 font-body mt-1">Tổng số lượng tồn</p>
+        </div>
+      </div>
+    </div>
+
+    <div class="grid grid-cols-1 lg:grid-cols-5 gap-8 items-start">
+
+      <div class="lg:col-span-3 flex flex-col gap-4">
+        <h2 class="font-display font-700 text-sm text-navy-950">Tồn Kho Theo Sản Phẩm</h2>
+        <div class="card-surface rounded-2xl overflow-hidden">
+          <div id="inv-products-list" class="divide-y divide-slate-100"></div>
+          <div id="inv-products-empty" class="hidden text-center py-16 px-6 font-body text-sm text-navy-900/50">
+            Chưa có sản phẩm nào — thêm sản phẩm ở tab "Sản Phẩm" trước.
+          </div>
+          <div id="inv-products-loading" class="flex items-center justify-center gap-2 py-16 text-sm text-navy-900/50">
+            <span class="spinner"></span> Đang tải tồn kho...
+          </div>
+        </div>
+      </div>
+
+      <div class="lg:col-span-2 flex flex-col gap-4">
+        <h2 class="font-display font-700 text-sm text-navy-950">Lịch Sử Nhập/Xuất Kho</h2>
+        <div class="card-surface rounded-2xl overflow-hidden">
+          <div id="inv-movements-list" class="divide-y divide-slate-100"></div>
+          <div id="inv-movements-empty" class="hidden text-center py-16 px-6 font-body text-sm text-navy-900/50">
+            Chưa có thay đổi tồn kho nào.
           </div>
         </div>
       </div>
@@ -2237,11 +2312,13 @@
     const tabBtnQuotes = document.getElementById('tab-btn-quotes');
     const tabBtnUsers = document.getElementById('tab-btn-users');
     const tabBtnAccounting = document.getElementById('tab-btn-accounting');
+    const tabBtnInventory = document.getElementById('tab-btn-inventory');
     const tabProducts = document.getElementById('tab-products');
     const tabContacts = document.getElementById('tab-contacts');
     const tabQuotes = document.getElementById('tab-quotes');
     const tabUsers = document.getElementById('tab-users');
     const tabAccounting = document.getElementById('tab-accounting');
+    const tabInventory = document.getElementById('tab-inventory');
 
     const ALL_TABS = [
       { btn: tabBtnProducts,    panel: tabProducts,    key: 'products'    },
@@ -2249,6 +2326,7 @@
       { btn: tabBtnQuotes,      panel: tabQuotes,      key: 'quotes'      },
       { btn: tabBtnUsers,       panel: tabUsers,       key: 'users'       },
       { btn: tabBtnAccounting,  panel: tabAccounting,  key: 'accounting'  },
+      { btn: tabBtnInventory,   panel: tabInventory,   key: 'inventory'   },
     ];
 
     function switchTab(activeKey) {
@@ -2260,12 +2338,14 @@
       if (activeKey === 'contacts' || activeKey === 'quotes') loadContacts();
       if (activeKey === 'users') loadUsers();
       if (activeKey === 'accounting') loadAccountingTab();
+      if (activeKey === 'inventory') loadInventoryTab();
     }
     tabBtnProducts.addEventListener('click', () => switchTab('products'));
     tabBtnContacts.addEventListener('click', () => switchTab('contacts'));
     tabBtnQuotes.addEventListener('click', () => switchTab('quotes'));
     tabBtnUsers.addEventListener('click', () => switchTab('users'));
     tabBtnAccounting.addEventListener('click', () => switchTab('accounting'));
+    tabBtnInventory.addEventListener('click', () => switchTab('inventory'));
 
     // ---------- Quản lý tài khoản (qua Edge Function admin-users) ----------
     // Trình duyệt không được phép gọi thẳng Supabase Admin API vì thao tác đó
@@ -2509,9 +2589,9 @@
       return digits ? Number(digits).toLocaleString('vi-VN') : '';
     }
 
-    async function applyStockDelta(productId, delta) {
+    async function applyStockDelta(productId, delta, reason) {
       if (!productId) return;
-      const { error } = await sb.rpc('adjust_product_stock', { p_product_id: productId, p_delta: delta });
+      const { error } = await sb.rpc('adjust_product_stock', { p_product_id: productId, p_delta: delta, p_reason: reason || null });
       if (error) console.warn('Không cập nhật được tồn kho:', error.message);
     }
 
@@ -2788,7 +2868,7 @@
         if (accEditingOrderId) {
           // Hoàn tồn kho của các dòng cũ, xóa dòng cũ, ghi dòng mới, trừ kho mới.
           for (const it of accEditingOriginalItems) {
-            await applyStockDelta(it.product_id, Number(it.quantity));
+            await applyStockDelta(it.product_id, Number(it.quantity), `Hoàn kho do sửa đơn #${accEditingOrderId}`);
           }
           const { error: updErr } = await sb.from('sales_orders').update(orderPayload).eq('id', accEditingOrderId);
           if (updErr) throw updErr;
@@ -2802,7 +2882,7 @@
           );
           if (insErr) throw insErr;
           for (const it of items) {
-            await applyStockDelta(it.product_id, -it.quantity);
+            await applyStockDelta(it.product_id, -it.quantity, `Bán hàng - đơn #${accEditingOrderId} (đã sửa)`);
           }
           showToast('Đã cập nhật đơn hàng!');
           cancelEditOrder();
@@ -2817,7 +2897,7 @@
           );
           if (itemsErr) throw itemsErr;
           for (const it of items) {
-            await applyStockDelta(it.product_id, -it.quantity);
+            await applyStockDelta(it.product_id, -it.quantity, `Bán hàng - đơn #${order.id}`);
           }
           showToast('Đã lưu đơn bán hàng!');
           resetDraftOrder();
@@ -3047,6 +3127,145 @@
       setTimeout(() => win.print(), 300);
     }
 
+    // ---------- Kho ----------
+    // Xem tồn kho tất cả sản phẩm 1 chỗ + nhập/xuất kho không qua đơn bán
+    // hàng (nhập hàng mới, kiểm kê, hàng hỏng...). Mọi thay đổi tồn kho —
+    // kể cả do bán hàng ở tab Kế Toán & Thuế — đều đi qua RPC
+    // adjust_product_stock() nên tự động có trong bảng inventory_movements,
+    // hiển thị làm "Lịch Sử Nhập/Xuất Kho" ở đây.
+    const LOW_STOCK_THRESHOLD = 5;
+    let invProductsCache = [];
+
+    async function loadInventoryTab() {
+      await loadInventoryProducts();
+      await loadInventoryMovements();
+    }
+
+    function stockStatus(stock) {
+      const s = Number(stock) || 0;
+      if (s <= 0) return { label: 'Hết hàng', cls: 'text-red-600 bg-red-50 border-red-200' };
+      if (s <= LOW_STOCK_THRESHOLD) return { label: 'Sắp hết', cls: 'text-amber-700 bg-amber-50 border-amber-200' };
+      return { label: 'Còn hàng', cls: 'text-emerald-700 bg-emerald-50 border-emerald-200' };
+    }
+
+    async function loadInventoryProducts() {
+      const list = document.getElementById('inv-products-list');
+      const loading = document.getElementById('inv-products-loading');
+      loading.classList.remove('hidden');
+      list.innerHTML = '';
+      document.getElementById('inv-products-empty').classList.add('hidden');
+
+      const { data, error } = await sb.from('products').select('id,name,category,stock').order('stock', { ascending: true }).order('name');
+      loading.classList.add('hidden');
+      if (error) {
+        list.innerHTML = `<div class="text-center py-10 text-sm text-red-600 px-6">Lỗi: ${escapeHtml(error.message)}</div>`;
+        return;
+      }
+      invProductsCache = data || [];
+      renderInventoryStats();
+      renderInventoryProducts();
+    }
+
+    function renderInventoryStats() {
+      const total = invProductsCache.length;
+      const low = invProductsCache.filter(p => (Number(p.stock) || 0) <= LOW_STOCK_THRESHOLD).length;
+      const totalUnits = invProductsCache.reduce((s, p) => s + (Number(p.stock) || 0), 0);
+      document.getElementById('inv-stat-total').textContent = total;
+      document.getElementById('inv-stat-low').textContent = low;
+      document.getElementById('inv-stat-units').textContent = totalUnits.toLocaleString('vi-VN');
+      const badge = document.getElementById('inv-low-stock-badge');
+      badge.classList.toggle('hidden', low === 0);
+      badge.textContent = low;
+    }
+
+    function renderInventoryProducts() {
+      const list = document.getElementById('inv-products-list');
+      const empty = document.getElementById('inv-products-empty');
+      if (invProductsCache.length === 0) { list.innerHTML = ''; empty.classList.remove('hidden'); return; }
+      empty.classList.add('hidden');
+
+      list.innerHTML = invProductsCache.map(p => {
+        const status = stockStatus(p.stock);
+        return `
+        <div class="px-5 py-3.5">
+          <div class="flex items-center gap-3 flex-wrap">
+            <div class="flex-1 min-w-0">
+              <p class="font-display font-700 text-sm text-navy-950 truncate">${escapeHtml(p.name)}</p>
+              ${p.category ? `<p class="font-body text-xs text-navy-900/50 mt-0.5">${escapeHtml(p.category)}</p>` : ''}
+            </div>
+            <span class="text-[11px] font-body font-700 border rounded-full px-2.5 py-1 shrink-0 ${status.cls}">${status.label}</span>
+            <p class="font-display font-800 text-base text-navy-950 w-12 text-right shrink-0">${Number(p.stock) || 0}</p>
+            <button data-id="${p.id}" class="inv-btn-toggle-adjust focus-ring text-xs font-display font-700 text-brand border border-brand/30 hover:bg-brand hover:text-white rounded-lg px-3 py-1.5 transition-colors shrink-0">Điều chỉnh</button>
+          </div>
+          <div data-adjust-panel="${p.id}" class="hidden mt-2.5 flex flex-wrap items-end gap-2 bg-slate-150 border border-slate-200 rounded-lg p-2.5">
+            <div class="flex flex-col gap-0.5">
+              <label class="text-[10px] font-body text-navy-900/40">Số lượng (+ nhập / − xuất)</label>
+              <input type="number" data-id="${p.id}" step="1" placeholder="VD: 50 hoặc -2" class="inv-adjust-delta focus-ring form-input border border-slate-200 rounded-lg px-2 py-1.5 text-sm w-32">
+            </div>
+            <div class="flex flex-col gap-0.5 flex-1 min-w-[160px]">
+              <label class="text-[10px] font-body text-navy-900/40">Lý do</label>
+              <input type="text" data-id="${p.id}" placeholder="VD: Nhập hàng mới về, kiểm kê, hàng hỏng..." class="inv-adjust-reason focus-ring form-input border border-slate-200 rounded-lg px-2 py-1.5 text-sm">
+            </div>
+            <button data-id="${p.id}" class="inv-btn-save-adjust focus-ring text-xs font-display font-700 text-white bg-brand hover:bg-ember rounded-lg px-3 py-2 transition-colors shrink-0">Lưu</button>
+          </div>
+        </div>`;
+      }).join('');
+
+      list.querySelectorAll('.inv-btn-toggle-adjust').forEach(btn => {
+        btn.addEventListener('click', () => {
+          const panel = document.querySelector(`[data-adjust-panel="${btn.dataset.id}"]`);
+          if (panel) panel.classList.toggle('hidden');
+        });
+      });
+      list.querySelectorAll('.inv-btn-save-adjust').forEach(btn => {
+        btn.addEventListener('click', () => saveInventoryAdjust(Number(btn.dataset.id)));
+      });
+    }
+
+    async function saveInventoryAdjust(productId) {
+      const deltaInput = document.querySelector(`.inv-adjust-delta[data-id="${productId}"]`);
+      const reasonInput = document.querySelector(`.inv-adjust-reason[data-id="${productId}"]`);
+      const delta = parseInt(deltaInput.value, 10);
+      if (!delta) {
+        showToast('Nhập số lượng khác 0 (số dương để nhập kho, số âm để xuất kho).', 'error');
+        return;
+      }
+      const reason = reasonInput.value.trim() || (delta > 0 ? 'Nhập kho' : 'Xuất kho / điều chỉnh');
+      const { error } = await sb.rpc('adjust_product_stock', { p_product_id: productId, p_delta: delta, p_reason: reason });
+      if (error) { showToast('Cập nhật tồn kho thất bại: ' + error.message, 'error'); return; }
+
+      showToast('Đã cập nhật tồn kho!');
+      await loadAccountingProducts(); // đồng bộ cache dùng khi chọn sản phẩm ở tab Kế Toán
+      await loadInventoryProducts();
+      await loadInventoryMovements();
+    }
+
+    async function loadInventoryMovements() {
+      const list = document.getElementById('inv-movements-list');
+      const empty = document.getElementById('inv-movements-empty');
+      const { data, error } = await sb.from('inventory_movements').select('*').order('created_at', { ascending: false }).limit(50);
+      if (error) {
+        list.innerHTML = `<div class="text-center py-10 text-sm text-red-600 px-6">Lỗi: ${escapeHtml(error.message)}</div>`;
+        return;
+      }
+      const movements = data || [];
+      if (movements.length === 0) { list.innerHTML = ''; empty.classList.remove('hidden'); return; }
+      empty.classList.add('hidden');
+
+      list.innerHTML = movements.map(m => {
+        const positive = Number(m.delta) > 0;
+        const when = new Date(m.created_at).toLocaleString('vi-VN', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' });
+        return `
+        <div class="px-5 py-3">
+          <div class="flex items-center justify-between gap-3">
+            <p class="font-display font-700 text-sm text-navy-950 truncate">${escapeHtml(m.product_name || 'Sản phẩm đã xóa')}</p>
+            <p class="font-display font-800 text-sm shrink-0 ${positive ? 'text-emerald-600' : 'text-red-600'}">${positive ? '+' : ''}${m.delta}</p>
+          </div>
+          <p class="font-body text-xs text-navy-900/50 mt-0.5">${escapeHtml(m.reason || '')} · ${when}</p>
+        </div>`;
+      }).join('');
+    }
+
     async function deleteOrder(id, label) {
       const ok = await askConfirm('Xóa đơn hàng?', `Đơn của "${label}" và toàn bộ dòng sản phẩm trong đơn sẽ bị xóa vĩnh viễn. Tồn kho các sản phẩm liên quan sẽ được hoàn lại.`);
       if (!ok) return;
@@ -3056,7 +3275,7 @@
       if (error) { showToast('Xóa thất bại: ' + error.message, 'error'); return; }
 
       for (const it of (items || [])) {
-        await applyStockDelta(it.product_id, Number(it.quantity));
+        await applyStockDelta(it.product_id, Number(it.quantity), `Hoàn kho do xóa đơn #${id}`);
       }
 
       showToast('Đã xóa đơn hàng!');
