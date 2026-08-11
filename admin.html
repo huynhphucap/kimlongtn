@@ -586,6 +586,11 @@
               </div>
 
               <div class="flex flex-col gap-1.5">
+                <label class="text-xs font-medium text-navy-900/60">Tồn kho <span class="text-navy-900/35 font-normal">(số lượng còn trong kho, dùng cho tab Kế Toán &amp; Thuế)</span></label>
+                <input type="number" id="f-stock" min="0" step="1" placeholder="0" class="form-input border border-slate-200 rounded-lg px-3 py-2 text-sm">
+              </div>
+
+              <div class="flex flex-col gap-1.5">
                 <label class="text-xs font-medium text-navy-900/60">Danh mục <span class="text-red-500">*</span></label>
                 <select id="f-category" required class="form-input border border-slate-200 rounded-lg px-3 py-2 text-sm bg-white">
                   <option value="Nhà Bếp">Nhà Bếp</option>
@@ -885,7 +890,7 @@
 
       <!-- Form thêm đơn bán hàng -->
       <div class="lg:col-span-2 card-surface card-accent-top border-brand/15 rounded-2xl p-6 flex flex-col gap-4">
-        <h2 class="font-display font-700 text-lg text-navy-950 flex items-center gap-2">
+        <h2 id="acc-form-title" class="font-display font-700 text-lg text-navy-950 flex items-center gap-2">
           <span class="icon-chip w-7 h-7 rounded-lg">
             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg>
           </span>
@@ -933,9 +938,14 @@
 
         <p id="acc-order-error" class="hidden text-sm text-red-600 bg-red-50 border border-red-200 rounded-lg px-3 py-2"></p>
 
-        <button type="button" id="acc-btn-submit-order" class="focus-ring bg-ember hover:bg-ember-dark text-white font-display font-700 text-sm px-5 py-2.5 rounded-xl shadow-[0_10px_20px_-8px_rgba(249,115,22,0.5)] transition-colors">
-          Lưu Đơn Hàng
-        </button>
+        <div class="flex items-center gap-3">
+          <button type="button" id="acc-btn-submit-order" class="focus-ring flex-1 bg-ember hover:bg-ember-dark text-white font-display font-700 text-sm px-5 py-2.5 rounded-xl shadow-[0_10px_20px_-8px_rgba(249,115,22,0.5)] transition-colors">
+            Lưu Đơn Hàng
+          </button>
+          <button type="button" id="acc-btn-cancel-edit-order" class="hidden focus-ring text-sm font-body font-medium text-navy-900/60 border border-slate-200 rounded-xl px-4 py-2.5 hover:bg-slate-150 transition-colors">
+            Hủy
+          </button>
+        </div>
       </div>
 
       <!-- Danh sách đơn + báo cáo tháng -->
@@ -1553,6 +1563,7 @@
         new_price: document.getElementById('f-new-price').value.trim() || '0 đ',
         discount: document.getElementById('f-discount').value.trim() || '-0%',
         badge: document.getElementById('f-badge').value.trim(),
+        stock: parseInt(document.getElementById('f-stock').value, 10) || 0,
         category: document.getElementById('f-category').value,
         tags: document.getElementById('f-tags').value.split(',').map(t => t.trim()).filter(Boolean),
         img: productImages[0] || 'https://placehold.co/300x300?text=Anh+San+Pham',
@@ -2000,6 +2011,7 @@
       document.getElementById('f-new-price').value = p.new_price || '';
       document.getElementById('f-discount').value = p.discount || '';
       document.getElementById('f-badge').value = p.badge || '';
+      document.getElementById('f-stock').value = p.stock ?? 0;
       renderCategoryOptions();
       document.getElementById('f-category').value = p.category || 'Nhà Bếp';
       document.getElementById('f-tags').value = (p.tags || []).join(', ');
@@ -2175,6 +2187,7 @@
             </div>
             <p class="font-body text-xs text-navy-900/50 mt-0.5">
               <span class="line-through">${escapeHtml(p.old_price)}</span> → <span class="text-ember-dark font-700">${escapeHtml(p.new_price)}</span> · ${escapeHtml(p.discount)}
+              · <span class="${Number(p.stock) > 0 ? '' : 'text-red-600 font-700'}">Tồn: ${Number(p.stock) || 0}</span>
             </p>
           </div>
           <div class="flex items-center gap-2 shrink-0">
@@ -2463,11 +2476,17 @@
     // ---------- Kế Toán & Thuế ----------
     // Bảng dữ liệu: sales_orders / sales_order_items / accounting_settings.
     // RLS chỉ cho phép role admin/accountant đọc-ghi — xem
-    // supabase/sql/accounting_schema.sql. Ở đây không cần dùng edge function
-    // vì không đụng tới Supabase Admin API, chỉ là bảng dữ liệu thường.
-    let accTaxRate = 0;
+    // supabase/sql/accounting_schema.sql + accounting_inventory.sql. Tồn kho
+    // (products.stock) được cộng/trừ qua RPC adjust_product_stock (security
+    // definer) thay vì UPDATE thẳng bảng products, để không phải mở quyền
+    // sửa products cho role accountant.
+    let accTaxRate = 0;          // thuế suất chung, cấu hình ở accounting_settings
+    let accActiveTaxRate = 0;    // thuế suất áp cho đơn đang soạn (thêm mới = accTaxRate; đang sửa = giữ nguyên thuế suất lúc tạo đơn đó)
     let accDraftItems = [];
     let accOrdersCache = [];
+    let accProductsCache = [];
+    let accEditingOrderId = null;
+    let accEditingOriginalItems = [];
 
     function formatVnd(n) {
       return Math.round(Number(n) || 0).toLocaleString('vi-VN') + ' đ';
@@ -2477,20 +2496,50 @@
       return (dateStr || '').slice(0, 7); // YYYY-MM
     }
 
+    // Giá sản phẩm trong bảng "products" là chuỗi tự do kiểu "590.000 đ"
+    // (nhập tay ở tab Sản Phẩm) — lấy phần số ra để dùng tính toán.
+    function parsePriceToNumber(str) {
+      const digits = String(str || '').replace(/[^\d]/g, '');
+      return digits ? parseInt(digits, 10) : 0;
+    }
+
+    async function applyStockDelta(productId, delta) {
+      if (!productId) return;
+      const { error } = await sb.rpc('adjust_product_stock', { p_product_id: productId, p_delta: delta });
+      if (error) console.warn('Không cập nhật được tồn kho:', error.message);
+    }
+
     async function loadAccountingTab() {
+      accEditingOrderId = null;
+      accEditingOriginalItems = [];
+      document.getElementById('acc-form-title').textContent = 'Thêm Đơn Bán Hàng';
+      document.getElementById('acc-btn-submit-order').textContent = 'Lưu Đơn Hàng';
+      document.getElementById('acc-btn-cancel-edit-order').classList.add('hidden');
+
+      await loadAccountingProducts();
       await loadAccountingSettings();
-      if (accDraftItems.length === 0) resetDraftOrder();
+      resetDraftOrder();
       await loadOrders();
+    }
+
+    async function loadAccountingProducts() {
+      const { data, error } = await sb.from('products').select('id,name,new_price,stock').order('name');
+      if (!error) accProductsCache = data || [];
+    }
+
+    function setActiveTaxRate(rate) {
+      accActiveTaxRate = Number(rate) || 0;
+      document.getElementById('acc-order-tax-rate-label').textContent = accActiveTaxRate;
+      recalcDraftOrder();
     }
 
     async function loadAccountingSettings() {
       const { data, error } = await sb.from('accounting_settings').select('tax_rate').eq('id', 1).maybeSingle();
       if (!error && data) accTaxRate = Number(data.tax_rate);
       document.getElementById('acc-tax-rate-display').textContent = accTaxRate + '%';
-      document.getElementById('acc-order-tax-rate-label').textContent = accTaxRate;
       document.getElementById('acc-tax-rate-input').value = accTaxRate;
       document.getElementById('acc-tax-rate-edit').classList.toggle('hidden', currentUserRole !== 'admin');
-      recalcDraftOrder();
+      if (!accEditingOrderId) setActiveTaxRate(accTaxRate);
     }
 
     document.getElementById('acc-btn-save-tax-rate').addEventListener('click', async () => {
@@ -2503,24 +2552,68 @@
       if (error) { showToast('Lưu thất bại: ' + error.message, 'error'); return; }
       accTaxRate = val;
       document.getElementById('acc-tax-rate-display').textContent = accTaxRate + '%';
-      document.getElementById('acc-order-tax-rate-label').textContent = accTaxRate;
       showToast('Đã cập nhật thuế suất!');
-      recalcDraftOrder();
+      if (!accEditingOrderId) setActiveTaxRate(accTaxRate);
     });
 
-    // ----- Form thêm đơn: dòng sản phẩm động -----
+    // ----- Form thêm/sửa đơn: dòng sản phẩm động -----
+    // Mỗi dòng có mode: 'unset' (chưa chọn) | 'catalog' (chọn từ sản phẩm có
+    // sẵn, có product_id + theo dõi tồn kho) | 'custom' (nhập tay, không trừ kho).
+    function productSelectOptionsHtml(selectedId) {
+      return accProductsCache.map(p => `<option value="${p.id}" ${String(p.id) === String(selectedId) ? 'selected' : ''}>${escapeHtml(p.name)} (Tồn: ${Number(p.stock) || 0})</option>`).join('');
+    }
+
     function renderDraftLineItems() {
       const wrap = document.getElementById('acc-line-items');
-      wrap.innerHTML = accDraftItems.map((item, i) => `
-        <div class="flex items-center gap-2">
-          <input type="text" data-idx="${i}" data-field="product_name" value="${escapeHtml(item.product_name)}" placeholder="Tên sản phẩm" class="acc-line-input form-input border border-slate-200 rounded-lg px-2 py-1.5 text-sm flex-1 min-w-0">
-          <input type="number" data-idx="${i}" data-field="quantity" value="${item.quantity}" min="0" step="1" placeholder="SL" class="acc-line-input form-input border border-slate-200 rounded-lg px-2 py-1.5 text-sm w-16 shrink-0">
-          <input type="number" data-idx="${i}" data-field="unit_price" value="${item.unit_price}" min="0" step="1000" placeholder="Đơn giá" class="acc-line-input form-input border border-slate-200 rounded-lg px-2 py-1.5 text-sm w-28 shrink-0">
-          <button type="button" data-idx="${i}" class="acc-btn-remove-line focus-ring icon-btn w-7 h-7 shrink-0 hover:text-red-600" title="Xóa dòng">
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M18 6 6 18M6 6l12 12"/></svg>
-          </button>
+      wrap.innerHTML = accDraftItems.map((item, i) => {
+        const product = item.mode === 'catalog' ? accProductsCache.find(p => p.id === item.product_id) : null;
+        const stock = product ? Number(product.stock) || 0 : null;
+        return `
+        <div class="flex flex-col gap-1.5 border border-slate-200 rounded-lg p-2.5">
+          <div class="flex items-center gap-2">
+            <select data-idx="${i}" class="acc-line-select focus-ring form-input border border-slate-200 rounded-lg px-2 py-1.5 text-xs flex-1 min-w-0 bg-white">
+              <option value="">— Chọn sản phẩm —</option>
+              ${productSelectOptionsHtml(item.mode === 'catalog' ? item.product_id : null)}
+              <option value="custom" ${item.mode === 'custom' ? 'selected' : ''}>Khác (nhập tay)</option>
+            </select>
+            <button type="button" data-idx="${i}" class="acc-btn-remove-line focus-ring icon-btn w-7 h-7 shrink-0 hover:text-red-600" title="Xóa dòng">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M18 6 6 18M6 6l12 12"/></svg>
+            </button>
+          </div>
+          ${item.mode === 'custom' ? `<input type="text" data-idx="${i}" data-field="product_name" value="${escapeHtml(item.product_name)}" placeholder="Tên sản phẩm/dịch vụ" class="acc-line-input form-input border border-slate-200 rounded-lg px-2 py-1.5 text-sm">` : ''}
+          <div class="flex items-center gap-2">
+            <input type="number" data-idx="${i}" data-field="quantity" value="${item.quantity}" min="0" step="1" placeholder="SL" class="acc-line-input form-input border border-slate-200 rounded-lg px-2 py-1.5 text-sm w-20 shrink-0">
+            <span class="text-navy-900/30 text-xs shrink-0">×</span>
+            <input type="number" data-idx="${i}" data-field="unit_price" value="${item.unit_price}" min="0" step="1000" placeholder="Đơn giá" class="acc-line-input form-input border border-slate-200 rounded-lg px-2 py-1.5 text-sm flex-1 min-w-0">
+            ${stock !== null ? `<span class="text-[11px] font-body shrink-0 whitespace-nowrap text-navy-900/40">Tồn: ${stock}</span>` : ''}
+          </div>
         </div>
-      `).join('');
+      `;
+      }).join('');
+
+      wrap.querySelectorAll('.acc-line-select').forEach(sel => {
+        sel.addEventListener('change', () => {
+          const idx = Number(sel.dataset.idx);
+          const val = sel.value;
+          const prevQty = accDraftItems[idx].quantity || 1;
+          if (val === '') {
+            accDraftItems[idx] = { mode: 'unset', product_id: null, product_name: '', quantity: prevQty, unit_price: 0 };
+          } else if (val === 'custom') {
+            accDraftItems[idx] = { mode: 'custom', product_id: null, product_name: '', quantity: prevQty, unit_price: accDraftItems[idx].unit_price || 0 };
+          } else {
+            const product = accProductsCache.find(p => String(p.id) === val);
+            accDraftItems[idx] = {
+              mode: 'catalog',
+              product_id: product ? product.id : null,
+              product_name: product ? product.name : '',
+              quantity: prevQty,
+              unit_price: product ? parsePriceToNumber(product.new_price) : 0,
+            };
+          }
+          renderDraftLineItems();
+          recalcDraftOrder();
+        });
+      });
       wrap.querySelectorAll('.acc-line-input').forEach(inp => {
         inp.addEventListener('input', () => {
           const idx = Number(inp.dataset.idx);
@@ -2532,7 +2625,7 @@
       wrap.querySelectorAll('.acc-btn-remove-line').forEach(btn => {
         btn.addEventListener('click', () => {
           accDraftItems.splice(Number(btn.dataset.idx), 1);
-          if (accDraftItems.length === 0) accDraftItems.push({ product_name: '', quantity: 1, unit_price: 0 });
+          if (accDraftItems.length === 0) accDraftItems.push({ mode: 'unset', product_id: null, product_name: '', quantity: 1, unit_price: 0 });
           renderDraftLineItems();
           recalcDraftOrder();
         });
@@ -2540,13 +2633,13 @@
     }
 
     document.getElementById('acc-btn-add-line').addEventListener('click', () => {
-      accDraftItems.push({ product_name: '', quantity: 1, unit_price: 0 });
+      accDraftItems.push({ mode: 'unset', product_id: null, product_name: '', quantity: 1, unit_price: 0 });
       renderDraftLineItems();
     });
 
     function recalcDraftOrder() {
       const subtotal = accDraftItems.reduce((s, it) => s + (Number(it.quantity) || 0) * (Number(it.unit_price) || 0), 0);
-      const taxAmount = subtotal * accTaxRate / 100;
+      const taxAmount = subtotal * accActiveTaxRate / 100;
       const total = subtotal + taxAmount;
       document.getElementById('acc-order-subtotal').textContent = formatVnd(subtotal);
       document.getElementById('acc-order-tax').textContent = formatVnd(taxAmount);
@@ -2555,14 +2648,57 @@
     }
 
     function resetDraftOrder() {
-      accDraftItems = [{ product_name: '', quantity: 1, unit_price: 0 }];
+      accDraftItems = [{ mode: 'unset', product_id: null, product_name: '', quantity: 1, unit_price: 0 }];
       renderDraftLineItems();
       document.getElementById('acc-order-customer').value = '';
       document.getElementById('acc-order-phone').value = '';
       document.getElementById('acc-order-note').value = '';
       document.getElementById('acc-order-date').value = new Date().toISOString().slice(0, 10);
       document.getElementById('acc-order-error').classList.add('hidden');
-      recalcDraftOrder();
+      setActiveTaxRate(accTaxRate);
+    }
+
+    function cancelEditOrder() {
+      accEditingOrderId = null;
+      accEditingOriginalItems = [];
+      document.getElementById('acc-form-title').textContent = 'Thêm Đơn Bán Hàng';
+      document.getElementById('acc-btn-submit-order').textContent = 'Lưu Đơn Hàng';
+      document.getElementById('acc-btn-cancel-edit-order').classList.add('hidden');
+      resetDraftOrder();
+    }
+    document.getElementById('acc-btn-cancel-edit-order').addEventListener('click', cancelEditOrder);
+
+    async function startEditOrder(id) {
+      const order = accOrdersCache.find(o => o.id === id);
+      if (!order) return;
+      const { data: items, error } = await sb.from('sales_order_items').select('*').eq('order_id', id).order('id');
+      if (error) { showToast('Không tải được chi tiết đơn: ' + error.message, 'error'); return; }
+
+      accEditingOrderId = id;
+      accEditingOriginalItems = items || [];
+
+      document.getElementById('acc-order-date').value = order.order_date;
+      document.getElementById('acc-order-customer').value = order.customer_name || '';
+      document.getElementById('acc-order-phone').value = order.customer_phone || '';
+      document.getElementById('acc-order-note').value = order.note || '';
+      document.getElementById('acc-order-error').classList.add('hidden');
+
+      accDraftItems = accEditingOriginalItems.length
+        ? accEditingOriginalItems.map(it => ({
+            mode: it.product_id ? 'catalog' : 'custom',
+            product_id: it.product_id || null,
+            product_name: it.product_name,
+            quantity: Number(it.quantity),
+            unit_price: Number(it.unit_price),
+          }))
+        : [{ mode: 'unset', product_id: null, product_name: '', quantity: 1, unit_price: 0 }];
+      renderDraftLineItems();
+      setActiveTaxRate(Number(order.tax_rate));
+
+      document.getElementById('acc-form-title').textContent = `Sửa Đơn Hàng #${id}`;
+      document.getElementById('acc-btn-submit-order').textContent = 'Cập Nhật Đơn Hàng';
+      document.getElementById('acc-btn-cancel-edit-order').classList.remove('hidden');
+      document.getElementById('acc-line-items').scrollIntoView({ behavior: 'smooth', block: 'center' });
     }
 
     document.getElementById('acc-btn-submit-order').addEventListener('click', async () => {
@@ -2571,6 +2707,7 @@
 
       const items = accDraftItems
         .map(it => ({
+          product_id: it.mode === 'catalog' ? it.product_id : null,
           product_name: (it.product_name || '').trim(),
           quantity: Number(it.quantity) || 0,
           unit_price: Number(it.unit_price) || 0,
@@ -2578,38 +2715,83 @@
         .filter(it => it.product_name && it.quantity > 0);
 
       if (items.length === 0) {
-        errEl.textContent = 'Cần ít nhất 1 dòng sản phẩm hợp lệ (có tên và số lượng > 0).';
+        errEl.textContent = 'Cần ít nhất 1 dòng sản phẩm hợp lệ (đã chọn/nhập tên và số lượng > 0).';
         errEl.classList.remove('hidden');
         return;
+      }
+
+      // Khi đang sửa đơn, số lượng cũ của đơn này coi như "sẽ được hoàn lại
+      // kho" trước khi trừ số mới — nên cộng ngược vào tồn kho hiện có để so
+      // sánh cho đúng (không báo vượt tồn kho nhầm với chính đơn đang sửa).
+      const restoreMap = new Map();
+      if (accEditingOrderId) {
+        accEditingOriginalItems.forEach(it => {
+          if (it.product_id) restoreMap.set(it.product_id, (restoreMap.get(it.product_id) || 0) + Number(it.quantity));
+        });
+      }
+      const overStock = items.filter(it => {
+        if (!it.product_id) return false;
+        const p = accProductsCache.find(x => x.id === it.product_id);
+        if (!p) return false;
+        const available = (Number(p.stock) || 0) + (restoreMap.get(it.product_id) || 0);
+        return it.quantity > available;
+      });
+      if (overStock.length > 0) {
+        const ok = await askConfirm('Vượt tồn kho?', `Số lượng vượt tồn kho hiện có cho: ${overStock.map(it => it.product_name).join(', ')}. Bạn vẫn muốn lưu đơn?`);
+        if (!ok) return;
       }
 
       const { subtotal, taxAmount, total } = recalcDraftOrder();
       const btn = document.getElementById('acc-btn-submit-order');
       btn.disabled = true;
 
+      const orderPayload = {
+        order_date: document.getElementById('acc-order-date').value || new Date().toISOString().slice(0, 10),
+        customer_name: document.getElementById('acc-order-customer').value.trim() || null,
+        customer_phone: document.getElementById('acc-order-phone').value.trim() || null,
+        note: document.getElementById('acc-order-note').value.trim() || null,
+        subtotal, tax_rate: accActiveTaxRate, tax_amount: taxAmount, total,
+      };
+
       try {
-        const { data: order, error: orderErr } = await sb.from('sales_orders').insert({
-          order_date: document.getElementById('acc-order-date').value || new Date().toISOString().slice(0, 10),
-          customer_name: document.getElementById('acc-order-customer').value.trim() || null,
-          customer_phone: document.getElementById('acc-order-phone').value.trim() || null,
-          note: document.getElementById('acc-order-note').value.trim() || null,
-          subtotal, tax_rate: accTaxRate, tax_amount: taxAmount, total,
-        }).select().single();
-        if (orderErr) throw orderErr;
-
-        const { error: itemsErr } = await sb.from('sales_order_items').insert(
-          items.map(it => ({
-            order_id: order.id,
-            product_name: it.product_name,
-            quantity: it.quantity,
-            unit_price: it.unit_price,
-            line_total: it.quantity * it.unit_price,
-          }))
-        );
-        if (itemsErr) throw itemsErr;
-
-        showToast('Đã lưu đơn bán hàng!');
-        resetDraftOrder();
+        if (accEditingOrderId) {
+          // Hoàn tồn kho của các dòng cũ, xóa dòng cũ, ghi dòng mới, trừ kho mới.
+          for (const it of accEditingOriginalItems) {
+            await applyStockDelta(it.product_id, Number(it.quantity));
+          }
+          const { error: updErr } = await sb.from('sales_orders').update(orderPayload).eq('id', accEditingOrderId);
+          if (updErr) throw updErr;
+          const { error: delErr } = await sb.from('sales_order_items').delete().eq('order_id', accEditingOrderId);
+          if (delErr) throw delErr;
+          const { error: insErr } = await sb.from('sales_order_items').insert(
+            items.map(it => ({
+              order_id: accEditingOrderId, product_id: it.product_id, product_name: it.product_name,
+              quantity: it.quantity, unit_price: it.unit_price, line_total: it.quantity * it.unit_price,
+            }))
+          );
+          if (insErr) throw insErr;
+          for (const it of items) {
+            await applyStockDelta(it.product_id, -it.quantity);
+          }
+          showToast('Đã cập nhật đơn hàng!');
+          cancelEditOrder();
+        } else {
+          const { data: order, error: orderErr } = await sb.from('sales_orders').insert(orderPayload).select().single();
+          if (orderErr) throw orderErr;
+          const { error: itemsErr } = await sb.from('sales_order_items').insert(
+            items.map(it => ({
+              order_id: order.id, product_id: it.product_id, product_name: it.product_name,
+              quantity: it.quantity, unit_price: it.unit_price, line_total: it.quantity * it.unit_price,
+            }))
+          );
+          if (itemsErr) throw itemsErr;
+          for (const it of items) {
+            await applyStockDelta(it.product_id, -it.quantity);
+          }
+          showToast('Đã lưu đơn bán hàng!');
+          resetDraftOrder();
+        }
+        await loadAccountingProducts();
         loadOrders();
       } catch (err) {
         errEl.textContent = 'Lỗi: ' + err.message;
@@ -2654,6 +2836,7 @@
             </div>
             <p class="font-display font-800 text-sm text-brand shrink-0">${formatVnd(o.total)}</p>
             <button data-id="${o.id}" class="acc-btn-toggle-items focus-ring text-xs font-body font-medium text-navy-900/50 hover:text-navy-900 underline shrink-0">Chi tiết</button>
+            <button data-id="${o.id}" class="acc-btn-edit-order focus-ring text-xs font-display font-700 text-brand border border-brand/30 hover:bg-brand hover:text-white rounded-lg px-3 py-1.5 transition-colors shrink-0">Sửa</button>
             <button data-id="${o.id}" data-label="${escapeHtml(o.customer_name || 'Khách lẻ')}" class="acc-btn-delete-order focus-ring text-xs font-display font-700 text-red-600 border border-red-200 hover:bg-red-600 hover:text-white rounded-lg px-3 py-1.5 transition-colors shrink-0">Xóa</button>
           </div>
           <div data-items-panel="${o.id}" class="hidden mt-2 pl-3 border-l-2 border-slate-100 flex flex-col gap-0.5"></div>
@@ -2663,8 +2846,11 @@
       list.querySelectorAll('.acc-btn-toggle-items').forEach(btn => {
         btn.addEventListener('click', () => toggleOrderItems(btn.dataset.id));
       });
+      list.querySelectorAll('.acc-btn-edit-order').forEach(btn => {
+        btn.addEventListener('click', () => startEditOrder(Number(btn.dataset.id)));
+      });
       list.querySelectorAll('.acc-btn-delete-order').forEach(btn => {
-        btn.addEventListener('click', () => deleteOrder(btn.dataset.id, btn.dataset.label));
+        btn.addEventListener('click', () => deleteOrder(Number(btn.dataset.id), btn.dataset.label));
       });
     }
 
@@ -2688,11 +2874,20 @@
     }
 
     async function deleteOrder(id, label) {
-      const ok = await askConfirm('Xóa đơn hàng?', `Đơn của "${label}" và toàn bộ dòng sản phẩm trong đơn sẽ bị xóa vĩnh viễn.`);
+      const ok = await askConfirm('Xóa đơn hàng?', `Đơn của "${label}" và toàn bộ dòng sản phẩm trong đơn sẽ bị xóa vĩnh viễn. Tồn kho các sản phẩm liên quan sẽ được hoàn lại.`);
       if (!ok) return;
+
+      const { data: items } = await sb.from('sales_order_items').select('product_id, quantity').eq('order_id', id);
       const { error } = await sb.from('sales_orders').delete().eq('id', id);
       if (error) { showToast('Xóa thất bại: ' + error.message, 'error'); return; }
+
+      for (const it of (items || [])) {
+        await applyStockDelta(it.product_id, Number(it.quantity));
+      }
+
       showToast('Đã xóa đơn hàng!');
+      if (accEditingOrderId === id) cancelEditOrder();
+      await loadAccountingProducts();
       loadOrders();
     }
 
