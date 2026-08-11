@@ -8,6 +8,7 @@
 
 <script src="https://cdn.tailwindcss.com"></script>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Sora:wght@400;600;700;800&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet">
 
@@ -900,6 +901,22 @@
       <p class="text-xs text-navy-900/40 font-body">Áp dụng cho đơn hàng mới tạo — đơn đã tạo giữ nguyên thuế suất lúc đó.</p>
     </div>
 
+    <!-- Thông tin hộ kinh doanh — in vào phần đầu Sổ S1-HKD khi xuất Excel -->
+    <div id="acc-hkd-info" class="hidden card-surface rounded-2xl p-5 mb-8 flex flex-col gap-3">
+      <p class="text-xs font-medium text-navy-900/60">Thông tin hộ kinh doanh <span class="text-navy-900/35 font-normal">(in vào đầu Sổ S1-HKD khi xuất Excel)</span></p>
+      <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+        <div class="flex flex-col gap-1.5">
+          <label class="text-xs font-medium text-navy-900/60">Tên hộ kinh doanh</label>
+          <input type="text" id="acc-hkd-name" placeholder="Hộ kinh doanh Cửa Hàng Kim Long" class="focus-ring form-input border border-slate-200 rounded-lg px-3 py-2 text-sm">
+        </div>
+        <div class="flex flex-col gap-1.5">
+          <label class="text-xs font-medium text-navy-900/60">Địa chỉ</label>
+          <input type="text" id="acc-hkd-address" placeholder="Địa chỉ đăng ký kinh doanh" class="focus-ring form-input border border-slate-200 rounded-lg px-3 py-2 text-sm">
+        </div>
+      </div>
+      <button type="button" id="acc-btn-save-hkd-info" class="focus-ring self-start text-xs font-display font-700 text-white bg-brand hover:bg-ember rounded-lg px-3 py-1.5 transition-colors">Lưu thông tin</button>
+    </div>
+
     <div class="grid grid-cols-1 lg:grid-cols-5 gap-8 items-start">
 
       <!-- Form thêm đơn bán hàng -->
@@ -978,9 +995,12 @@
           </div>
         </div>
 
-        <div class="flex items-center justify-between gap-3 mt-4">
+        <div class="flex items-center justify-between gap-3 mt-4 flex-wrap">
           <h2 class="font-display font-700 text-sm text-navy-950">Báo Cáo Doanh Thu &amp; Thuế Theo Tháng</h2>
-          <button type="button" id="acc-btn-export-report" class="focus-ring text-xs font-display font-700 text-navy-900/60 border border-slate-200 rounded-lg px-3 py-1.5 hover:bg-slate-150 transition-colors">Xuất CSV</button>
+          <div class="flex items-center gap-2">
+            <button type="button" id="acc-btn-export-report" class="focus-ring text-xs font-display font-700 text-navy-900/60 border border-slate-200 rounded-lg px-3 py-1.5 hover:bg-slate-150 transition-colors">Xuất CSV</button>
+            <button type="button" id="acc-btn-export-s1hkd" title="Xuất theo Mẫu S1-HKD, Thông tư 88/2021/TT-BTC — 1 trang tính (sheet) cho mỗi tháng có đơn hàng" class="focus-ring text-xs font-display font-700 text-white bg-brand hover:bg-ember rounded-lg px-3 py-1.5 transition-colors">Xuất Sổ S1-HKD (Excel)</button>
+          </div>
         </div>
         <div class="card-surface rounded-2xl overflow-hidden overflow-x-auto">
           <table class="w-full text-sm font-body">
@@ -2690,14 +2710,34 @@
       recalcDraftOrder();
     }
 
+    let accHkdName = '';
+    let accHkdAddress = '';
+
     async function loadAccountingSettings() {
-      const { data, error } = await sb.from('accounting_settings').select('tax_rate').eq('id', 1).maybeSingle();
-      if (!error && data) accTaxRate = Number(data.tax_rate);
+      const { data, error } = await sb.from('accounting_settings').select('tax_rate, hkd_name, hkd_address').eq('id', 1).maybeSingle();
+      if (!error && data) {
+        accTaxRate = Number(data.tax_rate);
+        accHkdName = data.hkd_name || '';
+        accHkdAddress = data.hkd_address || '';
+      }
       document.getElementById('acc-tax-rate-display').textContent = accTaxRate + '%';
       document.getElementById('acc-tax-rate-input').value = accTaxRate;
       document.getElementById('acc-tax-rate-edit').classList.toggle('hidden', currentUserRole !== 'admin');
+      document.getElementById('acc-hkd-name').value = accHkdName;
+      document.getElementById('acc-hkd-address').value = accHkdAddress;
+      document.getElementById('acc-hkd-info').classList.toggle('hidden', currentUserRole !== 'admin');
       if (!accEditingOrderId) setActiveTaxRate(accTaxRate);
     }
+
+    document.getElementById('acc-btn-save-hkd-info').addEventListener('click', async () => {
+      const name = document.getElementById('acc-hkd-name').value.trim();
+      const address = document.getElementById('acc-hkd-address').value.trim();
+      const { error } = await sb.from('accounting_settings').update({ hkd_name: name, hkd_address: address }).eq('id', 1);
+      if (error) { showToast('Lưu thất bại: ' + error.message, 'error'); return; }
+      accHkdName = name;
+      accHkdAddress = address;
+      showToast('Đã lưu thông tin hộ kinh doanh!');
+    });
 
     document.getElementById('acc-btn-save-tax-rate').addEventListener('click', async () => {
       const val = parseFloat(document.getElementById('acc-tax-rate-input').value);
@@ -3882,6 +3922,88 @@
       if (grouped.length === 0) { showToast('Chưa có dữ liệu để xuất.', 'error'); return; }
       grouped.forEach(([m, r]) => rows.push([m, r.count, r.subtotal, r.tax, r.total]));
       downloadCsv(`bao-cao-doanh-thu-thue_${new Date().toISOString().slice(0, 10)}.csv`, rows);
+    });
+
+    // ----- Xuất Sổ S1-HKD (Sổ chi tiết doanh thu bán hàng hóa, dịch vụ) -----
+    // Theo khung mẫu S1-HKD, Thông tư 88/2021/TT-BTC — 1 sheet Excel cho mỗi
+    // tháng có đơn hàng, mỗi đơn hàng là 1 dòng chứng từ. Giả định toàn bộ
+    // doanh thu thuộc diện chịu thuế GTGT (cột "không chịu thuế" luôn = 0) vì
+    // module hiện chỉ theo dõi 1 mức thuế suất chung cho mọi đơn hàng — nếu
+    // hộ kinh doanh của bạn có hàng hóa/dịch vụ không chịu thuế thì cần tự
+    // tách dòng đó ra sau khi xuất file.
+    document.getElementById('acc-btn-export-s1hkd').addEventListener('click', () => {
+      if (typeof XLSX === 'undefined') {
+        showToast('Không tải được thư viện xuất Excel — kiểm tra kết nối mạng rồi thử lại.', 'error');
+        return;
+      }
+      if (accOrdersCache.length === 0) {
+        showToast('Chưa có đơn hàng để xuất.', 'error');
+        return;
+      }
+
+      const byMonth = new Map();
+      [...accOrdersCache]
+        .sort((a, b) => a.order_date.localeCompare(b.order_date) || a.id - b.id)
+        .forEach(o => {
+          const key = orderMonthKey(o.order_date);
+          if (!byMonth.has(key)) byMonth.set(key, []);
+          byMonth.get(key).push(o);
+        });
+
+      const wb = XLSX.utils.book_new();
+      const hkdName = accHkdName || 'Cửa Hàng Kim Long';
+
+      Array.from(byMonth.keys()).sort().forEach(monthKey => {
+        const orders = byMonth.get(monthKey);
+        const [y, m] = monthKey.split('-');
+
+        const aoa = [
+          [`Hộ kinh doanh: ${hkdName}`],
+          [`Địa chỉ: ${accHkdAddress || ''}`],
+          [],
+          ['SỔ CHI TIẾT DOANH THU BÁN HÀNG HÓA, DỊCH VỤ'],
+          [`Tháng ${Number(m)} năm ${y}`],
+          [],
+          ['Ngày, tháng ghi sổ', 'Chứng từ', '', 'Diễn giải', 'Doanh thu bán hàng hóa, dịch vụ chịu thuế GTGT', 'Doanh thu bán hàng hóa, dịch vụ không chịu thuế GTGT', 'Thuế GTGT phải nộp', 'Ghi chú'],
+          ['', 'Số hiệu', 'Ngày, tháng', '', '', '', '', ''],
+          ['A', 'B', 'C', 'D', '1', '2', '3', 'E'],
+        ];
+
+        let sumTaxable = 0, sumNonTaxable = 0, sumTax = 0;
+        orders.forEach(o => {
+          const taxable = Number(o.subtotal) || 0;
+          const tax = Number(o.tax_amount) || 0;
+          sumTaxable += taxable;
+          sumTax += tax;
+          aoa.push([
+            o.order_date,
+            `HD${o.id}`,
+            o.order_date,
+            `Bán hàng cho ${o.customer_name || 'khách lẻ'}`,
+            taxable,
+            0,
+            tax,
+            o.note || '',
+          ]);
+        });
+
+        aoa.push(['Cộng tháng', '', '', '', sumTaxable, sumNonTaxable, sumTax, '']);
+        aoa.push([]);
+        aoa.push(['Người ghi sổ', '', '', 'Người đại diện hộ kinh doanh']);
+        aoa.push(['(Ký, ghi rõ họ tên)', '', '', '(Ký, ghi rõ họ tên, đóng dấu nếu có)']);
+
+        const ws = XLSX.utils.aoa_to_sheet(aoa);
+        ws['!cols'] = [{ wch: 14 }, { wch: 10 }, { wch: 12 }, { wch: 28 }, { wch: 16 }, { wch: 18 }, { wch: 14 }, { wch: 20 }];
+        ws['!merges'] = [
+          { s: { r: 3, c: 0 }, e: { r: 3, c: 7 } },
+          { s: { r: 4, c: 0 }, e: { r: 4, c: 7 } },
+          { s: { r: 6, c: 1 }, e: { r: 6, c: 2 } },
+        ];
+        XLSX.utils.book_append_sheet(wb, ws, `Thang ${Number(m)}-${y}`);
+      });
+
+      XLSX.writeFile(wb, `so-S1-HKD_${new Date().toISOString().slice(0, 10)}.xlsx`);
+      showToast(`Đã xuất Sổ S1-HKD (${byMonth.size} tháng)!`);
     });
 
     // ---------- Tin nhắn liên hệ ----------
