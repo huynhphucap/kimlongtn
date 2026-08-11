@@ -3201,17 +3201,58 @@
     const LOW_STOCK_THRESHOLD = 5;
     let invProductsCache = [];
     let invSearchQuery = '';
+    let invConversionsByProduct = new Map(); // product_id -> [{id, unit, factor}]
 
     async function loadInventoryTab() {
       document.getElementById('inv-product-search').value = '';
       invSearchQuery = '';
+      await loadUnitConversions();
       await loadInventoryProducts();
       resetReceiptForm();
       await loadInventoryMovements();
     }
 
+    // ----- Quy đổi đơn vị tính (vd 1 Thùng = 24 Cái) -----
+    async function loadUnitConversions() {
+      const { data, error } = await sb.from('product_unit_conversions').select('*').order('factor');
+      invConversionsByProduct = new Map();
+      if (error) { console.warn('Không tải được quy đổi đơn vị:', error.message); return; }
+      (data || []).forEach(row => {
+        const list = invConversionsByProduct.get(row.product_id) || [];
+        list.push(row);
+        invConversionsByProduct.set(row.product_id, list);
+      });
+    }
+
+    // Danh sách đơn vị dùng được cho 1 sản phẩm: đơn vị gốc (factor 1) +
+    // các quy đổi đã khai báo. factor = số đơn vị gốc tương ứng với 1 đơn vị này.
+    function unitOptionsForProduct(product) {
+      const baseUnit = (product && product.unit) || 'Cái';
+      const conversions = (product ? invConversionsByProduct.get(product.id) : null) || [];
+      return [{ unit: baseUnit, factor: 1 }, ...conversions.map(c => ({ unit: c.unit, factor: Number(c.factor) }))];
+    }
+
+    async function addUnitConversion(productId, unit, factor) {
+      const { error } = await sb.from('product_unit_conversions').insert({ product_id: productId, unit, factor });
+      if (error) { showToast('Thêm quy đổi thất bại: ' + error.message, 'error'); return false; }
+      showToast(`Đã thêm quy đổi: 1 ${unit} = ${factor} ${(invProductsCache.find(p => p.id === productId) || {}).unit || 'Cái'}!`);
+      await loadUnitConversions();
+      return true;
+    }
+
+    async function deleteUnitConversion(id) {
+      const ok = await askConfirm('Xóa quy đổi đơn vị?', 'Các dòng đã nhập/bán trước đó không bị ảnh hưởng, chỉ không dùng được đơn vị này cho lần sau.');
+      if (!ok) return;
+      const { error } = await sb.from('product_unit_conversions').delete().eq('id', id);
+      if (error) { showToast('Xóa thất bại: ' + error.message, 'error'); return; }
+      showToast('Đã xóa quy đổi!');
+      await loadUnitConversions();
+      renderInventoryProducts();
+      renderReceiptItems();
+    }
+
     // ----- Nhập hàng nhiều sản phẩm 1 lần (1 "phiếu nhập kho") -----
-    let invReceiptItems = [{ product_id: null, product_name: '', quantity: 1, unit: '' }];
+    let invReceiptItems = [{ product_id: null, product_name: '', quantity: 1, unit: '', unitFactor: 1 }];
 
     // excludeIds: sản phẩm đã được chọn ở DÒNG KHÁC trong cùng phiếu nhập —
     // ẩn khỏi dropdown để không lỡ chọn trùng 1 sản phẩm ở 2 dòng (muốn nhập
@@ -3229,17 +3270,26 @@
         const usedElsewhere = new Set(
           invReceiptItems.filter((it, j) => j !== i && it.product_id).map(it => it.product_id)
         );
+        const product = item.product_id ? invProductsCache.find(p => p.id === item.product_id) : null;
+        const units = product ? unitOptionsForProduct(product) : [];
         return `
-        <div class="flex items-center gap-2">
-          <select data-idx="${i}" class="inv-receipt-select focus-ring form-input border border-slate-200 rounded-lg px-2 py-1.5 text-xs flex-1 min-w-0 bg-white">
-            <option value="">— Chọn sản phẩm —</option>
-            ${receiptProductOptionsHtml(item.product_id, usedElsewhere)}
-          </select>
-          <input type="number" data-idx="${i}" min="1" step="1" value="${item.quantity}" placeholder="SL" class="inv-receipt-qty focus-ring form-input border border-slate-200 rounded-lg px-2 py-1.5 text-sm w-20 shrink-0">
-          <input type="text" data-idx="${i}" list="unit-suggestions" value="${escapeHtml(item.unit || '')}" placeholder="ĐVT" title="Đơn vị tính cho lần nhập này (khác đơn vị mặc định của sản phẩm nếu cần, vd nhập theo Thùng)" class="inv-receipt-unit focus-ring form-input border border-slate-200 rounded-lg px-2 py-1.5 text-sm w-24 shrink-0">
-          <button type="button" data-idx="${i}" class="inv-btn-remove-receipt-line focus-ring icon-btn w-7 h-7 shrink-0 hover:text-red-600" title="Xóa dòng">
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M18 6 6 18M6 6l12 12"/></svg>
-          </button>
+        <div class="flex flex-col gap-1">
+          <div class="flex items-center gap-2">
+            <select data-idx="${i}" class="inv-receipt-select focus-ring form-input border border-slate-200 rounded-lg px-2 py-1.5 text-xs flex-1 min-w-0 bg-white">
+              <option value="">— Chọn sản phẩm —</option>
+              ${receiptProductOptionsHtml(item.product_id, usedElsewhere)}
+            </select>
+            <input type="number" data-idx="${i}" min="0" step="any" value="${item.quantity}" placeholder="SL" class="inv-receipt-qty focus-ring form-input border border-slate-200 rounded-lg px-2 py-1.5 text-sm w-20 shrink-0">
+            <select data-idx="${i}" ${!product ? 'disabled' : ''} class="inv-receipt-unit focus-ring form-input border border-slate-200 rounded-lg px-2 py-1.5 text-xs w-32 shrink-0 bg-white">
+              ${product
+                ? units.map(u => `<option value="${u.factor}" data-unit="${escapeHtml(u.unit)}" ${u.factor === item.unitFactor ? 'selected' : ''}>${escapeHtml(u.unit)}${u.factor !== 1 ? ` (=${formatUnitQty(u.factor)} ${escapeHtml(product.unit || 'Cái')})` : ''}</option>`).join('')
+                : '<option>— chọn sản phẩm trước —</option>'}
+            </select>
+            <button type="button" data-idx="${i}" class="inv-btn-remove-receipt-line focus-ring icon-btn w-7 h-7 shrink-0 hover:text-red-600" title="Xóa dòng">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M18 6 6 18M6 6l12 12"/></svg>
+            </button>
+          </div>
+          <p data-receipt-hint="${i}" class="text-[11px] font-body text-navy-900/40 pl-1"></p>
         </div>
       `;
       }).join('');
@@ -3251,35 +3301,55 @@
           invReceiptItems[idx].product_id = product ? product.id : null;
           invReceiptItems[idx].product_name = product ? product.name : '';
           invReceiptItems[idx].unit = product ? (product.unit || 'Cái') : '';
+          invReceiptItems[idx].unitFactor = 1;
           renderReceiptItems(); // các dòng khác cần ẩn/hiện lại sản phẩm vừa chọn
         });
       });
       wrap.querySelectorAll('.inv-receipt-qty').forEach(inp => {
         inp.addEventListener('input', () => {
           invReceiptItems[Number(inp.dataset.idx)].quantity = Number(inp.value);
+          updateReceiptHint(Number(inp.dataset.idx));
         });
       });
-      wrap.querySelectorAll('.inv-receipt-unit').forEach(inp => {
-        inp.addEventListener('input', () => {
-          invReceiptItems[Number(inp.dataset.idx)].unit = inp.value;
+      wrap.querySelectorAll('.inv-receipt-unit').forEach(sel => {
+        sel.addEventListener('change', () => {
+          const idx = Number(sel.dataset.idx);
+          const opt = sel.options[sel.selectedIndex];
+          invReceiptItems[idx].unitFactor = Number(sel.value) || 1;
+          invReceiptItems[idx].unit = opt ? opt.dataset.unit : '';
+          updateReceiptHint(idx);
         });
       });
       wrap.querySelectorAll('.inv-btn-remove-receipt-line').forEach(btn => {
         btn.addEventListener('click', () => {
           invReceiptItems.splice(Number(btn.dataset.idx), 1);
-          if (invReceiptItems.length === 0) invReceiptItems.push({ product_id: null, product_name: '', quantity: 1, unit: '' });
+          if (invReceiptItems.length === 0) invReceiptItems.push({ product_id: null, product_name: '', quantity: 1, unit: '', unitFactor: 1 });
           renderReceiptItems();
         });
       });
+
+      invReceiptItems.forEach((item, i) => updateReceiptHint(i));
+    }
+
+    function updateReceiptHint(idx) {
+      const hint = document.querySelector(`[data-receipt-hint="${idx}"]`);
+      if (!hint) return;
+      const item = invReceiptItems[idx];
+      const product = item.product_id ? invProductsCache.find(p => p.id === item.product_id) : null;
+      const qty = Number(item.quantity) || 0;
+      const factor = Number(item.unitFactor) || 1;
+      hint.textContent = (product && qty && factor !== 1)
+        ? `= ${formatUnitQty(qty * factor)} ${product.unit || 'Cái'} sẽ được cộng vào kho.`
+        : '';
     }
 
     document.getElementById('inv-btn-add-receipt-line').addEventListener('click', () => {
-      invReceiptItems.push({ product_id: null, product_name: '', quantity: 1, unit: '' });
+      invReceiptItems.push({ product_id: null, product_name: '', quantity: 1, unit: '', unitFactor: 1 });
       renderReceiptItems();
     });
 
     function resetReceiptForm() {
-      invReceiptItems = [{ product_id: null, product_name: '', quantity: 1, unit: '' }];
+      invReceiptItems = [{ product_id: null, product_name: '', quantity: 1, unit: '', unitFactor: 1 }];
       renderReceiptItems();
       document.getElementById('inv-receipt-reason').value = '';
       document.getElementById('inv-receipt-error').classList.add('hidden');
@@ -3308,13 +3378,16 @@
         return;
       }
 
-      const reason = document.getElementById('inv-receipt-reason').value.trim() || 'Nhập kho (nhiều sản phẩm)';
+      const baseReason = document.getElementById('inv-receipt-reason').value.trim() || 'Nhập kho (nhiều sản phẩm)';
       const btn = document.getElementById('inv-btn-save-receipt');
       btn.disabled = true;
 
       let failCount = 0;
       for (const it of validItems) {
-        const { error } = await sb.rpc('adjust_product_stock', { p_product_id: it.product_id, p_delta: Number(it.quantity), p_reason: reason, p_unit: (it.unit || '').trim() || null });
+        const factor = Number(it.unitFactor) || 1;
+        const baseDelta = Math.round(Number(it.quantity) * factor); // tồn kho luôn là số nguyên đơn vị gốc
+        const reason = factor !== 1 ? `${baseReason} — ${it.quantity} ${it.unit}` : baseReason;
+        const { error } = await sb.rpc('adjust_product_stock', { p_product_id: it.product_id, p_delta: baseDelta, p_reason: reason });
         if (error) { failCount++; console.warn('Không nhập được', it.product_name, error.message); }
       }
 
@@ -3350,6 +3423,11 @@
       if (s <= 0) return { label: 'Hết hàng', cls: 'text-red-600 bg-red-50 border-red-200' };
       if (s <= LOW_STOCK_THRESHOLD) return { label: 'Sắp hết', cls: 'text-amber-700 bg-amber-50 border-amber-200' };
       return { label: 'Còn hàng', cls: 'text-emerald-700 bg-emerald-50 border-emerald-200' };
+    }
+
+    function formatUnitQty(qty) {
+      const n = Number(qty) || 0;
+      return Number.isInteger(n) ? n.toLocaleString('vi-VN') : n.toLocaleString('vi-VN', { maximumFractionDigits: 2 });
     }
 
     async function loadInventoryProducts() {
@@ -3407,6 +3485,11 @@
 
       list.innerHTML = filtered.map(p => {
         const status = stockStatus(p.stock);
+        const units = unitOptionsForProduct(p);
+        const conversions = invConversionsByProduct.get(p.id) || [];
+        const stockLines = units.map(u => `
+          <p class="font-display font-800 text-sm text-navy-950 leading-tight">${formatUnitQty((Number(p.stock) || 0) / u.factor)} <span class="font-body font-normal text-[11px] text-navy-900/40">${escapeHtml(u.unit)}</span></p>
+        `).join('');
         return `
         <div class="px-5 py-3.5">
           <div class="flex items-center gap-3 flex-wrap">
@@ -3415,44 +3498,128 @@
               ${p.category ? `<p class="font-body text-xs text-navy-900/50 mt-0.5">${escapeHtml(p.category)}</p>` : ''}
             </div>
             <span class="text-[11px] font-body font-700 border rounded-full px-2.5 py-1 shrink-0 ${status.cls}">${status.label}</span>
-            <p class="font-display font-800 text-base text-navy-950 shrink-0 text-right">${Number(p.stock) || 0} <span class="font-body font-normal text-xs text-navy-900/40">${escapeHtml(p.unit || 'Cái')}</span></p>
+            <div class="shrink-0 text-right">${stockLines}</div>
+            <button data-id="${p.id}" class="inv-btn-toggle-units focus-ring text-xs font-display font-700 text-navy-900/60 border border-slate-200 hover:bg-slate-150 rounded-lg px-3 py-1.5 transition-colors shrink-0">Quy đổi ĐVT</button>
             <button data-id="${p.id}" class="inv-btn-toggle-adjust focus-ring text-xs font-display font-700 text-brand border border-brand/30 hover:bg-brand hover:text-white rounded-lg px-3 py-1.5 transition-colors shrink-0">Điều chỉnh</button>
           </div>
+
+          <div data-units-panel="${p.id}" class="hidden mt-2.5 flex flex-col gap-2 bg-slate-150 border border-slate-200 rounded-lg p-2.5">
+            <p class="text-[11px] font-body text-navy-900/50">Đơn vị gốc (dùng để tính tồn kho): <strong>${escapeHtml(p.unit || 'Cái')}</strong></p>
+            ${conversions.length ? conversions.map(c => `
+              <div class="flex items-center gap-2 text-xs font-body text-navy-900/70">
+                <span class="flex-1">1 <strong>${escapeHtml(c.unit)}</strong> = ${formatUnitQty(c.factor)} ${escapeHtml(p.unit || 'Cái')}</span>
+                <button data-conv-id="${c.id}" class="inv-btn-delete-conv focus-ring text-[11px] text-red-600 hover:underline shrink-0">Xóa</button>
+              </div>
+            `).join('') : '<p class="text-[11px] font-body text-navy-900/40">Chưa có quy đổi nào — sản phẩm chỉ dùng đơn vị gốc.</p>'}
+            <div class="flex items-end gap-2 pt-1 border-t border-slate-200">
+              <div class="flex flex-col gap-0.5 w-28 shrink-0">
+                <label class="text-[10px] font-body text-navy-900/40">Đơn vị mới</label>
+                <input type="text" data-id="${p.id}" list="unit-suggestions" placeholder="VD: Thùng" class="inv-new-conv-unit focus-ring form-input border border-slate-200 rounded-lg px-2 py-1.5 text-sm">
+              </div>
+              <span class="text-navy-900/30 text-xs pb-2 shrink-0">=</span>
+              <div class="flex flex-col gap-0.5 w-24 shrink-0">
+                <label class="text-[10px] font-body text-navy-900/40">Bằng bao nhiêu ${escapeHtml(p.unit || 'Cái')}</label>
+                <input type="number" data-id="${p.id}" min="0" step="any" placeholder="VD: 24" class="inv-new-conv-factor focus-ring form-input border border-slate-200 rounded-lg px-2 py-1.5 text-sm">
+              </div>
+              <button data-id="${p.id}" class="inv-btn-add-conv focus-ring text-xs font-display font-700 text-white bg-brand hover:bg-ember rounded-lg px-3 py-2 transition-colors shrink-0">Thêm quy đổi</button>
+            </div>
+          </div>
+
           <div data-adjust-panel="${p.id}" class="hidden mt-2.5 flex flex-wrap items-end gap-2 bg-slate-150 border border-slate-200 rounded-lg p-2.5">
-            <div class="flex flex-col gap-0.5">
+            <div class="flex flex-col gap-0.5 w-28 shrink-0">
               <label class="text-[10px] font-body text-navy-900/40">Số lượng (+ nhập / − xuất)</label>
-              <input type="number" data-id="${p.id}" step="1" placeholder="VD: 50 hoặc -2" class="inv-adjust-delta focus-ring form-input border border-slate-200 rounded-lg px-2 py-1.5 text-sm w-32">
+              <input type="number" data-id="${p.id}" step="any" placeholder="VD: 50 hoặc -2" class="inv-adjust-qty focus-ring form-input border border-slate-200 rounded-lg px-2 py-1.5 text-sm w-full">
+            </div>
+            <div class="flex flex-col gap-0.5 w-32 shrink-0">
+              <label class="text-[10px] font-body text-navy-900/40">Theo đơn vị</label>
+              <select data-id="${p.id}" class="inv-adjust-unit focus-ring form-input border border-slate-200 rounded-lg px-2 py-1.5 text-sm bg-white">
+                ${units.map(u => `<option value="${u.factor}">${escapeHtml(u.unit)}${u.factor !== 1 ? ` (=${formatUnitQty(u.factor)} ${escapeHtml(p.unit || 'Cái')})` : ''}</option>`).join('')}
+              </select>
             </div>
             <div class="flex flex-col gap-0.5 flex-1 min-w-[160px]">
               <label class="text-[10px] font-body text-navy-900/40">Lý do</label>
               <input type="text" data-id="${p.id}" placeholder="VD: Nhập hàng mới về, kiểm kê, hàng hỏng..." class="inv-adjust-reason focus-ring form-input border border-slate-200 rounded-lg px-2 py-1.5 text-sm">
             </div>
             <button data-id="${p.id}" class="inv-btn-save-adjust focus-ring text-xs font-display font-700 text-white bg-brand hover:bg-ember rounded-lg px-3 py-2 transition-colors shrink-0">Lưu</button>
+            <p data-adjust-hint="${p.id}" class="w-full text-[11px] font-body text-navy-900/40"></p>
           </div>
         </div>`;
       }).join('');
 
+      list.querySelectorAll('.inv-btn-toggle-units').forEach(btn => {
+        btn.addEventListener('click', () => {
+          const panel = document.querySelector(`[data-units-panel="${btn.dataset.id}"]`);
+          if (panel) panel.classList.toggle('hidden');
+        });
+      });
+      list.querySelectorAll('.inv-btn-add-conv').forEach(btn => {
+        btn.addEventListener('click', async () => {
+          const productId = Number(btn.dataset.id);
+          const unitInput = document.querySelector(`.inv-new-conv-unit[data-id="${productId}"]`);
+          const factorInput = document.querySelector(`.inv-new-conv-factor[data-id="${productId}"]`);
+          const unit = unitInput.value.trim();
+          const factor = parseFloat(factorInput.value);
+          const product = invProductsCache.find(p => p.id === productId);
+          if (!unit || !factor || factor <= 0) {
+            showToast('Nhập đơn vị và hệ số quy đổi hợp lệ (lớn hơn 0).', 'error');
+            return;
+          }
+          if (product && unit.toLowerCase() === (product.unit || 'Cái').toLowerCase()) {
+            showToast('Đơn vị này trùng đơn vị gốc của sản phẩm rồi.', 'error');
+            return;
+          }
+          const ok = await addUnitConversion(productId, unit, factor);
+          if (ok) { renderInventoryProducts(); renderReceiptItems(); }
+        });
+      });
+      list.querySelectorAll('.inv-btn-delete-conv').forEach(btn => {
+        btn.addEventListener('click', () => deleteUnitConversion(Number(btn.dataset.convId)));
+      });
       list.querySelectorAll('.inv-btn-toggle-adjust').forEach(btn => {
         btn.addEventListener('click', () => {
           const panel = document.querySelector(`[data-adjust-panel="${btn.dataset.id}"]`);
           if (panel) panel.classList.toggle('hidden');
         });
       });
+      list.querySelectorAll('.inv-adjust-qty, .inv-adjust-unit').forEach(el => {
+        el.addEventListener('input', () => updateAdjustHint(Number(el.dataset.id)));
+      });
       list.querySelectorAll('.inv-btn-save-adjust').forEach(btn => {
         btn.addEventListener('click', () => saveInventoryAdjust(Number(btn.dataset.id)));
       });
     }
 
+    function updateAdjustHint(productId) {
+      const qtyInput = document.querySelector(`.inv-adjust-qty[data-id="${productId}"]`);
+      const unitSelect = document.querySelector(`.inv-adjust-unit[data-id="${productId}"]`);
+      const hint = document.querySelector(`[data-adjust-hint="${productId}"]`);
+      if (!qtyInput || !unitSelect || !hint) return;
+      const product = invProductsCache.find(p => p.id === productId);
+      const qty = Number(qtyInput.value) || 0;
+      const factor = Number(unitSelect.value) || 1;
+      const baseQty = qty * factor;
+      const unitLabel = unitSelect.options[unitSelect.selectedIndex]?.text || '';
+      hint.textContent = qty
+        ? `= ${formatUnitQty(baseQty)} ${(product && product.unit) || 'Cái'} sẽ được ${baseQty >= 0 ? 'cộng vào' : 'trừ khỏi'} kho (từ ${qty} ${unitLabel}).`
+        : '';
+    }
+
     async function saveInventoryAdjust(productId) {
-      const deltaInput = document.querySelector(`.inv-adjust-delta[data-id="${productId}"]`);
+      const qtyInput = document.querySelector(`.inv-adjust-qty[data-id="${productId}"]`);
+      const unitSelect = document.querySelector(`.inv-adjust-unit[data-id="${productId}"]`);
       const reasonInput = document.querySelector(`.inv-adjust-reason[data-id="${productId}"]`);
-      const delta = parseInt(deltaInput.value, 10);
-      if (!delta) {
+      const qty = Number(qtyInput.value);
+      const factor = Number(unitSelect.value) || 1;
+      if (!qty) {
         showToast('Nhập số lượng khác 0 (số dương để nhập kho, số âm để xuất kho).', 'error');
         return;
       }
-      const reason = reasonInput.value.trim() || (delta > 0 ? 'Nhập kho' : 'Xuất kho / điều chỉnh');
-      const { error } = await sb.rpc('adjust_product_stock', { p_product_id: productId, p_delta: delta, p_reason: reason });
+      const baseDelta = Math.round(qty * factor); // tồn kho luôn là số nguyên đơn vị gốc
+      const unitLabel = unitSelect.options[unitSelect.selectedIndex]?.text || '';
+      let reason = reasonInput.value.trim() || (baseDelta > 0 ? 'Nhập kho' : 'Xuất kho / điều chỉnh');
+      if (factor !== 1) reason += ` — ${qty} ${unitLabel}`;
+
+      const { error } = await sb.rpc('adjust_product_stock', { p_product_id: productId, p_delta: baseDelta, p_reason: reason });
       if (error) { showToast('Cập nhật tồn kho thất bại: ' + error.message, 'error'); return; }
 
       showToast('Đã cập nhật tồn kho!');
