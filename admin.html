@@ -589,9 +589,19 @@
                 </div>
               </div>
 
-              <div class="flex flex-col gap-1.5">
-                <label class="text-xs font-medium text-navy-900/60">Tồn kho <span class="text-navy-900/35 font-normal">(số lượng còn trong kho, dùng cho tab Kế Toán &amp; Thuế)</span></label>
-                <input type="number" id="f-stock" min="0" step="1" placeholder="0" class="form-input border border-slate-200 rounded-lg px-3 py-2 text-sm">
+              <div class="grid grid-cols-2 gap-3">
+                <div class="flex flex-col gap-1.5">
+                  <label class="text-xs font-medium text-navy-900/60">Tồn kho <span class="text-navy-900/35 font-normal">(dùng cho tab Kế Toán &amp; Thuế)</span></label>
+                  <input type="number" id="f-stock" min="0" step="1" placeholder="0" class="form-input border border-slate-200 rounded-lg px-3 py-2 text-sm">
+                </div>
+                <div class="flex flex-col gap-1.5">
+                  <label class="text-xs font-medium text-navy-900/60">Đơn vị tính <span class="text-navy-900/35 font-normal">(vd: Cái, Hộp, Kg)</span></label>
+                  <input type="text" id="f-unit" list="unit-suggestions" placeholder="Cái" class="form-input border border-slate-200 rounded-lg px-3 py-2 text-sm">
+                  <datalist id="unit-suggestions">
+                    <option value="Cái"><option value="Chiếc"><option value="Bộ"><option value="Hộp">
+                    <option value="Thùng"><option value="Lốc"><option value="Gói"><option value="Kg">
+                  </datalist>
+                </div>
               </div>
 
               <div class="flex flex-col gap-1.5">
@@ -1675,6 +1685,7 @@
         discount: document.getElementById('f-discount').value.trim() || '-0%',
         badge: document.getElementById('f-badge').value.trim(),
         stock: parseInt(document.getElementById('f-stock').value, 10) || 0,
+        unit: document.getElementById('f-unit').value.trim() || 'Cái',
         category: document.getElementById('f-category').value,
         tags: document.getElementById('f-tags').value.split(',').map(t => t.trim()).filter(Boolean),
         img: productImages[0] || 'https://placehold.co/300x300?text=Anh+San+Pham',
@@ -2123,6 +2134,7 @@
       document.getElementById('f-discount').value = p.discount || '';
       document.getElementById('f-badge').value = p.badge || '';
       document.getElementById('f-stock').value = p.stock ?? 0;
+      document.getElementById('f-unit').value = p.unit || 'Cái';
       renderCategoryOptions();
       document.getElementById('f-category').value = p.category || 'Nhà Bếp';
       document.getElementById('f-tags').value = (p.tags || []).join(', ');
@@ -2298,7 +2310,7 @@
             </div>
             <p class="font-body text-xs text-navy-900/50 mt-0.5">
               <span class="line-through">${escapeHtml(p.old_price)}</span> → <span class="text-ember-dark font-700">${escapeHtml(p.new_price)}</span> · ${escapeHtml(p.discount)}
-              · <span class="${Number(p.stock) > 0 ? '' : 'text-red-600 font-700'}">Tồn: ${Number(p.stock) || 0}</span>
+              · <span class="${Number(p.stock) > 0 ? '' : 'text-red-600 font-700'}">Tồn: ${Number(p.stock) || 0} ${escapeHtml(p.unit || 'Cái')}</span>
             </p>
           </div>
           <div class="flex items-center gap-2 shrink-0">
@@ -2645,7 +2657,7 @@
     }
 
     async function loadAccountingProducts() {
-      const { data, error } = await sb.from('products').select('id,name,new_price,stock').order('name');
+      const { data, error } = await sb.from('products').select('id,name,new_price,stock,unit').order('name');
       if (error) {
         console.error('Không tải được danh sách sản phẩm:', error);
         showToast('Không tải được danh sách sản phẩm: ' + error.message, 'error');
@@ -2688,7 +2700,7 @@
     // Mỗi dòng có mode: 'unset' (chưa chọn) | 'catalog' (chọn từ sản phẩm có
     // sẵn, có product_id + theo dõi tồn kho) | 'custom' (nhập tay, không trừ kho).
     function productSelectOptionsHtml(selectedId) {
-      return accProductsCache.map(p => `<option value="${p.id}" ${String(p.id) === String(selectedId) ? 'selected' : ''}>${escapeHtml(p.name)} (Tồn: ${Number(p.stock) || 0})</option>`).join('');
+      return accProductsCache.map(p => `<option value="${p.id}" ${String(p.id) === String(selectedId) ? 'selected' : ''}>${escapeHtml(p.name)} (Tồn: ${Number(p.stock) || 0} ${escapeHtml(p.unit || 'Cái')})</option>`).join('');
     }
 
     function renderDraftLineItems() {
@@ -2696,6 +2708,7 @@
       wrap.innerHTML = accDraftItems.map((item, i) => {
         const product = item.mode === 'catalog' ? accProductsCache.find(p => p.id === item.product_id) : null;
         const stock = product ? Number(product.stock) || 0 : null;
+        const qtyLabel = item.unit ? `Số lượng (${escapeHtml(item.unit)})` : 'Số lượng';
         return `
         <div class="flex flex-col gap-1.5 border border-slate-200 rounded-lg p-2.5">
           <div class="flex items-center gap-2">
@@ -2709,13 +2722,19 @@
             </button>
           </div>
           ${item.mode === 'custom' ? `
-          <div class="flex flex-col gap-0.5">
-            <label class="text-[10px] font-body text-navy-900/40">Tên sản phẩm / dịch vụ</label>
-            <input type="text" data-idx="${i}" data-field="product_name" value="${escapeHtml(item.product_name)}" placeholder="VD: Phí lắp đặt" class="acc-line-input form-input border border-slate-200 rounded-lg px-2 py-1.5 text-sm">
+          <div class="flex items-center gap-2">
+            <div class="flex flex-col gap-0.5 flex-1 min-w-0">
+              <label class="text-[10px] font-body text-navy-900/40">Tên sản phẩm / dịch vụ</label>
+              <input type="text" data-idx="${i}" data-field="product_name" value="${escapeHtml(item.product_name)}" placeholder="VD: Phí lắp đặt" class="acc-line-input form-input border border-slate-200 rounded-lg px-2 py-1.5 text-sm">
+            </div>
+            <div class="flex flex-col gap-0.5 w-24 shrink-0">
+              <label class="text-[10px] font-body text-navy-900/40">ĐVT</label>
+              <input type="text" data-idx="${i}" data-field="unit" list="unit-suggestions" value="${escapeHtml(item.unit)}" placeholder="Cái" class="acc-line-input form-input border border-slate-200 rounded-lg px-2 py-1.5 text-sm">
+            </div>
           </div>` : ''}
           <div class="flex items-end gap-2">
-            <div class="flex flex-col gap-0.5 w-20 shrink-0">
-              <label class="text-[10px] font-body text-navy-900/40">Số lượng</label>
+            <div class="flex flex-col gap-0.5 w-24 shrink-0">
+              <label class="text-[10px] font-body text-navy-900/40">${qtyLabel}</label>
               <input type="number" data-idx="${i}" data-field="quantity" value="${item.quantity}" min="0" step="1" class="acc-line-input form-input border border-slate-200 rounded-lg px-2 py-1.5 text-sm w-full">
             </div>
             <span class="text-navy-900/30 text-xs shrink-0 pb-2">×</span>
@@ -2735,15 +2754,16 @@
           const val = sel.value;
           const prevQty = accDraftItems[idx].quantity || 1;
           if (val === '') {
-            accDraftItems[idx] = { mode: 'unset', product_id: null, product_name: '', quantity: prevQty, unit_price: 0 };
+            accDraftItems[idx] = { mode: 'unset', product_id: null, product_name: '', unit: '', quantity: prevQty, unit_price: 0 };
           } else if (val === 'custom') {
-            accDraftItems[idx] = { mode: 'custom', product_id: null, product_name: '', quantity: prevQty, unit_price: accDraftItems[idx].unit_price || 0 };
+            accDraftItems[idx] = { mode: 'custom', product_id: null, product_name: '', unit: accDraftItems[idx].unit || 'Cái', quantity: prevQty, unit_price: accDraftItems[idx].unit_price || 0 };
           } else {
             const product = accProductsCache.find(p => String(p.id) === val);
             accDraftItems[idx] = {
               mode: 'catalog',
               product_id: product ? product.id : null,
               product_name: product ? product.name : '',
+              unit: product ? (product.unit || 'Cái') : '',
               quantity: prevQty,
               unit_price: product ? parsePriceToNumber(product.new_price) : 0,
             };
@@ -2756,7 +2776,7 @@
         inp.addEventListener('input', () => {
           const idx = Number(inp.dataset.idx);
           const field = inp.dataset.field;
-          accDraftItems[idx][field] = field === 'product_name' ? inp.value : Number(inp.value);
+          accDraftItems[idx][field] = (field === 'product_name' || field === 'unit') ? inp.value : Number(inp.value);
           recalcDraftOrder();
         });
       });
@@ -2772,7 +2792,7 @@
       wrap.querySelectorAll('.acc-btn-remove-line').forEach(btn => {
         btn.addEventListener('click', () => {
           accDraftItems.splice(Number(btn.dataset.idx), 1);
-          if (accDraftItems.length === 0) accDraftItems.push({ mode: 'unset', product_id: null, product_name: '', quantity: 1, unit_price: 0 });
+          if (accDraftItems.length === 0) accDraftItems.push({ mode: 'unset', product_id: null, product_name: '', unit: '', quantity: 1, unit_price: 0 });
           renderDraftLineItems();
           recalcDraftOrder();
         });
@@ -2780,7 +2800,7 @@
     }
 
     document.getElementById('acc-btn-add-line').addEventListener('click', () => {
-      accDraftItems.push({ mode: 'unset', product_id: null, product_name: '', quantity: 1, unit_price: 0 });
+      accDraftItems.push({ mode: 'unset', product_id: null, product_name: '', unit: '', quantity: 1, unit_price: 0 });
       renderDraftLineItems();
     });
 
@@ -2795,7 +2815,7 @@
     }
 
     function resetDraftOrder() {
-      accDraftItems = [{ mode: 'unset', product_id: null, product_name: '', quantity: 1, unit_price: 0 }];
+      accDraftItems = [{ mode: 'unset', product_id: null, product_name: '', unit: '', quantity: 1, unit_price: 0 }];
       renderDraftLineItems();
       document.getElementById('acc-order-customer').value = '';
       document.getElementById('acc-order-phone').value = '';
@@ -2835,10 +2855,11 @@
             mode: it.product_id ? 'catalog' : 'custom',
             product_id: it.product_id || null,
             product_name: it.product_name,
+            unit: it.unit || 'Cái',
             quantity: Number(it.quantity),
             unit_price: Number(it.unit_price),
           }))
-        : [{ mode: 'unset', product_id: null, product_name: '', quantity: 1, unit_price: 0 }];
+        : [{ mode: 'unset', product_id: null, product_name: '', unit: '', quantity: 1, unit_price: 0 }];
       renderDraftLineItems();
       setActiveTaxRate(Number(order.tax_rate));
 
@@ -2856,6 +2877,7 @@
         .map(it => ({
           product_id: it.mode === 'catalog' ? it.product_id : null,
           product_name: (it.product_name || '').trim(),
+          unit: (it.unit || '').trim() || 'Cái',
           quantity: Number(it.quantity) || 0,
           unit_price: Number(it.unit_price) || 0,
         }))
@@ -2912,7 +2934,7 @@
           if (delErr) throw delErr;
           const { error: insErr } = await sb.from('sales_order_items').insert(
             items.map(it => ({
-              order_id: accEditingOrderId, product_id: it.product_id, product_name: it.product_name,
+              order_id: accEditingOrderId, product_id: it.product_id, product_name: it.product_name, unit: it.unit,
               quantity: it.quantity, unit_price: it.unit_price, line_total: it.quantity * it.unit_price,
             }))
           );
@@ -2927,7 +2949,7 @@
           if (orderErr) throw orderErr;
           const { error: itemsErr } = await sb.from('sales_order_items').insert(
             items.map(it => ({
-              order_id: order.id, product_id: it.product_id, product_name: it.product_name,
+              order_id: order.id, product_id: it.product_id, product_name: it.product_name, unit: it.unit,
               quantity: it.quantity, unit_price: it.unit_price, line_total: it.quantity * it.unit_price,
             }))
           );
@@ -3020,7 +3042,7 @@
       }
       panel.dataset.loaded = '1';
       panel.innerHTML = (data && data.length)
-        ? data.map(it => `<p class="font-body text-xs text-navy-900/60">${escapeHtml(it.product_name)} — ${it.quantity} × ${formatVnd(it.unit_price)} = ${formatVnd(it.line_total)}</p>`).join('')
+        ? data.map(it => `<p class="font-body text-xs text-navy-900/60">${escapeHtml(it.product_name)} — ${it.quantity} ${escapeHtml(it.unit || 'Cái')} × ${formatVnd(it.unit_price)} = ${formatVnd(it.line_total)}</p>`).join('')
         : '<p class="font-body text-xs text-navy-900/40">Không có dòng sản phẩm.</p>';
     }
 
@@ -3040,11 +3062,12 @@
           <tr>
             <td class="stt">${i + 1}</td>
             <td>${escapeHtml(it.product_name)}</td>
+            <td class="num">${escapeHtml(it.unit || 'Cái')}</td>
             <td class="num">${it.quantity}</td>
             <td class="num">${formatVnd(it.unit_price)}</td>
             <td class="num">${formatVnd(it.line_total)}</td>
           </tr>`).join('')
-        : '<tr><td colspan="5" style="text-align:center;color:#999;">Không có dòng sản phẩm</td></tr>';
+        : '<tr><td colspan="6" style="text-align:center;color:#999;">Không có dòng sản phẩm</td></tr>';
 
       const saleDate = new Date(order.order_date);
 
@@ -3118,7 +3141,7 @@
 
   <table class="items">
     <thead>
-      <tr><th style="width:34px;">STT</th><th>Tên sản phẩm</th><th class="num" style="width:50px;">SL</th><th class="num" style="width:100px;">Đơn giá</th><th class="num" style="width:110px;">Thành tiền</th></tr>
+      <tr><th style="width:34px;">STT</th><th>Tên sản phẩm</th><th class="num" style="width:56px;">ĐVT</th><th class="num" style="width:44px;">SL</th><th class="num" style="width:96px;">Đơn giá</th><th class="num" style="width:104px;">Thành tiền</th></tr>
     </thead>
     <tbody>${rows}</tbody>
   </table>
@@ -3190,7 +3213,7 @@
     function receiptProductOptionsHtml(selectedId, excludeIds) {
       return invProductsCache
         .filter(p => p.id === selectedId || !excludeIds.has(p.id))
-        .map(p => `<option value="${p.id}" ${String(p.id) === String(selectedId) ? 'selected' : ''}>${escapeHtml(p.name)} (Tồn: ${Number(p.stock) || 0})</option>`)
+        .map(p => `<option value="${p.id}" ${String(p.id) === String(selectedId) ? 'selected' : ''}>${escapeHtml(p.name)} (Tồn: ${Number(p.stock) || 0} ${escapeHtml(p.unit || 'Cái')})</option>`)
         .join('');
     }
 
@@ -3323,7 +3346,7 @@
       list.innerHTML = '';
       document.getElementById('inv-products-empty').classList.add('hidden');
 
-      const { data, error } = await sb.from('products').select('id,name,category,stock').order('stock', { ascending: true }).order('name');
+      const { data, error } = await sb.from('products').select('id,name,category,stock,unit').order('stock', { ascending: true }).order('name');
       loading.classList.add('hidden');
       if (error) {
         list.innerHTML = `<div class="text-center py-10 text-sm text-red-600 px-6">Lỗi: ${escapeHtml(error.message)}</div>`;
@@ -3379,7 +3402,7 @@
               ${p.category ? `<p class="font-body text-xs text-navy-900/50 mt-0.5">${escapeHtml(p.category)}</p>` : ''}
             </div>
             <span class="text-[11px] font-body font-700 border rounded-full px-2.5 py-1 shrink-0 ${status.cls}">${status.label}</span>
-            <p class="font-display font-800 text-base text-navy-950 w-12 text-right shrink-0">${Number(p.stock) || 0}</p>
+            <p class="font-display font-800 text-base text-navy-950 shrink-0 text-right">${Number(p.stock) || 0} <span class="font-body font-normal text-xs text-navy-900/40">${escapeHtml(p.unit || 'Cái')}</span></p>
             <button data-id="${p.id}" class="inv-btn-toggle-adjust focus-ring text-xs font-display font-700 text-brand border border-brand/30 hover:bg-brand hover:text-white rounded-lg px-3 py-1.5 transition-colors shrink-0">Điều chỉnh</button>
           </div>
           <div data-adjust-panel="${p.id}" class="hidden mt-2.5 flex flex-wrap items-end gap-2 bg-slate-150 border border-slate-200 rounded-lg p-2.5">
@@ -3444,7 +3467,7 @@
         <div class="px-5 py-3">
           <div class="flex items-center justify-between gap-3">
             <p class="font-display font-700 text-sm text-navy-950 truncate">${escapeHtml(m.product_name || 'Sản phẩm đã xóa')}</p>
-            <p class="font-display font-800 text-sm shrink-0 ${positive ? 'text-emerald-600' : 'text-red-600'}">${positive ? '+' : ''}${m.delta}</p>
+            <p class="font-display font-800 text-sm shrink-0 ${positive ? 'text-emerald-600' : 'text-red-600'}">${positive ? '+' : ''}${m.delta} ${escapeHtml(m.unit || '')}</p>
           </div>
           <p class="font-body text-xs text-navy-900/50 mt-0.5">${escapeHtml(m.reason || '')} · ${when}</p>
         </div>`;
