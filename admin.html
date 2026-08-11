@@ -466,7 +466,7 @@
   <main id="dashboard-view" class="hidden max-w-7xl mx-auto px-5 py-10">
 
     <!-- Dải thống kê nhanh -->
-    <div class="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-8">
+    <div id="dashboard-stats-row" class="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-8">
       <div class="stat-card rounded-2xl px-5 py-4 flex items-center gap-4">
         <span class="icon-chip">
           <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 7 12 3 4 7l8 4 8-4Z"/><path d="M4 7v10l8 4 8-4V7"/><path d="M12 11v10"/></svg>
@@ -513,6 +513,10 @@
       <button id="tab-btn-users" data-active="false" class="tab-btn focus-ring font-display font-700 text-sm px-4 py-2.5 transition-colors">
         <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
         Tài Khoản Quản Trị <span id="users-pending-badge" class="hidden ml-0.5 bg-ember text-white text-[10px] rounded-full px-1.5 py-0.5"></span>
+      </button>
+      <button id="tab-btn-accounting" data-active="false" class="tab-btn focus-ring font-display font-700 text-sm px-4 py-2.5 transition-colors">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>
+        Kế Toán &amp; Thuế
       </button>
     </div>
 
@@ -769,7 +773,7 @@
           </span>
           Thêm Tài Khoản Mới
         </h2>
-        <p class="font-body text-xs text-navy-900/50">Người này sẽ có thể đăng nhập và quản lý toàn bộ sản phẩm, tin nhắn.</p>
+        <p class="font-body text-xs text-navy-900/50">Quản trị viên có toàn quyền (sản phẩm, tin nhắn, tài khoản...). Kế toán chỉ đăng nhập được vào module Kế Toán &amp; Thuế.</p>
 
         <div class="flex flex-col gap-1.5">
           <label class="text-xs font-medium text-navy-900/60">Email</label>
@@ -780,6 +784,13 @@
           <label class="text-xs font-medium text-navy-900/60">Mật khẩu (tối thiểu 6 ký tự)</label>
           <input type="password" id="u-password" required placeholder="••••••••"
                  class="form-input border border-slate-200 rounded-lg px-3 py-2.5 text-sm">
+        </div>
+        <div class="flex flex-col gap-1.5">
+          <label class="text-xs font-medium text-navy-900/60">Vai trò</label>
+          <select id="u-role" class="form-input border border-slate-200 rounded-lg px-3 py-2.5 text-sm bg-white">
+            <option value="admin">Quản trị viên — toàn quyền</option>
+            <option value="accountant">Kế toán — chỉ module Kế Toán &amp; Thuế</option>
+          </select>
         </div>
 
         <p id="u-error" class="hidden text-sm text-red-600 bg-red-50 border border-red-200 rounded-lg px-3 py-2"></p>
@@ -808,6 +819,22 @@
         </div>
       </div>
 
+    </div>
+  </div>
+
+  <!-- ===== TAB: KẾ TOÁN & THUẾ ===== -->
+  <!-- Chỉ tài khoản role "admin" hoặc "accountant" mới thấy tab này (xem applyRoleVisibility).
+       Đây mới là khung quyền truy cập — nghiệp vụ kế toán/thuế thực tế sẽ được xây ở bước sau. -->
+  <div id="tab-accounting" class="hidden max-w-7xl mx-auto px-5 pb-16">
+    <div class="flex flex-wrap items-center justify-between gap-3 mb-8">
+      <div>
+        <h1 class="font-display font-800 text-2xl text-navy-950">Kế Toán &amp; Thuế</h1>
+        <p class="font-body text-sm text-navy-900/60 mt-1">Module quản lý bán hàng và thuế nội bộ — chỉ admin và kế toán truy cập được</p>
+      </div>
+    </div>
+
+    <div class="card-surface rounded-2xl overflow-hidden text-center py-16 px-6">
+      <p class="font-body text-sm text-navy-900/50">Module Kế Toán &amp; Thuế đang được xây dựng và sẽ sớm có ở đây.</p>
     </div>
   </div>
 
@@ -983,6 +1010,16 @@
     function isUserApproved(user) {
       return user?.app_metadata?.status !== 'pending';
     }
+
+    // Tài khoản duyệt trước khi có hệ thống role không có trường role — coi
+    // mặc định là 'admin' để không ai bị mất quyền truy cập hiện có. Logic
+    // này phải khớp với hàm getRole() ở supabase/functions/admin-users/index.ts.
+    function getUserRole(user) {
+      const role = user?.app_metadata?.role;
+      if (role === 'admin' || role === 'accountant') return role;
+      return isUserApproved(user) ? 'admin' : null;
+    }
+    let currentUserRole = null;
 
     async function checkSession() {
       if (!isConfigured || !sb) return;
@@ -1275,9 +1312,31 @@
       btnLogout.classList.remove('hidden');
       userEmailEl.classList.remove('hidden');
       userEmailEl.textContent = user.email;
-      loadProducts();
-      loadContactsBadgeCount();
-      loadUsers();
+
+      currentUserRole = getUserRole(user);
+      applyRoleVisibility(currentUserRole);
+
+      if (currentUserRole === 'admin') {
+        loadProducts();
+        loadContactsBadgeCount();
+        loadUsers();
+        switchTab('products');
+      } else {
+        switchTab('accounting');
+      }
+    }
+
+    // Kế toán ("accountant") chỉ thấy tab Kế Toán & Thuế — mọi tab/khu vực
+    // quản lý sản phẩm, liên hệ, báo giá, tài khoản đều dành riêng cho admin.
+    // Đây chỉ là UX (ẩn nút bấm); quyền thật được chặn ở phía server (edge
+    // function admin-users và RLS của các bảng liên quan).
+    function applyRoleVisibility(role) {
+      const isAdmin = role === 'admin';
+      document.getElementById('dashboard-stats-row').classList.toggle('hidden', !isAdmin);
+      tabBtnProducts.classList.toggle('hidden', !isAdmin);
+      tabBtnContacts.classList.toggle('hidden', !isAdmin);
+      tabBtnQuotes.classList.toggle('hidden', !isAdmin);
+      tabBtnUsers.classList.toggle('hidden', !isAdmin);
     }
 
     loginForm.addEventListener('submit', async (e) => {
@@ -2022,16 +2081,19 @@
     const tabBtnContacts = document.getElementById('tab-btn-contacts');
     const tabBtnQuotes = document.getElementById('tab-btn-quotes');
     const tabBtnUsers = document.getElementById('tab-btn-users');
+    const tabBtnAccounting = document.getElementById('tab-btn-accounting');
     const tabProducts = document.getElementById('tab-products');
     const tabContacts = document.getElementById('tab-contacts');
     const tabQuotes = document.getElementById('tab-quotes');
     const tabUsers = document.getElementById('tab-users');
+    const tabAccounting = document.getElementById('tab-accounting');
 
     const ALL_TABS = [
-      { btn: tabBtnProducts, panel: tabProducts, key: 'products' },
-      { btn: tabBtnContacts, panel: tabContacts, key: 'contacts' },
-      { btn: tabBtnQuotes,   panel: tabQuotes,   key: 'quotes'   },
-      { btn: tabBtnUsers,    panel: tabUsers,    key: 'users'    },
+      { btn: tabBtnProducts,    panel: tabProducts,    key: 'products'    },
+      { btn: tabBtnContacts,    panel: tabContacts,    key: 'contacts'    },
+      { btn: tabBtnQuotes,      panel: tabQuotes,      key: 'quotes'      },
+      { btn: tabBtnUsers,       panel: tabUsers,       key: 'users'       },
+      { btn: tabBtnAccounting,  panel: tabAccounting,  key: 'accounting'  },
     ];
 
     function switchTab(activeKey) {
@@ -2047,6 +2109,7 @@
     tabBtnContacts.addEventListener('click', () => switchTab('contacts'));
     tabBtnQuotes.addEventListener('click', () => switchTab('quotes'));
     tabBtnUsers.addEventListener('click', () => switchTab('users'));
+    tabBtnAccounting.addEventListener('click', () => switchTab('accounting'));
 
     // ---------- Quản lý tài khoản (qua Edge Function admin-users) ----------
     // Trình duyệt không được phép gọi thẳng Supabase Admin API vì thao tác đó
@@ -2065,6 +2128,10 @@
 
     function isPendingUser(u) {
       return u.app_metadata?.status === 'pending';
+    }
+
+    function roleLabel(role) {
+      return role === 'accountant' ? 'Kế toán' : 'Quản trị viên';
     }
 
     async function loadUsers() {
@@ -2102,11 +2169,14 @@
         list.innerHTML = sortedUsers.map(u => {
           const isMe = u.id === me?.id;
           const pending = isPendingUser(u);
+          const role = getUserRole(u) || 'admin';
           const date = new Date(u.created_at).toLocaleDateString('vi-VN');
           const lastSign = u.last_sign_in_at
             ? new Date(u.last_sign_in_at).toLocaleString('vi-VN', { day:'2-digit', month:'2-digit', year:'numeric', hour:'2-digit', minute:'2-digit' })
             : 'Chưa đăng nhập';
           const fullName = u.user_metadata?.full_name;
+          const roleOptions = ['admin', 'accountant']
+            .map(r => `<option value="${r}" ${r === role ? 'selected' : ''}>${roleLabel(r)}</option>`).join('');
           return `
           <div class="row-hover flex items-center gap-4 px-5 py-4 ${pending ? 'bg-amber-50/50' : ''}">
             <div class="w-9 h-9 rounded-full bg-brand/10 flex items-center justify-center shrink-0">
@@ -2117,20 +2187,31 @@
                 <p class="font-display font-700 text-sm text-navy-950 truncate">${escapeHtml(fullName || u.email)}</p>
                 ${isMe ? '<span class="text-[10px] font-body font-medium text-emerald-700 bg-emerald-50 border border-emerald-200 rounded-full px-2 py-0.5">Bạn</span>' : ''}
                 ${pending ? '<span class="text-[10px] font-body font-700 text-amber-700 bg-amber-100 border border-amber-300 rounded-full px-2 py-0.5">Chờ duyệt</span>' : (u.confirmed_at ? '<span class="text-[10px] font-body font-medium text-brand bg-brand/10 rounded-full px-2 py-0.5">Đã xác nhận</span>' : '<span class="text-[10px] font-body text-amber-700 bg-amber-50 border border-amber-200 rounded-full px-2 py-0.5">Chưa xác nhận</span>')}
+                ${!pending ? `<span class="text-[10px] font-body font-medium ${role === 'accountant' ? 'text-emerald-700 bg-emerald-50 border-emerald-200' : 'text-brand bg-brand/10 border-brand/20'} border rounded-full px-2 py-0.5">${roleLabel(role)}</span>` : ''}
               </div>
               <p class="font-body text-xs text-navy-900/50 mt-0.5">
                 ${fullName ? escapeHtml(u.email) + ' · ' : ''}Tạo: ${date} · Đăng nhập lần cuối: ${lastSign}
               </p>
             </div>
             <div class="flex items-center gap-2 shrink-0">
-              ${pending ? `<button data-id="${u.id}" data-email="${escapeHtml(u.email)}" class="btn-approve-user focus-ring text-xs font-display font-700 text-white bg-emerald-600 hover:bg-emerald-700 rounded-lg px-3 py-1.5 transition-colors">Duyệt</button>` : ''}
+              ${pending ? `
+                <select data-id="${u.id}" class="approve-role-select focus-ring text-xs font-body border border-slate-200 rounded-lg px-2 py-1.5 bg-white">${roleOptions}</select>
+                <button data-id="${u.id}" data-email="${escapeHtml(u.email)}" class="btn-approve-user focus-ring text-xs font-display font-700 text-white bg-emerald-600 hover:bg-emerald-700 rounded-lg px-3 py-1.5 transition-colors">Duyệt</button>
+              ` : ''}
+              ${!pending && !isMe ? `<select data-id="${u.id}" data-email="${escapeHtml(u.email)}" class="btn-change-role focus-ring text-xs font-body border border-slate-200 rounded-lg px-2 py-1.5 bg-white">${roleOptions}</select>` : ''}
               ${!isMe ? `<button data-id="${u.id}" data-email="${escapeHtml(u.email)}" class="btn-delete-user focus-ring text-xs font-display font-700 text-red-600 border border-red-200 hover:bg-red-600 hover:text-white rounded-lg px-3 py-1.5 transition-colors">${pending ? 'Từ chối' : 'Xóa'}</button>` : ''}
             </div>
           </div>`;
         }).join('');
 
         list.querySelectorAll('.btn-approve-user').forEach(btn => {
-          btn.addEventListener('click', () => approveUser(btn.dataset.id, btn.dataset.email));
+          btn.addEventListener('click', () => {
+            const select = list.querySelector(`.approve-role-select[data-id="${btn.dataset.id}"]`);
+            approveUser(btn.dataset.id, btn.dataset.email, select ? select.value : 'admin');
+          });
+        });
+        list.querySelectorAll('.btn-change-role').forEach(sel => {
+          sel.addEventListener('change', () => changeUserRole(sel.dataset.id, sel.dataset.email, sel.value));
         });
         list.querySelectorAll('.btn-delete-user').forEach(btn => {
           btn.addEventListener('click', () => deleteUser(btn.dataset.id, btn.dataset.email));
@@ -2141,24 +2222,41 @@
       }
     }
 
-    async function approveUser(id, email) {
+    async function approveUser(id, email, role) {
       try {
         const headers = await getAdminHeaders();
         const res = await fetch(ADMIN_USERS_FN_URL, {
-          method: 'PATCH', headers, body: JSON.stringify({ id, status: 'approved' })
+          method: 'PATCH', headers, body: JSON.stringify({ id, status: 'approved', role })
         });
         const json = await res.json();
         if (!res.ok) throw new Error(json.message || 'Duyệt thất bại');
-        showToast(`Đã duyệt tài khoản ${email}!`);
+        showToast(`Đã duyệt tài khoản ${email} (${roleLabel(role)})!`);
         loadUsers();
       } catch (err) {
         showToast('Duyệt thất bại: ' + err.message, 'error');
       }
     }
 
+    async function changeUserRole(id, email, role) {
+      try {
+        const headers = await getAdminHeaders();
+        const res = await fetch(ADMIN_USERS_FN_URL, {
+          method: 'PATCH', headers, body: JSON.stringify({ id, role })
+        });
+        const json = await res.json();
+        if (!res.ok) throw new Error(json.message || 'Đổi vai trò thất bại');
+        showToast(`Đã đổi vai trò của ${email} thành ${roleLabel(role)}!`);
+        loadUsers();
+      } catch (err) {
+        showToast('Đổi vai trò thất bại: ' + err.message, 'error');
+        loadUsers();
+      }
+    }
+
     document.getElementById('btn-add-user').addEventListener('click', async () => {
       const email = document.getElementById('u-email').value.trim();
       const password = document.getElementById('u-password').value;
+      const role = document.getElementById('u-role').value;
       const errEl = document.getElementById('u-error');
       const btn = document.getElementById('btn-add-user');
       errEl.classList.add('hidden');
@@ -2182,13 +2280,14 @@
         const res = await fetch(ADMIN_USERS_FN_URL, {
           method: 'POST',
           headers,
-          body: JSON.stringify({ email, password })
+          body: JSON.stringify({ email, password, role })
         });
         const json = await res.json();
         if (!res.ok) throw new Error(json.message || json.msg || 'Thêm thất bại');
         showToast(`Đã thêm tài khoản ${email} thành công!`);
         document.getElementById('u-email').value = '';
         document.getElementById('u-password').value = '';
+        document.getElementById('u-role').value = 'admin';
         loadUsers();
       } catch (err) {
         errEl.textContent = 'Lỗi: ' + err.message;
