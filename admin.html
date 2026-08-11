@@ -3504,20 +3504,25 @@
         const status = stockStatus(p.stock);
         const units = unitOptionsForProduct(p);
         const conversions = invConversionsByProduct.get(p.id) || [];
+        // Mỗi đơn vị (gốc + các quy đổi) xuống 1 dòng riêng, dưới tên sản phẩm.
         const stockLines = units.map(u => `
-          <p class="font-display font-800 text-sm text-navy-950 leading-tight">${formatUnitQty((Number(p.stock) || 0) / u.factor)} <span class="font-body font-normal text-[11px] text-navy-900/40">${escapeHtml(u.unit)}</span></p>
+          <p class="font-display font-800 text-sm text-navy-950 leading-snug">${formatUnitQty((Number(p.stock) || 0) / u.factor)} <span class="font-body font-normal text-xs text-navy-900/40">${escapeHtml(u.unit)}</span></p>
         `).join('');
         return `
         <div class="px-5 py-3.5">
-          <div class="flex items-center gap-3 flex-wrap">
-            <div class="flex-1 min-w-0">
-              <p class="font-display font-700 text-sm text-navy-950 truncate">${escapeHtml(p.name)}</p>
+          <div class="flex items-start justify-between gap-3 flex-wrap">
+            <div class="min-w-0">
+              <div class="flex items-center gap-2 flex-wrap">
+                <p class="font-display font-700 text-sm text-navy-950">${escapeHtml(p.name)}</p>
+                <span class="text-[11px] font-body font-700 border rounded-full px-2.5 py-1 shrink-0 ${status.cls}">${status.label}</span>
+              </div>
               ${p.category ? `<p class="font-body text-xs text-navy-900/50 mt-0.5">${escapeHtml(p.category)}</p>` : ''}
+              <div class="mt-1.5 flex flex-col">${stockLines}</div>
             </div>
-            <span class="text-[11px] font-body font-700 border rounded-full px-2.5 py-1 shrink-0 ${status.cls}">${status.label}</span>
-            <div class="shrink-0 text-right">${stockLines}</div>
-            <button data-id="${p.id}" class="inv-btn-toggle-units focus-ring text-xs font-display font-700 text-navy-900/60 border border-slate-200 hover:bg-slate-150 rounded-lg px-3 py-1.5 transition-colors shrink-0">Quy đổi ĐVT</button>
-            <button data-id="${p.id}" class="inv-btn-toggle-adjust focus-ring text-xs font-display font-700 text-brand border border-brand/30 hover:bg-brand hover:text-white rounded-lg px-3 py-1.5 transition-colors shrink-0">Điều chỉnh</button>
+            <div class="flex items-center gap-2 shrink-0">
+              <button data-id="${p.id}" class="inv-btn-toggle-units focus-ring text-xs font-display font-700 text-navy-900/60 border border-slate-200 hover:bg-slate-150 rounded-lg px-3 py-1.5 transition-colors shrink-0">Quy đổi ĐVT</button>
+              <button data-id="${p.id}" class="inv-btn-toggle-adjust focus-ring text-xs font-display font-700 text-brand border border-brand/30 hover:bg-brand hover:text-white rounded-lg px-3 py-1.5 transition-colors shrink-0">Điều chỉnh</button>
+            </div>
           </div>
 
           <div data-units-panel="${p.id}" class="hidden mt-2.5 flex flex-col gap-2 bg-slate-150 border border-slate-200 rounded-lg p-2.5">
