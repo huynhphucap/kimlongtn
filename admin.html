@@ -4012,6 +4012,14 @@
       downloadCsv(`bao-cao-doanh-thu-thue_${new Date().toISOString().slice(0, 10)}.csv`, rows);
     });
 
+    // Chuyển "YYYY-MM-DD" thành Date thật (không phải chữ) để Excel hiểu là
+    // ngày — canh phải, đồng nhất định dạng, sửa/tính toán trong Excel đúng.
+    // Dựng theo giờ địa phương (không parse qua UTC) để tránh lệch 1 ngày.
+    function parseOrderDateForExcel(dateStr) {
+      const [y, m, d] = String(dateStr || '').split('-').map(Number);
+      return new Date(y || 1970, (m || 1) - 1, d || 1);
+    }
+
     // ----- Xuất Sổ S1-HKD (Sổ chi tiết doanh thu bán hàng hóa, dịch vụ) -----
     // Theo khung mẫu S1-HKD, Thông tư 88/2021/TT-BTC — 1 sheet Excel cho mỗi
     // kỳ (tháng hoặc quý, theo lựa chọn ở trên báo cáo) có đơn hàng trong
@@ -4101,11 +4109,14 @@
           const tax = Number(o.tax_amount) || 0;
           sumTaxable += taxable;
           sumTax += tax;
+          const orderDate = parseOrderDateForExcel(o.order_date);
           ws.getRow(r).values = [
-            o.order_date, `HD${o.id}`, o.order_date,
+            orderDate, `HD${o.id}`, orderDate,
             `Bán hàng cho ${o.customer_name || 'khách lẻ'}`,
             taxable, 0, tax, o.note || '',
           ];
+          ws.getCell(`A${r}`).numFmt = 'dd/mm/yyyy';
+          ws.getCell(`C${r}`).numFmt = 'dd/mm/yyyy';
           ws.getCell(`E${r}`).numFmt = '#,##0';
           ws.getCell(`F${r}`).numFmt = '#,##0';
           ws.getCell(`G${r}`).numFmt = '#,##0';
