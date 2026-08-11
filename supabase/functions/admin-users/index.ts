@@ -13,7 +13,17 @@
 //   Bearer là access token thật từ sb.auth.signInWithPassword, VÀ tài khoản gọi
 //   phải đã được duyệt (app_metadata.status khác "pending") — tài khoản cũ tạo
 //   trước khi có tính năng này không có trường status nên vẫn coi là đã duyệt.
+//
+// Phân quyền (role): app_metadata.role là "admin" hoặc "accountant".
+// - "admin": toàn quyền, kể cả quản lý tài khoản (endpoint này).
+// - "accountant": chỉ dùng module Kế toán/Thuế (RLS riêng ở bảng kế toán),
+//   KHÔNG được gọi endpoint quản lý tài khoản này (GET/POST/PATCH/DELETE ở
+//   dưới đều chặn caller không phải admin).
+// Tài khoản đã duyệt từ trước khi có role không có trường này — coi mặc định
+// là "admin" để không ai bị mất quyền truy cập hiện có.
 import { createClient } from "npm:@supabase/supabase-js@2";
+
+const ALLOWED_ROLES = ["admin", "accountant"];
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -30,6 +40,16 @@ function jsonResponse(body: unknown, status = 200) {
 
 function isApproved(user: { app_metadata?: Record<string, unknown> }) {
   return user?.app_metadata?.status !== "pending";
+}
+
+function getRole(user: { app_metadata?: Record<string, unknown> }) {
+  const role = user?.app_metadata?.role;
+  if (typeof role === "string" && ALLOWED_ROLES.includes(role)) return role;
+  return isApproved(user) ? "admin" : null;
+}
+
+function isAdmin(user: { app_metadata?: Record<string, unknown> }) {
+  return getRole(user) === "admin";
 }
 
 Deno.serve(async (req) => {
@@ -72,6 +92,12 @@ Deno.serve(async (req) => {
       return jsonResponse({ message: "Tài khoản của bạn đang chờ quản trị viên duyệt." }, 403);
     }
 
+    // Quản lý tài khoản (xem/tạo/duyệt/đổi role/xóa) chỉ dành cho admin —
+    // tài khoản role "accountant" chỉ được dùng module Kế toán/Thuế riêng.
+    if (!isAdmin(caller)) {
+      return jsonResponse({ message: "Chỉ quản trị viên mới có quyền quản lý tài khoản." }, 403);
+    }
+
     if (req.method === "GET") {
       const { data, error } = await adminClient.auth.admin.listUsers();
       if (error) throw error;
@@ -79,21 +105,37 @@ Deno.serve(async (req) => {
     }
 
     if (req.method === "POST") {
-      const { email, password } = body;
+      const { email, password, role } = body;
       if (!email || !password) return jsonResponse({ message: "Thiếu email hoặc mật khẩu" }, 400);
+      if (role !== undefined && !ALLOWED_ROLES.includes(role)) {
+        return jsonResponse({ message: "role không hợp lệ" }, 400);
+      }
       const { data, error } = await adminClient.auth.admin.createUser({
         email, password, email_confirm: true,
-        app_metadata: { status: "approved" },
+        app_metadata: { status: "approved", role: role ?? "admin" },
       });
       if (error) throw error;
       return jsonResponse({ user: data.user });
     }
 
     if (req.method === "PATCH") {
-      const { id, status } = body;
-      if (!id || status !== "approved") return jsonResponse({ message: "Thiếu id hoặc status không hợp lệ" }, 400);
+      const { id, status, role } = body;
+      if (!id) return jsonResponse({ message: "Thiếu id tài khoản" }, 400);
+      if (status !== undefined && status !== "approved") {
+        return jsonResponse({ message: "status không hợp lệ" }, 400);
+      }
+      if (role !== undefined && !ALLOWED_ROLES.includes(role)) {
+        return jsonResponse({ message: "role không hợp lệ" }, 400);
+      }
+      if (status === undefined && role === undefined) {
+        return jsonResponse({ message: "Thiếu status hoặc role để cập nhật" }, 400);
+      }
+      const appMetadata: Record<string, string> = {};
+      if (status === "approved") appMetadata.status = "approved";
+      if (role !== undefined) appMetadata.role = role;
+      else if (status === "approved") appMetadata.role = "admin";
       const { data, error } = await adminClient.auth.admin.updateUserById(id, {
-        app_metadata: { status: "approved" },
+        app_metadata: appMetadata,
       });
       if (error) throw error;
       return jsonResponse({ user: data.user });
@@ -102,6 +144,9 @@ Deno.serve(async (req) => {
     if (req.method === "DELETE") {
       const { id } = body;
       if (!id) return jsonResponse({ message: "Thiếu id tài khoản" }, 400);
+      if (id === caller.id) {
+        return jsonResponse({ message: "Không thể tự xóa tài khoản của chính mình." }, 400);
+      }
       const { error } = await adminClient.auth.admin.deleteUser(id);
       if (error) throw error;
       return jsonResponse({ ok: true });
