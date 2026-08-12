@@ -2874,6 +2874,7 @@
       syncTaxRatePresetUI(accTaxRate);
       showToast('Đã cập nhật thuế suất!');
       if (!accEditingOrderId) setActiveTaxRate(accTaxRate);
+      renderMonthlyReport(); // Cập nhật lại dòng "Thuế phải nộp (kỳ đang lọc)" theo thuế suất mới, không cần F5.
     });
 
     // ----- Form thêm/sửa đơn: dòng sản phẩm động -----
