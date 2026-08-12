@@ -159,6 +159,15 @@
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script src="js/shared.js"></script>
   <script>
+    // Dữ liệu SEO chỉ để Google hiểu nội dung — KHÔNG được phép làm hỏng việc hiển thị
+    // sản phẩm. Nếu nó lỗi (ví dụ trình duyệt của khách còn giữ js/shared.js bản cũ trong
+    // bộ nhớ đệm, chưa có các hàm/biến mới) thì bỏ qua và chạy tiếp bình thường.
+    // Cố ý khai báo ngay trong trang, không đưa vào js/shared.js, để vẫn dùng được kể cả
+    // khi chính js/shared.js là bản cũ.
+    function trySeo(fn) {
+      try { fn(); } catch (e) { console.warn('Bỏ qua dữ liệu SEO:', e); }
+    }
+
     const params = new URLSearchParams(window.location.search);
     const productId = params.get('id');
 
@@ -363,7 +372,7 @@
     function renderProduct(p) {
       window.currentProduct = p;
       document.getElementById('page-title').textContent = p.name + ' - Cửa Hàng Kim Long';
-      updateSeoTags(p);
+      trySeo(() => updateSeoTags(p));
       document.getElementById('breadcrumb').innerHTML = `
         <a href="index.html" class="hover:text-brand transition-colors">Trang Chủ</a> /
         <a href="san-pham.html" class="hover:text-brand transition-colors">Sản Phẩm</a> /

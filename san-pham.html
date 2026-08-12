@@ -153,6 +153,15 @@
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script src="js/shared.js"></script>
   <script>
+    // Dữ liệu SEO chỉ để Google hiểu nội dung — KHÔNG được phép làm hỏng việc hiển thị
+    // sản phẩm. Nếu nó lỗi (ví dụ trình duyệt của khách còn giữ js/shared.js bản cũ trong
+    // bộ nhớ đệm, chưa có các hàm mới) thì bỏ qua và chạy tiếp bình thường.
+    // Cố ý khai báo ngay trong trang, không đưa vào js/shared.js, để vẫn dùng được kể cả
+    // khi chính js/shared.js là bản cũ.
+    function trySeo(fn) {
+      try { fn(); } catch (e) { console.warn('Bỏ qua dữ liệu SEO:', e); }
+    }
+
     // Số sản phẩm hiển thị mỗi trang
     const PAGE_SIZE = 10;
     let currentPage = 1;
@@ -344,7 +353,7 @@
       });
 
       // Khai báo danh sách sản phẩm đang hiển thị cho Google (kèm giá)
-      injectJsonLd('ld-itemlist', {
+      trySeo(() => injectJsonLd('ld-itemlist', {
         '@context': 'https://schema.org',
         '@type': 'ItemList',
         name: currentCategory === 'Tất Cả' ? 'Tất cả sản phẩm' : currentCategory,
@@ -368,7 +377,7 @@
           }
           return { '@type': 'ListItem', position: (currentPage - 1) * PAGE_SIZE + i + 1, item };
         })
-      });
+      }));
     }
 
     function renderPagination(totalItems, page) {
@@ -519,10 +528,10 @@
       searchClear.classList.remove('hidden');
     }
 
-    injectJsonLd('ld-breadcrumb', breadcrumbJsonLd([
+    trySeo(() => injectJsonLd('ld-breadcrumb', breadcrumbJsonLd([
       { name: 'Trang Chủ', file: 'index.html' },
       { name: 'Sản Phẩm', file: 'san-pham.html' }
-    ]));
+    ])));
 
     loadProducts(1);
     registerServiceWorker();

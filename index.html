@@ -383,7 +383,16 @@
     initScrollReveal();
 
     // ---------- Dữ liệu có cấu trúc cho Google ----------
-    // Khai báo cửa hàng (tên, hotline, giờ mở cửa) + ô tìm kiếm ngay trên kết quả tìm kiếm.
+    // Phần này chỉ để Google hiểu nội dung — KHÔNG được phép làm hỏng việc hiển thị
+    // sản phẩm. Nếu nó lỗi (ví dụ trình duyệt của khách còn giữ js/shared.js bản cũ
+    // trong bộ nhớ đệm, chưa có các hàm mới) thì bỏ qua và chạy tiếp bình thường.
+    // Cố ý khai báo ngay trong trang, không đưa vào js/shared.js, để vẫn dùng được
+    // kể cả khi chính js/shared.js là bản cũ.
+    function trySeo(fn) {
+      try { fn(); } catch (e) { console.warn('Bỏ qua dữ liệu SEO:', e); }
+    }
+
+    trySeo(() => {
     injectJsonLd('ld-store', storeJsonLd());
     injectJsonLd('ld-website', {
       '@context': 'https://schema.org',
@@ -397,10 +406,11 @@
         'query-input': 'required name=search_term_string'
       }
     });
+    });
 
     // Danh sách sản phẩm nổi bật đang hiển thị trên trang chủ
     function injectFeaturedJsonLd(products) {
-      injectJsonLd('ld-featured', {
+      trySeo(() => injectJsonLd('ld-featured', {
         '@context': 'https://schema.org',
         '@type': 'ItemList',
         name: 'Sản phẩm nổi bật',
@@ -410,7 +420,7 @@
           name: p.name,
           url: `${SITE_URL}/chi-tiet-san-pham.html?id=${encodeURIComponent(p.id)}`
         }))
-      });
+      }));
     }
 
     async function loadFeatured() {
