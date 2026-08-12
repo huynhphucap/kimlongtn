@@ -3014,6 +3014,14 @@
       setActiveTaxRate(0); // Mặc định không tính thuế cho đơn mới — khách lẻ, không xuất hoá đơn GTGT.
     }
 
+    // Nút "Xóa" trên mỗi dòng đơn hàng chỉ hiện khi đơn đó đang được sửa —
+    // tránh bấm nhầm Xóa khi chỉ định bấm Sửa.
+    function syncOrderDeleteButtons() {
+      document.querySelectorAll('.acc-btn-delete-order').forEach(btn => {
+        btn.classList.toggle('hidden', Number(btn.dataset.id) !== accEditingOrderId);
+      });
+    }
+
     function cancelEditOrder() {
       accEditingOrderId = null;
       accEditingOriginalItems = [];
@@ -3021,6 +3029,7 @@
       document.getElementById('acc-btn-submit-order').textContent = 'Lưu Đơn Hàng';
       document.getElementById('acc-btn-cancel-edit-order').classList.add('hidden');
       resetDraftOrder();
+      syncOrderDeleteButtons();
     }
     document.getElementById('acc-btn-cancel-edit-order').addEventListener('click', cancelEditOrder);
 
@@ -3032,6 +3041,7 @@
 
       accEditingOrderId = id;
       accEditingOriginalItems = items || [];
+      syncOrderDeleteButtons();
 
       document.getElementById('acc-order-date').value = order.order_date;
       document.getElementById('acc-order-customer').value = order.customer_name || '';
@@ -3204,7 +3214,7 @@
             <button data-id="${o.id}" class="acc-btn-toggle-items focus-ring text-xs font-body font-medium text-navy-900/50 hover:text-navy-900 underline shrink-0">Chi tiết</button>
             <button data-id="${o.id}" class="acc-btn-print-order focus-ring text-xs font-display font-700 text-navy-900/60 border border-slate-200 hover:bg-slate-150 rounded-lg px-3 py-1.5 transition-colors shrink-0">In hóa đơn</button>
             <button data-id="${o.id}" class="acc-btn-edit-order focus-ring text-xs font-display font-700 text-brand border border-brand/30 hover:bg-brand hover:text-white rounded-lg px-3 py-1.5 transition-colors shrink-0">Sửa</button>
-            <button data-id="${o.id}" data-label="${escapeHtml(o.customer_name || 'Khách lẻ')}" class="acc-btn-delete-order focus-ring text-xs font-display font-700 text-red-600 border border-red-200 hover:bg-red-600 hover:text-white rounded-lg px-3 py-1.5 transition-colors shrink-0">Xóa</button>
+            <button data-id="${o.id}" data-label="${escapeHtml(o.customer_name || 'Khách lẻ')}" class="acc-btn-delete-order focus-ring text-xs font-display font-700 text-red-600 border border-red-200 hover:bg-red-600 hover:text-white rounded-lg px-3 py-1.5 transition-colors shrink-0 ${accEditingOrderId === o.id ? '' : 'hidden'}">Xóa</button>
           </div>
           <div data-items-panel="${o.id}" class="hidden mt-2 pl-3 border-l-2 border-slate-100 flex flex-col gap-0.5"></div>
         </div>
