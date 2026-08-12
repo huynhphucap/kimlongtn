@@ -2778,8 +2778,12 @@
       document.getElementById('acc-btn-submit-order').textContent = 'Lưu Đơn Hàng';
       document.getElementById('acc-btn-cancel-edit-order').classList.add('hidden');
 
-      await loadAccountingProducts();
-      await loadAccountingSettings();
+      // Sản phẩm và cài đặt thuế là 2 truy vấn độc lập — chạy song song thay
+      // vì tuần tự để mở tab nhanh hơn. loadOrders() phải đợi sau vì báo cáo
+      // của nó đọc accTaxRate (do loadAccountingSettings set) — chạy song
+      // song với cái đó sẽ có lúc lấy giá trị thuế suất cũ (đọc trước khi
+      // ghi xong).
+      await Promise.all([loadAccountingProducts(), loadAccountingSettings()]);
       resetDraftOrder();
       await loadOrders();
     }
@@ -3133,9 +3137,11 @@
       try {
         if (accEditingOrderId) {
           // Hoàn tồn kho của các dòng cũ, xóa dòng cũ, ghi dòng mới, trừ kho mới.
-          for (const it of accEditingOriginalItems) {
-            await applyStockDelta(it.product_id, Number(it.quantity), `Hoàn kho do sửa đơn #${accEditingOrderId}`);
-          }
+          // Từng dòng cộng/trừ kho độc lập nhau (UPDATE nguyên tử trong RPC) —
+          // gọi song song thay vì đợi lần lượt từng dòng.
+          await Promise.all(accEditingOriginalItems.map(it =>
+            applyStockDelta(it.product_id, Number(it.quantity), `Hoàn kho do sửa đơn #${accEditingOrderId}`)
+          ));
           const { error: updErr } = await sb.from('sales_orders').update(orderPayload).eq('id', accEditingOrderId);
           if (updErr) throw updErr;
           const { error: delErr } = await sb.from('sales_order_items').delete().eq('order_id', accEditingOrderId);
@@ -3147,9 +3153,9 @@
             }))
           );
           if (insErr) throw insErr;
-          for (const it of items) {
-            await applyStockDelta(it.product_id, -it.quantity, `Bán hàng - đơn #${accEditingOrderId} (đã sửa)`);
-          }
+          await Promise.all(items.map(it =>
+            applyStockDelta(it.product_id, -it.quantity, `Bán hàng - đơn #${accEditingOrderId} (đã sửa)`)
+          ));
           showToast('Đã cập nhật đơn hàng!');
           cancelEditOrder();
         } else {
@@ -3162,9 +3168,9 @@
             }))
           );
           if (itemsErr) throw itemsErr;
-          for (const it of items) {
-            await applyStockDelta(it.product_id, -it.quantity, `Bán hàng - đơn #${order.id}`);
-          }
+          await Promise.all(items.map(it =>
+            applyStockDelta(it.product_id, -it.quantity, `Bán hàng - đơn #${order.id}`)
+          ));
           showToast('Đã lưu đơn bán hàng!');
           resetDraftOrder();
         }
@@ -3410,10 +3416,13 @@
       invSearchQuery = '';
       invProductsPaginator.page = 1;
       invMovementsPaginator.page = 1;
-      await loadUnitConversions();
+      // Lịch sử kho không phụ thuộc dữ liệu sản phẩm/quy đổi nên chạy song
+      // song luôn, thay vì đợi xong 2 cái kia mới bắt đầu tải.
+      const movementsPromise = loadInventoryMovements();
+      await loadUnitConversions(); // loadInventoryProducts() cần map quy đổi này để tính tồn kho theo ĐVT
       await loadInventoryProducts();
       resetReceiptForm();
-      await loadInventoryMovements();
+      await movementsPromise;
     }
 
     // ----- Quy đổi đơn vị tính (vd 1 Thùng = 24 Cái) -----
@@ -3586,14 +3595,17 @@
       const btn = document.getElementById('inv-btn-save-receipt');
       btn.disabled = true;
 
-      let failCount = 0;
-      for (const it of validItems) {
+      // Đã kiểm tra không trùng product_id ở trên nên gọi song song an toàn,
+      // không cần đợi lần lượt từng dòng.
+      const results = await Promise.all(validItems.map(async it => {
         const factor = Number(it.unitFactor) || 1;
         const baseDelta = Math.round(Number(it.quantity) * factor); // tồn kho luôn là số nguyên đơn vị gốc
         const reason = factor !== 1 ? `${baseReason} — ${it.quantity} ${it.unit}` : baseReason;
         const { error } = await sb.rpc('adjust_product_stock', { p_product_id: it.product_id, p_delta: baseDelta, p_reason: reason });
-        if (error) { failCount++; console.warn('Không nhập được', it.product_name, error.message); }
-      }
+        if (error) console.warn('Không nhập được', it.product_name, error.message);
+        return error ? 1 : 0;
+      }));
+      const failCount = results.reduce((s, n) => s + n, 0);
 
       if (failCount === 0) {
         showToast(`Đã nhập kho ${validItems.length} sản phẩm!`);
@@ -3976,9 +3988,9 @@
       const { error } = await sb.from('sales_orders').delete().eq('id', id);
       if (error) { showToast('Xóa thất bại: ' + error.message, 'error'); return; }
 
-      for (const it of (items || [])) {
-        await applyStockDelta(it.product_id, Number(it.quantity), `Hoàn kho do xóa đơn #${id}`);
-      }
+      await Promise.all((items || []).map(it =>
+        applyStockDelta(it.product_id, Number(it.quantity), `Hoàn kho do xóa đơn #${id}`)
+      ));
 
       showToast('Đã xóa đơn hàng!');
       if (accEditingOrderId === id) cancelEditOrder();
