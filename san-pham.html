@@ -3,6 +3,19 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+<!-- Đặt giao diện sáng/tối TRƯỚC khi trang vẽ ra, tránh nháy trắng khi đang ở chế độ tối. -->
+<script>
+  (function () {
+    try {
+      var saved = localStorage.getItem('kl_theme');
+      var dark = saved ? saved === 'dark' : window.matchMedia('(prefers-color-scheme: dark)').matches;
+      if (dark) document.documentElement.classList.add('dark');
+    } catch (e) {}
+    document.documentElement.classList.add('js');
+  })();
+</script>
+
 <title>Cửa Hàng Kim Long - Đồ Điện Gia Dụng Giá Sốc</title>
 <meta name="description" content="Xem toàn bộ sản phẩm đồ điện gia dụng Kim Long: nồi cơm điện, quạt điện, bóng đèn, đồ gia dụng và nhiều thiết bị khác. Giá sốc, hàng chính hãng, tìm kiếm và lọc theo danh mục dễ dàng.">
 <link rel="canonical" href="https://huynhphucap.github.io/kimlongtn/san-pham.html">
@@ -30,132 +43,12 @@
 <meta name="apple-mobile-web-app-title" content="Kim Long">
 
 <script src="https://cdn.tailwindcss.com"></script>
-<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="js/tailwind-config.js"></script>
+<link rel="stylesheet" href="css/site.css">
+
 <link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Sora:wght@400;600;700;800&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet">
-
-<script>
-  tailwind.config = {
-    theme: {
-      extend: {
-        colors: {
-          navy: { 950: '#0B1220', 900: '#0F1B33', 800: '#152A4D' },
-          brand: { DEFAULT: '#2563EB', light: '#5B8DFF' },
-          ember: { DEFAULT: '#F97316', dark: '#C2540A' },
-          slate: { 150: '#EEF1F6' }
-        },
-        fontFamily: {
-          display: ['Sora', 'sans-serif'],
-          body: ['Inter', 'sans-serif'],
-          mono: ['JetBrains Mono', 'monospace']
-        }
-      }
-    }
-  }
-</script>
-
-<style>
-  body { font-family: 'Inter', sans-serif; }
-  .price-strike { text-decoration: line-through; }
-
-  /* Mượt khi chuyển qua lại giữa các trang */
-  @view-transition { navigation: auto; }
-  @keyframes page-in { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: translateY(0); } }
-  body { animation: page-in .35s ease-out; }
-
-  /* --- 3D promo ribbon (ember palette to match brand) --- */
-  .promo-ribbon {
-    position: relative;
-    background: linear-gradient(180deg, #fb923c 0%, #f97316 55%, #c2540a 100%);
-    box-shadow:
-      inset 0 1px 0 rgba(255,255,255,.45),
-      inset 0 -3px 4px rgba(0,0,0,.25),
-      0 3px 6px rgba(194,84,10,.45);
-    text-shadow: 0 1px 1px rgba(0,0,0,.35);
-    letter-spacing: .02em;
-  }
-  .promo-ribbon::after{
-    content:"";
-    position:absolute; left:0; bottom:-6px;
-    border-style: solid;
-    border-width: 0 6px 6px 0;
-    border-color: transparent #7c2d12 transparent transparent;
-    filter: brightness(.7);
-  }
-  .promo-badge-3d {
-    position: relative;
-    background: linear-gradient(180deg, #ffe37a 0%, #fbbf24 55%, #f59e0b 100%);
-    box-shadow:
-      inset 0 1px 0 rgba(255,255,255,.6),
-      inset 0 -3px 4px rgba(0,0,0,.25),
-      0 3px 6px rgba(180,83,9,.5);
-    text-shadow: 0 1px 0 rgba(255,255,255,.35);
-  }
-  .promo-badge-3d::before{
-    content:"";
-    position:absolute; inset:0;
-    border-radius: inherit;
-    background: linear-gradient(120deg, rgba(255,255,255,.55) 0%, rgba(255,255,255,0) 40%);
-    pointer-events: none;
-  }
-  .price-badge-3d {
-    background: linear-gradient(180deg, #fb923c 0%, #ea580c 60%, #c2540a 100%);
-    box-shadow:
-      inset 0 1px 0 rgba(255,255,255,.5),
-      inset 0 -2px 3px rgba(0,0,0,.3),
-      0 2px 4px rgba(194,84,10,.5);
-    text-shadow: 0 1px 1px rgba(0,0,0,.3);
-  }
-
-  .focus-ring:focus-visible {
-    outline: 2px solid #F97316;
-    outline-offset: 2px;
-  }
-
-  .quote-toggle-btn { background: #fff; color: rgba(15,27,51,.5); }
-  .quote-toggle-btn:hover { color: #2563EB; }
-  .quote-toggle-btn.quote-in-cart { background: #2563EB; color: #fff; }
-  .quote-toggle-btn.quote-in-cart:hover { background: #DC2626; color: #fff; }
-  .quote-toggle-btn.quote-done { background: #F97316; color: #fff; }
-  .quote-toggle-btn.quote-done:hover { background: #DC2626; color: #fff; }
-
-  input.form-input { transition: border-color .2s ease, box-shadow .2s ease; }
-  input.form-input:focus {
-    outline: none;
-    border-color: #2563EB;
-    box-shadow: 0 0 0 3px rgba(37,99,235,.15);
-  }
-  .spinner {
-    border: 2.5px solid rgba(255,255,255,.35);
-    border-top-color: #fff;
-    border-radius: 9999px;
-    width: 1rem; height: 1rem;
-    animation: spin .7s linear infinite;
-  }
-  @keyframes spin { to { transform: rotate(360deg); } }
-
-  @keyframes toast-in { from { opacity: 0; transform: translateX(24px) scale(.96); } to { opacity: 1; transform: translateX(0) scale(1); } }
-  @keyframes toast-out { from { opacity: 1; transform: translateX(0) scale(1); } to { opacity: 0; transform: translateX(24px) scale(.96); } }
-  .toast { animation: toast-in .25s ease-out; }
-  .toast.toast-leaving { animation: toast-out .25s ease-in forwards; }
-
-  /* Khung xám nhấp nháy khi đang tải dữ liệu */
-  @keyframes skeleton-shimmer { 0% { background-position: 200% 0; } 100% { background-position: -200% 0; } }
-  .skeleton {
-    background: linear-gradient(90deg, #e2e8f0 25%, #eef1f6 37%, #e2e8f0 63%);
-    background-size: 400% 100%;
-    animation: skeleton-shimmer 1.4s ease infinite;
-  }
-
-  /* Thẻ sản phẩm xuất hiện lần lượt khi tải xong */
-  @keyframes card-in { from { opacity: 0; transform: translateY(16px); } to { opacity: 1; transform: translateY(0); } }
-  .card-enter { animation: card-in .45s ease-out both; }
-
-  @media (prefers-reduced-motion: no-preference) {
-    .hover-lift { transition: transform .25s ease, box-shadow .25s ease; }
-    .hover-lift:hover { transform: translateY(-4px); box-shadow: 0 16px 30px -12px rgba(15,27,51,0.35); }
-  }
-</style>
 </head>
 <body class="bg-slate-150 text-navy-950">
 
@@ -196,7 +89,7 @@
       </div>
 
       <!-- Mobile: compact menu row -->
-      <div class="flex sm:hidden items-center gap-3">
+      <div data-mobile-nav class="flex sm:hidden items-center gap-3">
         <ul class="flex items-center gap-4 font-body text-xs font-medium text-white/70">
           <li><a href="san-pham.html" class="text-ember focus-ring rounded">Sản Phẩm</a></li>
           <li><a href="khuyen-mai.html" class="focus-ring rounded">Khuyến Mãi</a></li>
@@ -255,6 +148,9 @@
 
   <!-- Nút giỏ báo giá nổi, khay giỏ và modal nhập thông tin liên hệ: xem initQuoteCartUI() trong js/shared.js -->
 
+  <!-- Thư viện Supabase để ở cuối trang (không phải trong <head>) để trang hiện ra nhanh hơn:
+       nó chỉ cần có mặt trước js/shared.js, không cần chặn lúc trình duyệt đang dựng giao diện. -->
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script src="js/shared.js"></script>
   <script>
     // Số sản phẩm hiển thị mỗi trang
@@ -416,7 +312,9 @@
             ${quoteButtonIcon(quoteButtonState(p.id))}
           </button>
           <a href="chi-tiet-san-pham.html?id=${encodeURIComponent(p.id)}" class="aspect-square bg-slate-100 flex items-center justify-center overflow-hidden">
-            <img src="${escapeHtml(p.img)}" alt="${escapeHtml(p.name)}" class="object-cover w-full h-full">
+            <img src="${escapeHtml(p.img)}" alt="${escapeHtml(p.name)}"
+                 width="300" height="300" loading="lazy" decoding="async"
+                 class="object-cover w-full h-full">
           </a>
           <div class="relative h-5">
             <div class="absolute -top-4 left-0 right-0 flex items-stretch drop-shadow-md">
@@ -443,6 +341,33 @@
           const p = products.find(x => String(x.id) === btn.dataset.quoteId);
           if (p) toggleCartItem(p, btn);
         });
+      });
+
+      // Khai báo danh sách sản phẩm đang hiển thị cho Google (kèm giá)
+      injectJsonLd('ld-itemlist', {
+        '@context': 'https://schema.org',
+        '@type': 'ItemList',
+        name: currentCategory === 'Tất Cả' ? 'Tất cả sản phẩm' : currentCategory,
+        numberOfItems: products.length,
+        itemListElement: products.map((p, i) => {
+          const price = parsePriceNumber(p.new_price);
+          const item = {
+            '@type': 'Product',
+            name: p.name,
+            image: p.img,
+            sku: String(p.id),
+            url: `${SITE_URL}/chi-tiet-san-pham.html?id=${encodeURIComponent(p.id)}`
+          };
+          if (price) {
+            item.offers = {
+              '@type': 'Offer',
+              price,
+              priceCurrency: 'VND',
+              availability: 'https://schema.org/InStock'
+            };
+          }
+          return { '@type': 'ListItem', position: (currentPage - 1) * PAGE_SIZE + i + 1, item };
+        })
       });
     }
 
@@ -558,10 +483,16 @@
       }
     }
 
-    const urlCategoryParam = new URLSearchParams(location.search).get('category');
+    const urlParams = new URLSearchParams(location.search);
+    const urlCategoryParam = urlParams.get('category');
     if (urlCategoryParam && CATEGORIES.includes(urlCategoryParam)) {
       currentCategory = urlCategoryParam;
     }
+
+    // ?q=... — dùng khi Google hiện ô tìm kiếm riêng cho website (khai báo ở trang chủ),
+    // và để có thể gửi đường dẫn kết quả tìm kiếm cho khách.
+    const urlSearchParam = (urlParams.get('q') || '').trim();
+    if (urlSearchParam) searchQuery = urlSearchParam;
 
     const searchInput = document.getElementById('search-input');
     const searchClear = document.getElementById('search-clear');
@@ -582,6 +513,16 @@
       searchInput.focus();
       loadProducts(1);
     });
+
+    if (searchQuery) {
+      searchInput.value = searchQuery;
+      searchClear.classList.remove('hidden');
+    }
+
+    injectJsonLd('ld-breadcrumb', breadcrumbJsonLd([
+      { name: 'Trang Chủ', file: 'index.html' },
+      { name: 'Sản Phẩm', file: 'san-pham.html' }
+    ]));
 
     loadProducts(1);
     registerServiceWorker();

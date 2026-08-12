@@ -407,3 +407,278 @@ function registerServiceWorker() {
     navigator.serviceWorker.register('service-worker.js').catch(() => {});
   }
 }
+
+// ====================================================================
+// ====== Thông tin cửa hàng dùng chung (SEO + các nút liên hệ) ======
+// ====================================================================
+const SITE_URL = 'https://huynhphucap.github.io/kimlongtn';
+const STORE_NAME = 'Cửa Hàng Kim Long';
+const STORE_PHONE = '0364878771';
+const STORE_PHONE_PRETTY = '0364.878.771';
+const STORE_EMAIL = 'cskh@kimlong.vn';
+
+// ---------- Chế độ tối (dark mode) ----------
+// Class `dark` trên thẻ <html> được bật ngay trong <head> của mỗi trang (đoạn script
+// nhỏ chạy trước khi trang vẽ ra, để không bị "nháy trắng"). Ở đây chỉ lo phần
+// bật/tắt bằng nút và ghi nhớ lựa chọn.
+const THEME_KEY = 'kl_theme';
+
+function getTheme() {
+  return document.documentElement.classList.contains('dark') ? 'dark' : 'light';
+}
+
+function applyTheme(theme) {
+  const isDark = theme === 'dark';
+  document.documentElement.classList.toggle('dark', isDark);
+  try { localStorage.setItem(THEME_KEY, theme); } catch {}
+
+  // Đổi luôn màu thanh trạng thái trên điện thoại cho khớp
+  const meta = document.querySelector('meta[name="theme-color"]');
+  if (meta) meta.setAttribute('content', isDark ? '#080E1A' : '#2563eb');
+
+  document.querySelectorAll('[data-theme-toggle]').forEach(syncThemeToggleButton);
+}
+
+function toggleTheme() {
+  applyTheme(getTheme() === 'dark' ? 'light' : 'dark');
+}
+
+const THEME_ICON_SUN = '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M6.3 17.7l-1.4 1.4M19.1 4.9l-1.4 1.4"/></svg>';
+const THEME_ICON_MOON = '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.8A9 9 0 1 1 11.2 3a7 7 0 0 0 9.8 9.8Z"/></svg>';
+
+function syncThemeToggleButton(btn) {
+  const isDark = getTheme() === 'dark';
+  // Đang ở chế độ tối thì nút mời chuyển sang sáng, và ngược lại
+  const label = isDark ? 'Chuyển sang giao diện sáng' : 'Chuyển sang giao diện tối';
+  btn.setAttribute('aria-label', label);
+  btn.setAttribute('title', label);
+  const icon = isDark ? THEME_ICON_SUN : THEME_ICON_MOON;
+  const text = btn.dataset.themeToggle === 'full'
+    ? `<span class="font-body text-sm">${isDark ? 'Giao diện sáng' : 'Giao diện tối'}</span>`
+    : '';
+  btn.innerHTML = icon + text;
+}
+
+// ---------- Ảnh dự phòng khi link ảnh hỏng ----------
+// Trước đây ảnh lỗi hiện icon "ảnh vỡ" mặc định của trình duyệt, trông rất xấu.
+// Giờ thay bằng một hình SVG xám nhạt cùng tông với site.
+const IMG_FALLBACK = 'data:image/svg+xml;charset=utf-8,' + encodeURIComponent(
+  '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="#94a3b8" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">' +
+  '<rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><path d="m21 15-4.35-4.35a2 2 0 0 0-2.83 0L3 21"/></svg>'
+);
+
+function initImageFallback() {
+  // Dùng capture vì sự kiện `error` của <img> không nổi bọt lên document.
+  document.addEventListener('error', (e) => {
+    const img = e.target;
+    if (!(img instanceof HTMLImageElement)) return;
+    if (img.dataset.fallbackApplied) return;
+    img.dataset.fallbackApplied = '1';
+    img.src = IMG_FALLBACK;
+    img.classList.add('img-fallback');
+  }, true);
+}
+
+// ---------- Menu mobile, nút sáng/tối, nút lên đầu trang ----------
+// Toàn bộ được chèn bằng JS để 6 trang HTML không phải lặp lại cùng một đoạn markup.
+const NAV_LINKS = [
+  { href: 'index.html', label: 'Trang Chủ' },
+  { href: 'san-pham.html', label: 'Sản Phẩm' },
+  { href: 'khuyen-mai.html', label: 'Khuyến Mãi' },
+  { href: 'lien-he.html', label: 'Liên Hệ' }
+];
+
+function currentPageFile() {
+  const file = location.pathname.split('/').pop();
+  return file === '' ? 'index.html' : file;
+}
+
+function initSkipLink() {
+  const target = document.querySelector('main') || document.querySelector('h1');
+  if (!target) return;
+  if (!target.id) target.id = 'noi-dung-chinh';
+  target.setAttribute('tabindex', '-1');
+  document.body.insertAdjacentHTML('afterbegin',
+    `<a href="#${target.id}" class="skip-link font-display">Bỏ qua tới nội dung chính</a>`);
+}
+
+function initHeaderControls() {
+  const nav = document.querySelector('header nav');
+  if (!nav || document.getElementById('site-drawer')) return;
+
+  const here = currentPageFile();
+
+  // Nút sáng/tối (desktop) + nút ☰ (mobile), gom vào 1 ô ở cuối thanh điều hướng
+  nav.insertAdjacentHTML('beforeend', `
+    <div class="flex items-center gap-2 shrink-0">
+      <button type="button" data-theme-toggle="icon"
+        class="focus-ring hidden sm:inline-flex w-9 h-9 rounded-lg border border-white/20 text-white/70 hover:text-ember hover:border-ember items-center justify-center transition-colors"></button>
+      <button type="button" id="nav-hamburger" aria-label="Mở menu" aria-expanded="false" aria-controls="site-drawer"
+        class="focus-ring sm:hidden w-9 h-9 rounded-lg border border-white/20 text-white/80 hover:text-ember hover:border-ember flex items-center justify-center transition-colors">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M3 6h18M3 12h18M3 18h18"/></svg>
+      </button>
+    </div>
+  `);
+
+  // Ngăn menu trượt ra từ bên phải
+  document.body.insertAdjacentHTML('beforeend', `
+    <div id="site-drawer" class="hidden fixed inset-0 z-[140] sm:hidden" role="dialog" aria-modal="true" aria-label="Menu">
+      <div id="site-drawer-backdrop" class="absolute inset-0 bg-navy-950/70 backdrop-blur-sm"></div>
+      <div id="site-drawer-panel" class="absolute top-0 right-0 h-full w-[80%] max-w-xs bg-navy-950 border-l border-white/10 flex flex-col">
+        <div class="flex items-center justify-between px-5 py-4 border-b border-white/10">
+          <span class="font-display font-800 text-lg tracking-tight text-white">Kim Long</span>
+          <button type="button" id="site-drawer-close" aria-label="Đóng menu"
+            class="focus-ring w-9 h-9 rounded-lg text-white/70 hover:text-ember flex items-center justify-center transition-colors">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M18 6 6 18M6 6l12 12"/></svg>
+          </button>
+        </div>
+
+        <nav class="flex-1 overflow-y-auto px-3 py-4">
+          <ul class="flex flex-col gap-1">
+            ${NAV_LINKS.map(l => `
+              <li>
+                <a href="${l.href}" class="focus-ring flex items-center justify-between rounded-xl px-4 py-3 font-display font-700 text-base transition-colors ${
+                  l.href === here ? 'bg-ember/15 text-ember' : 'text-white/75 hover:bg-white/5 hover:text-white'
+                }">
+                  ${l.label}
+                  <span aria-hidden="true" class="text-white/30">→</span>
+                </a>
+              </li>`).join('')}
+          </ul>
+        </nav>
+
+        <div class="px-3 pb-3 flex flex-col gap-2 border-t border-white/10 pt-3">
+          <button type="button" data-theme-toggle="full"
+            class="focus-ring flex items-center gap-2.5 rounded-xl px-4 py-3 text-white/75 hover:bg-white/5 hover:text-white transition-colors"></button>
+          <a href="tel:${STORE_PHONE}" class="focus-ring flex items-center justify-center gap-2 rounded-xl bg-ember hover:bg-ember-dark text-white font-display font-700 text-sm px-4 py-3 transition-colors">
+            📞 Gọi ${STORE_PHONE_PRETTY}
+          </a>
+          <a href="https://zalo.me/${STORE_PHONE}" target="_blank" rel="noopener" class="focus-ring flex items-center justify-center gap-2 rounded-xl border border-white/20 text-white/75 hover:border-sky-400 hover:text-sky-400 font-display font-700 text-sm px-4 py-3 transition-colors">
+            Nhắn Zalo
+          </a>
+        </div>
+      </div>
+    </div>
+  `);
+
+  const drawer = document.getElementById('site-drawer');
+  const hamburger = document.getElementById('nav-hamburger');
+
+  function openDrawer() {
+    drawer.classList.remove('hidden');
+    document.body.classList.add('drawer-open');
+    hamburger.setAttribute('aria-expanded', 'true');
+    // Đợi 1 khung hình để trình duyệt kịp nhận trạng thái đầu, hiệu ứng trượt mới chạy
+    requestAnimationFrame(() => drawer.classList.add('drawer-visible'));
+    document.getElementById('site-drawer-close').focus();
+  }
+  function closeDrawer() {
+    drawer.classList.remove('drawer-visible');
+    document.body.classList.remove('drawer-open');
+    hamburger.setAttribute('aria-expanded', 'false');
+    setTimeout(() => drawer.classList.add('hidden'), 280);
+  }
+
+  hamburger.addEventListener('click', openDrawer);
+  document.getElementById('site-drawer-close').addEventListener('click', closeDrawer);
+  document.getElementById('site-drawer-backdrop').addEventListener('click', closeDrawer);
+  document.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape' && !drawer.classList.contains('hidden')) closeDrawer();
+  });
+
+  document.querySelectorAll('[data-theme-toggle]').forEach(btn => {
+    syncThemeToggleButton(btn);
+    btn.addEventListener('click', toggleTheme);
+  });
+}
+
+function initBackToTop() {
+  if (document.getElementById('back-to-top')) return;
+  document.body.insertAdjacentHTML('beforeend', `
+    <button type="button" id="back-to-top" aria-label="Lên đầu trang" title="Lên đầu trang"
+      class="focus-ring fixed right-4 bottom-6 z-40 w-11 h-11 rounded-full bg-navy-950 text-white border border-white/15 shadow-lg hover:bg-brand transition-colors flex items-center justify-center">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="m18 15-6-6-6 6"/></svg>
+    </button>
+  `);
+  const btn = document.getElementById('back-to-top');
+  const onScroll = () => btn.classList.toggle('btt-visible', window.scrollY > 400);
+  window.addEventListener('scroll', onScroll, { passive: true });
+  onScroll();
+  btn.addEventListener('click', () => window.scrollTo({ top: 0, behavior: 'smooth' }));
+}
+
+// Gọi 1 lần cho mọi trang — không cần trang nào phải tự gọi.
+function initSiteChrome() {
+  initImageFallback();
+  initSkipLink();
+  initHeaderControls();
+  initBackToTop();
+}
+
+if (document.readyState === 'loading') {
+  document.addEventListener('DOMContentLoaded', initSiteChrome);
+} else {
+  initSiteChrome();
+}
+
+// ====================================================================
+// ====== Dữ liệu có cấu trúc JSON-LD (giúp Google hiểu nội dung) ======
+// ====================================================================
+
+// "590.000 đ" -> 590000 ; "1.450.000 đ" -> 1450000 ; không đọc được -> null
+function parsePriceNumber(str) {
+  const digits = String(str ?? '').replace(/[^\d]/g, '');
+  return digits ? Number(digits) : null;
+}
+
+// Chèn (hoặc cập nhật) một khối <script type="application/ld+json"> theo id.
+// Trang chi tiết sản phẩm gọi lại hàm này sau khi tải xong dữ liệu từ Supabase.
+function injectJsonLd(id, data) {
+  let el = document.getElementById(id);
+  if (!el) {
+    el = document.createElement('script');
+    el.type = 'application/ld+json';
+    el.id = id;
+    document.head.appendChild(el);
+  }
+  el.textContent = JSON.stringify(data);
+}
+
+// Thông tin cửa hàng — dùng lại ở nhiều trang
+function storeJsonLd() {
+  return {
+    '@context': 'https://schema.org',
+    '@type': 'Store',
+    '@id': `${SITE_URL}/#store`,
+    name: STORE_NAME,
+    url: `${SITE_URL}/`,
+    image: `${SITE_URL}/icon-512.png`,
+    logo: `${SITE_URL}/icon-512.png`,
+    description: 'Đồ điện gia dụng chính hãng: nồi cơm điện, quạt điện, bóng đèn LED và nhiều thiết bị khác. Bảo hành rõ ràng, giao hàng nhanh.',
+    telephone: `+84${STORE_PHONE.replace(/^0/, '')}`,
+    email: STORE_EMAIL,
+    priceRange: '20.000đ - 2.000.000đ',
+    areaServed: 'VN',
+    address: { '@type': 'PostalAddress', addressCountry: 'VN' },
+    openingHoursSpecification: [{
+      '@type': 'OpeningHoursSpecification',
+      dayOfWeek: ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'],
+      opens: '08:00',
+      closes: '21:00'
+    }]
+  };
+}
+
+// Đường dẫn phân cấp (Trang Chủ / Sản Phẩm / ...) hiện dưới tiêu đề trên Google
+function breadcrumbJsonLd(items) {
+  return {
+    '@context': 'https://schema.org',
+    '@type': 'BreadcrumbList',
+    itemListElement: items.map((it, i) => ({
+      '@type': 'ListItem',
+      position: i + 1,
+      name: it.name,
+      item: `${SITE_URL}/${it.file}`
+    }))
+  };
+}
