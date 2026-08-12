@@ -199,6 +199,17 @@
   .report-mode-btn[data-active="true"] { background: #fff; color: #2563EB; box-shadow: 0 1px 2px rgba(15,27,51,.08); }
   .report-mode-btn[data-active="false"] { color: rgba(15,27,51,.45); }
   .report-mode-btn[data-active="false"]:hover { color: #0F1B33; }
+
+  /* Cỡ chữ lớn hơn ở tab Kế Toán & Thuế và tab Kho cho dễ đọc — đè lên các
+     class cỡ chữ của Tailwind (text-xs/sm/base/lg...) bằng độ ưu tiên cao
+     hơn (chọn theo id cha) thay vì sửa từng chỗ trong HTML lẫn chuỗi JS. */
+  #tab-accounting [class~="text-xs"], #tab-inventory [class~="text-xs"],
+  #tab-accounting [class~="text-[11px]"], #tab-inventory [class~="text-[11px]"] { font-size: .8125rem; }
+  #tab-accounting [class~="text-sm"], #tab-inventory [class~="text-sm"] { font-size: .9375rem; }
+  #tab-accounting [class~="text-base"], #tab-inventory [class~="text-base"] { font-size: 1.0625rem; }
+  #tab-accounting [class~="text-lg"], #tab-inventory [class~="text-lg"] { font-size: 1.25rem; }
+  #tab-accounting [class~="text-xl"], #tab-inventory [class~="text-xl"] { font-size: 1.375rem; }
+  #tab-accounting [class~="text-2xl"], #tab-inventory [class~="text-2xl"] { font-size: 1.625rem; }
 </style>
 </head>
 
