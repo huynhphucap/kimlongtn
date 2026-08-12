@@ -264,14 +264,21 @@
       btn.classList.toggle('text-navy-950', !sent && !inCart);
       btn.classList.toggle('hover:bg-navy-950', !sent && !inCart);
       btn.classList.toggle('hover:text-white', !sent && !inCart);
-      btn.disabled = sent;
+      btn.title = sent ? 'Bấm để bỏ yêu cầu báo giá này' : '';
       btn.textContent = sent ? '✓ Đã gửi yêu cầu báo giá' : inCart ? '✓ Đã thêm vào giỏ báo giá' : '+ Thêm vào giỏ báo giá';
     }
 
     const refreshCartUI = initQuoteCartUI(updateQuoteButton);
 
     function toggleCartItem(product) {
-      if (isQuoteSent(product.id)) return;
+      if (isQuoteSent(product.id)) {
+        if (!confirm(`Bỏ yêu cầu báo giá đã gửi cho "${product.name}"? Bạn có thể thêm lại vào giỏ và gửi yêu cầu mới.`)) return;
+        unmarkQuoteSent(product.id);
+        showToast(`Đã bỏ yêu cầu báo giá cho "${product.name}".`, 'info');
+        updateQuoteButton();
+        refreshCartUI();
+        return;
+      }
       if (isInCart(product.id)) {
         removeFromCart(product.id);
         showToast(`Đã bỏ "${product.name}" khỏi giỏ báo giá.`, 'info');

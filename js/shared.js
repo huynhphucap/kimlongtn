@@ -55,6 +55,12 @@ function markQuoteSent(id) {
   const ids = getSentQuoteIds();
   if (!isQuoteSent(id)) { ids.push(id); localStorage.setItem(QUOTE_SENT_KEY, JSON.stringify(ids)); }
 }
+// Cho phép khách bỏ đánh dấu "đã gửi yêu cầu báo giá" (bấm lại vào nút đã gửi) —
+// để có thể thêm lại vào giỏ và gửi yêu cầu báo giá mới cho sản phẩm đó.
+function unmarkQuoteSent(id) {
+  const ids = getSentQuoteIds().filter(x => String(x) !== String(id));
+  localStorage.setItem(QUOTE_SENT_KEY, JSON.stringify(ids));
+}
 
 // ---------- Giỏ báo giá: gộp nhiều sản phẩm rồi gửi 1 yêu cầu báo giá duy nhất ----------
 const CART_KEY = 'kl_quote_cart';

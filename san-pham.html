@@ -116,8 +116,8 @@
   .quote-toggle-btn:hover { color: #2563EB; }
   .quote-toggle-btn.quote-in-cart { background: #2563EB; color: #fff; }
   .quote-toggle-btn.quote-in-cart:hover { background: #DC2626; color: #fff; }
-  .quote-toggle-btn.quote-done { background: #F97316; color: #fff; cursor: default; }
-  .quote-toggle-btn.quote-done:hover { color: #fff; }
+  .quote-toggle-btn.quote-done { background: #F97316; color: #fff; }
+  .quote-toggle-btn.quote-done:hover { background: #DC2626; color: #fff; }
 
   input.form-input { transition: border-color .2s ease, box-shadow .2s ease; }
   input.form-input:focus {
@@ -353,8 +353,7 @@
       const state = quoteButtonState(id);
       btn.classList.toggle('quote-done', state === 'sent');
       btn.classList.toggle('quote-in-cart', state === 'in-cart');
-      btn.disabled = state === 'sent';
-      btn.title = state === 'sent' ? 'Đã gửi yêu cầu báo giá' : state === 'in-cart' ? 'Bỏ khỏi giỏ báo giá' : 'Thêm vào giỏ báo giá';
+      btn.title = state === 'sent' ? 'Bấm để bỏ yêu cầu báo giá này' : state === 'in-cart' ? 'Bỏ khỏi giỏ báo giá' : 'Thêm vào giỏ báo giá';
       btn.innerHTML = quoteButtonIcon(state);
     }
     function refreshAllQuoteButtons() {
@@ -363,7 +362,14 @@
     const refreshCartUI = initQuoteCartUI(refreshAllQuoteButtons);
 
     function toggleCartItem(product, btn) {
-      if (isQuoteSent(product.id)) return;
+      if (isQuoteSent(product.id)) {
+        if (!confirm(`Bỏ yêu cầu báo giá đã gửi cho "${product.name}"? Bạn có thể thêm lại vào giỏ và gửi yêu cầu mới.`)) return;
+        unmarkQuoteSent(product.id);
+        showToast(`Đã bỏ yêu cầu báo giá cho "${product.name}".`, 'info');
+        updateQuoteButton(btn, product.id);
+        refreshCartUI();
+        return;
+      }
       if (isInCart(product.id)) {
         removeFromCart(product.id);
         showToast(`Đã bỏ "${product.name}" khỏi giỏ báo giá.`, 'info');
@@ -405,7 +411,7 @@
           ${p.badge ? `<span class="absolute top-2 left-2 bg-white text-ember text-xs font-display font-700 px-2.5 py-1 rounded-full z-10 shadow-[0_2px_4px_rgba(0,0,0,.15)] border border-ember/20">${escapeHtml(p.badge)}</span>` : ''}
           <button type="button" data-quote-id="${p.id}"
                   class="quote-toggle-btn focus-ring absolute top-2 right-2 z-10 w-7 h-7 rounded-full flex items-center justify-center shadow-[0_2px_4px_rgba(0,0,0,.15)] transition-colors ${quoteButtonState(p.id) === 'sent' ? 'quote-done' : ''} ${quoteButtonState(p.id) === 'in-cart' ? 'quote-in-cart' : ''}"
-                  title="${quoteButtonState(p.id) === 'sent' ? 'Đã gửi yêu cầu báo giá' : quoteButtonState(p.id) === 'in-cart' ? 'Bỏ khỏi giỏ báo giá' : 'Thêm vào giỏ báo giá'}" ${quoteButtonState(p.id) === 'sent' ? 'disabled' : ''}>
+                  title="${quoteButtonState(p.id) === 'sent' ? 'Bấm để bỏ yêu cầu báo giá này' : quoteButtonState(p.id) === 'in-cart' ? 'Bỏ khỏi giỏ báo giá' : 'Thêm vào giỏ báo giá'}">
             ${quoteButtonIcon(quoteButtonState(p.id))}
           </button>
           <a href="chi-tiet-san-pham.html?id=${encodeURIComponent(p.id)}" class="aspect-square bg-slate-100 flex items-center justify-center overflow-hidden">
