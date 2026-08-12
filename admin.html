@@ -970,6 +970,10 @@
           <div class="flex items-center justify-between text-navy-900/60">
             <span>Tạm tính</span><span id="acc-order-subtotal">0 đ</span>
           </div>
+          <label class="flex items-center gap-1.5 text-xs text-navy-900/50 cursor-pointer">
+            <input type="checkbox" id="acc-order-no-tax" class="rounded border-slate-300">
+            Không tính thuế cho đơn này (khách lẻ, không xuất hoá đơn GTGT)
+          </label>
           <div class="flex items-center justify-between text-navy-900/60">
             <span>Thuế (<span id="acc-order-tax-rate-label">0</span>%)</span><span id="acc-order-tax">0 đ</span>
           </div>
@@ -2783,8 +2787,16 @@
     function setActiveTaxRate(rate) {
       accActiveTaxRate = Number(rate) || 0;
       document.getElementById('acc-order-tax-rate-label').textContent = accActiveTaxRate;
+      document.getElementById('acc-order-no-tax').checked = accActiveTaxRate === 0;
       recalcDraftOrder();
     }
+
+    // Đơn khách lẻ của hộ kinh doanh không xuất hoá đơn GTGT nên không cần
+    // cộng thuế vào giá bán — tick ô này để đưa thuế suất đơn về 0%. Bỏ tick
+    // sẽ quay lại thuế suất đang áp dụng chung (accTaxRate).
+    document.getElementById('acc-order-no-tax').addEventListener('change', (e) => {
+      setActiveTaxRate(e.target.checked ? 0 : accTaxRate);
+    });
 
     let accHkdName = '';
     let accHkdAddress = '';
