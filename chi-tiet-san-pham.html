@@ -3,6 +3,19 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+<!-- Đặt giao diện sáng/tối TRƯỚC khi trang vẽ ra, tránh nháy trắng khi đang ở chế độ tối. -->
+<script>
+  (function () {
+    try {
+      var saved = localStorage.getItem('kl_theme');
+      var dark = saved ? saved === 'dark' : window.matchMedia('(prefers-color-scheme: dark)').matches;
+      if (dark) document.documentElement.classList.add('dark');
+    } catch (e) {}
+    document.documentElement.classList.add('js');
+  })();
+</script>
+
 <title id="page-title">Chi Tiết Sản Phẩm - Cửa Hàng Kim Long</title>
 <meta id="meta-description" name="description" content="Xem chi tiết sản phẩm đồ điện gia dụng chính hãng tại Cửa Hàng Kim Long. Giá tốt, bảo hành rõ ràng, giao lắp tận nơi.">
 <link id="meta-canonical" rel="canonical" href="https://huynhphucap.github.io/kimlongtn/chi-tiet-san-pham.html">
@@ -29,95 +42,12 @@
 <meta name="apple-mobile-web-app-title" content="Kim Long">
 
 <script src="https://cdn.tailwindcss.com"></script>
-<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="js/tailwind-config.js"></script>
+<link rel="stylesheet" href="css/site.css">
+
 <link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Sora:wght@400;600;700;800&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet">
-
-<script>
-  tailwind.config = {
-    theme: {
-      extend: {
-        colors: {
-          navy: { 950: '#0B1220', 900: '#0F1B33', 800: '#152A4D' },
-          brand: { DEFAULT: '#2563EB', light: '#5B8DFF' },
-          ember: { DEFAULT: '#F97316', dark: '#C2540A' },
-          slate: { 150: '#EEF1F6' }
-        },
-        fontFamily: {
-          display: ['Sora', 'sans-serif'],
-          body: ['Inter', 'sans-serif'],
-          mono: ['JetBrains Mono', 'monospace']
-        }
-      }
-    }
-  }
-</script>
-
-<style>
-  body { font-family: 'Inter', sans-serif; }
-  .price-strike { text-decoration: line-through; }
-
-  @view-transition { navigation: auto; }
-  @keyframes page-in { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: translateY(0); } }
-  body { animation: page-in .35s ease-out; }
-
-  .led-price {
-    font-family: 'JetBrains Mono', monospace;
-    background: #0B1220;
-    color: #5CF2A0;
-    text-shadow: 0 0 6px rgba(92, 242, 160, 0.55);
-    letter-spacing: 0.02em;
-  }
-
-  .price-badge-3d {
-    background: linear-gradient(180deg, #fb923c 0%, #ea580c 60%, #c2540a 100%);
-    box-shadow: inset 0 1px 0 rgba(255,255,255,.5), inset 0 -2px 3px rgba(0,0,0,.3), 0 2px 4px rgba(194,84,10,.5);
-    text-shadow: 0 1px 1px rgba(0,0,0,.3);
-  }
-
-  .focus-ring:focus-visible { outline: 2px solid #F97316; outline-offset: 2px; }
-
-  input.form-input { transition: border-color .2s ease, box-shadow .2s ease; }
-  input.form-input:focus {
-    outline: none;
-    border-color: #2563EB;
-    box-shadow: 0 0 0 3px rgba(37,99,235,.15);
-  }
-  .spinner {
-    border: 2.5px solid rgba(255,255,255,.35);
-    border-top-color: #fff;
-    border-radius: 9999px;
-    width: 1rem; height: 1rem;
-    animation: spin .7s linear infinite;
-  }
-  @keyframes spin { to { transform: rotate(360deg); } }
-
-  @keyframes toast-in { from { opacity: 0; transform: translateX(24px) scale(.96); } to { opacity: 1; transform: translateX(0) scale(1); } }
-  @keyframes toast-out { from { opacity: 1; transform: translateX(0) scale(1); } to { opacity: 0; transform: translateX(24px) scale(.96); } }
-  .toast { animation: toast-in .25s ease-out; }
-  .toast.toast-leaving { animation: toast-out .25s ease-in forwards; }
-
-  @media (prefers-reduced-motion: no-preference) {
-    .hover-lift { transition: transform .25s ease, box-shadow .25s ease; }
-    .hover-lift:hover { transform: translateY(-4px); box-shadow: 0 16px 30px -12px rgba(15,27,51,0.35); }
-  }
-
-  /* Khung xám nhấp nháy khi đang tải dữ liệu */
-  @keyframes skeleton-shimmer { 0% { background-position: 200% 0; } 100% { background-position: -200% 0; } }
-  .skeleton {
-    background: linear-gradient(90deg, #e2e8f0 25%, #eef1f6 37%, #e2e8f0 63%);
-    background-size: 400% 100%;
-    animation: skeleton-shimmer 1.4s ease infinite;
-  }
-
-  /* Zoom nhẹ khi rê chuột vào ảnh sản phẩm */
-  .zoom-img-wrap { overflow: hidden; }
-  .zoom-img-wrap img { transition: transform .5s ease; }
-  .zoom-img-wrap:hover img { transform: scale(1.06); }
-
-  @keyframes card-in { from { opacity: 0; transform: translateY(16px); } to { opacity: 1; transform: translateY(0); } }
-  .card-enter { animation: card-in .45s ease-out both; }
-</style>
 </head>
 
 <body class="bg-slate-150 text-navy-950">
@@ -155,7 +85,7 @@
         </a>
       </div>
 
-      <div class="flex sm:hidden items-center gap-3">
+      <div data-mobile-nav class="flex sm:hidden items-center gap-3">
         <ul class="flex items-center gap-4 font-body text-xs font-medium text-white/70">
           <li><a href="san-pham.html" class="text-ember focus-ring rounded">Sản Phẩm</a></li>
           <li><a href="khuyen-mai.html" class="focus-ring rounded">Khuyến Mãi</a></li>
@@ -224,6 +154,9 @@
     <span id="lightbox-counter" class="hidden absolute bottom-4 left-1/2 -translate-x-1/2 text-white/80 text-xs font-body bg-white/10 rounded-full px-3 py-1"></span>
   </div>
 
+  <!-- Thư viện Supabase để ở cuối trang (không phải trong <head>) để trang hiện ra nhanh hơn:
+       nó chỉ cần có mặt trước js/shared.js, không cần chặn lúc trình duyệt đang dựng giao diện. -->
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script src="js/shared.js"></script>
   <script>
     const params = new URLSearchParams(window.location.search);
@@ -376,7 +309,7 @@
         </div>`;
     }
 
-    const SITE_URL = 'https://huynhphucap.github.io/kimlongtn';
+    // SITE_URL / STORE_NAME... khai báo trong js/shared.js để mọi trang dùng chung.
 
     function updateSeoTags(p) {
       const title = `${p.name} - Cửa Hàng Kim Long`;
@@ -393,6 +326,38 @@
       document.getElementById('meta-twitter-title').setAttribute('content', title);
       document.getElementById('meta-twitter-description').setAttribute('content', desc);
       document.getElementById('meta-twitter-image').setAttribute('content', image);
+
+      // ---------- Dữ liệu có cấu trúc cho Google ----------
+      // Nhờ khối Product này, kết quả tìm kiếm có thể hiện kèm giá và tình trạng còn hàng.
+      const priceNumber = parsePriceNumber(p.new_price);
+      const product = {
+        '@context': 'https://schema.org',
+        '@type': 'Product',
+        name: p.name,
+        description: desc,
+        image: (Array.isArray(p.images) && p.images.length ? p.images : [image]),
+        sku: String(p.id),
+        category: p.category || undefined,
+        brand: { '@type': 'Brand', name: 'Kim Long' },
+        url
+      };
+      if (priceNumber) {
+        product.offers = {
+          '@type': 'Offer',
+          url,
+          price: priceNumber,
+          priceCurrency: 'VND',
+          availability: 'https://schema.org/InStock',
+          seller: { '@type': 'Store', name: STORE_NAME }
+        };
+      }
+      injectJsonLd('ld-product', product);
+
+      injectJsonLd('ld-breadcrumb', breadcrumbJsonLd([
+        { name: 'Trang Chủ', file: 'index.html' },
+        { name: 'Sản Phẩm', file: 'san-pham.html' },
+        { name: p.name, file: `chi-tiet-san-pham.html?id=${encodeURIComponent(p.id)}` }
+      ]));
     }
 
     function renderProduct(p) {
@@ -418,7 +383,9 @@
           <div class="relative group">
             <div id="main-img-trigger" class="zoom-img-wrap rounded-2xl bg-white border border-slate-200 cursor-zoom-in">
               <div class="aspect-square bg-slate-100 overflow-hidden rounded-2xl">
-                <img id="main-product-img" src="${escapeHtml(images[0])}" alt="${escapeHtml(p.name)}" class="w-full h-full object-cover">
+                <img id="main-product-img" src="${escapeHtml(images[0])}" alt="${escapeHtml(p.name)}"
+                     width="700" height="700" fetchpriority="high" decoding="async"
+                     class="w-full h-full object-cover">
               </div>
             </div>
             <span class="absolute top-2 right-2 bg-navy-950/60 text-white text-[11px] font-body px-2.5 py-1 rounded-full flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none">
@@ -439,7 +406,9 @@
           <div class="grid grid-cols-5 gap-2">
             ${images.map((img, i) => `
               <button type="button" data-index="${i}" class="thumb-btn focus-ring aspect-square rounded-lg overflow-hidden border-2 ${i === 0 ? 'border-brand' : 'border-transparent'} bg-slate-100">
-                <img src="${escapeHtml(img)}" alt="${escapeHtml(p.name)} - ảnh ${i + 1}" class="w-full h-full object-cover">
+                <img src="${escapeHtml(img)}" alt="${escapeHtml(p.name)} - ảnh ${i + 1}"
+                     width="140" height="140" loading="lazy" decoding="async"
+                     class="w-full h-full object-cover">
               </button>
             `).join('')}
           </div>` : ''}
@@ -515,7 +484,9 @@
       document.getElementById('related-grid').innerHTML = list.slice(0, 4).map((p, i) => `
         <a href="chi-tiet-san-pham.html?id=${encodeURIComponent(p.id)}" class="card-enter hover-lift bg-white border border-slate-200 rounded-2xl overflow-hidden flex flex-col" style="animation-delay:${i * 80}ms">
           <div class="aspect-square bg-slate-100 overflow-hidden">
-            <img src="${escapeHtml(p.img)}" alt="${escapeHtml(p.name)}" class="w-full h-full object-cover">
+            <img src="${escapeHtml(p.img)}" alt="${escapeHtml(p.name)}"
+                 width="300" height="300" loading="lazy" decoding="async"
+                 class="w-full h-full object-cover">
           </div>
           <div class="p-3 flex flex-col gap-1">
             <p class="text-sm font-display font-700 text-navy-950 leading-snug line-clamp-2 min-h-[2.5em]">${escapeHtml(p.name)}</p>

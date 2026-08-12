@@ -1,0 +1,359 @@
+/* ==========================================================================
+   Kim Long — CSS dùng chung cho toàn bộ trang công khai
+   --------------------------------------------------------------------------
+   Trước đây mỗi trang (index / san-pham / chi-tiet-san-pham / khuyen-mai /
+   lien-he / 404) tự dán lại một khối <style> gần như y hệt nhau. Gộp về một
+   file giúp: sửa 1 lần áp dụng mọi trang, và trình duyệt chỉ tải + cache 1 lần
+   thay vì tải lại theo từng trang HTML.
+
+   Bố cục file:
+     1. Nền tảng (font, chuyển trang)
+     2. Thành phần dùng chung (nút, thẻ, giá, ruy băng khuyến mãi...)
+     3. Trạng thái tải (skeleton, spinner, toast)
+     4. Bộ khung website do js/shared.js chèn vào (menu mobile, nút lên đầu trang...)
+     5. Chế độ tối (dark mode)
+   ========================================================================== */
+
+/* ============ 1. NỀN TẢNG ============ */
+
+:root { color-scheme: light; }
+html.dark { color-scheme: dark; }
+
+body { font-family: 'Inter', sans-serif; }
+
+/* Mượt khi chuyển qua lại giữa các trang (Chrome/Edge mới) */
+@view-transition { navigation: auto; }
+
+/* Fallback: trang mờ dần hiện ra khi tải, tạo cảm giác chuyển mượt trên mọi trình duyệt */
+@keyframes page-in { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: translateY(0); } }
+body { animation: page-in .35s ease-out; }
+
+/* Viền vàng cam khi di chuyển bằng bàn phím (Tab) */
+.focus-ring:focus-visible {
+  outline: 2px solid #F97316;
+  outline-offset: 2px;
+}
+
+/* Chấm li ti kiểu bảng mạch — gợi cảm giác cửa hàng đồ điện.
+   Các banner dùng class này CÙNG LÚC với gradient của Tailwind (bg-gradient-to-br
+   from-navy-950 ...). Cả hai đều đặt `background-image` nên trước đây chúng triệt
+   tiêu nhau: lớp chấm đè mất gradient, làm banner mất nền tối (chữ trắng nằm trên
+   nền xám sáng, gần như không đọc được).
+   Cách sửa: vẽ chồng 2 lớp — chấm ở trên, gradient ở dưới. Gradient được lấy lại
+   từ biến --tw-gradient-stops mà chính các class from-/via-/to- đã đặt sẵn; phần
+   tử nào không có gradient thì rơi về `transparent` nên không ảnh hưởng gì. */
+.keypad-texture {
+  background-image:
+    radial-gradient(circle, rgba(255,255,255,0.09) 1.6px, transparent 1.6px),
+    linear-gradient(to bottom right, var(--tw-gradient-stops, transparent, transparent));
+  background-size: 22px 22px, cover;
+}
+
+
+/* ============ 2. THÀNH PHẦN DÙNG CHUNG ============ */
+
+.price-strike { text-decoration: line-through; }
+
+/* Ô giá kiểu màn hình LED của thiết bị điện */
+.led-price {
+  font-family: 'JetBrains Mono', monospace;
+  background: #0B1220;
+  color: #5CF2A0;
+  text-shadow: 0 0 6px rgba(92, 242, 160, 0.55);
+  letter-spacing: 0.02em;
+}
+
+/* Ruy băng "Khuyến Mãi Đặc Biệt" nổi khối trên thẻ sản phẩm */
+.promo-ribbon {
+  position: relative;
+  background: linear-gradient(180deg, #fb923c 0%, #f97316 55%, #c2540a 100%);
+  box-shadow:
+    inset 0 1px 0 rgba(255,255,255,.45),
+    inset 0 -3px 4px rgba(0,0,0,.25),
+    0 3px 6px rgba(194,84,10,.45);
+  text-shadow: 0 1px 1px rgba(0,0,0,.35);
+  letter-spacing: .02em;
+}
+.promo-ribbon::after {
+  content: "";
+  position: absolute; left: 0; bottom: -6px;
+  border-style: solid;
+  border-width: 0 6px 6px 0;
+  border-color: transparent #7c2d12 transparent transparent;
+  filter: brightness(.7);
+}
+
+.promo-badge-3d {
+  position: relative;
+  background: linear-gradient(180deg, #ffe37a 0%, #fbbf24 55%, #f59e0b 100%);
+  box-shadow:
+    inset 0 1px 0 rgba(255,255,255,.6),
+    inset 0 -3px 4px rgba(0,0,0,.25),
+    0 3px 6px rgba(180,83,9,.5);
+  text-shadow: 0 1px 0 rgba(255,255,255,.35);
+}
+.promo-badge-3d::before {
+  content: "";
+  position: absolute; inset: 0;
+  border-radius: inherit;
+  background: linear-gradient(120deg, rgba(255,255,255,.55) 0%, rgba(255,255,255,0) 40%);
+  pointer-events: none;
+}
+
+.price-badge-3d {
+  background: linear-gradient(180deg, #fb923c 0%, #ea580c 60%, #c2540a 100%);
+  box-shadow:
+    inset 0 1px 0 rgba(255,255,255,.5),
+    inset 0 -2px 3px rgba(0,0,0,.3),
+    0 2px 4px rgba(194,84,10,.5);
+  text-shadow: 0 1px 1px rgba(0,0,0,.3);
+}
+
+/* Thẻ khuyến mãi dạng poster ở trang Khuyến Mãi */
+.promo-tile { transition: transform .3s cubic-bezier(.2,.8,.2,1), box-shadow .3s ease; }
+.promo-tile:hover { transform: translateY(-6px); box-shadow: 0 24px 40px -18px rgba(15,27,51,.45); }
+
+/* Đồng hồ đếm ngược flash sale */
+.countdown-chip {
+  font-family: 'JetBrains Mono', monospace;
+  background: #0B1220;
+  color: #5CF2A0;
+  text-shadow: 0 0 6px rgba(92, 242, 160, 0.55);
+}
+
+/* Thẻ thông tin liên hệ 3D nổi khối */
+.info-card {
+  position: relative;
+  background: linear-gradient(180deg, #ffffff 0%, #fafbfe 100%);
+  box-shadow:
+    0 1px 0 rgba(255,255,255,.8) inset,
+    0 10px 22px -14px rgba(15,27,51,.25);
+  transition: transform .3s ease, box-shadow .3s ease;
+}
+.info-card:hover {
+  transform: translateY(-5px);
+  box-shadow:
+    0 1px 0 rgba(255,255,255,.8) inset,
+    0 20px 34px -16px rgba(37,99,235,.3);
+}
+.info-card::before {
+  content: "";
+  position: absolute; inset: 0;
+  border-radius: inherit;
+  padding: 1.5px;
+  background: linear-gradient(135deg, transparent 40%, rgba(37,99,235,.5) 100%);
+  -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
+  -webkit-mask-composite: xor;
+  mask-composite: exclude;
+  opacity: 0;
+  transition: opacity .3s ease;
+  pointer-events: none;
+}
+.info-card:hover::before { opacity: 1; }
+
+.icon-chip {
+  box-shadow: inset 0 1px 0 rgba(255,255,255,.5), 0 3px 8px -3px rgba(37,99,235,.5);
+}
+
+/* Zoom nhẹ khi rê chuột vào ảnh sản phẩm */
+.zoom-img-wrap { overflow: hidden; }
+.zoom-img-wrap img { transition: transform .5s ease; }
+.zoom-img-wrap:hover img { transform: scale(1.06); }
+
+/* Nút "Thêm vào giỏ báo giá" trên thẻ sản phẩm — 3 trạng thái */
+.quote-toggle-btn { background: #fff; color: rgba(15,27,51,.5); }
+.quote-toggle-btn:hover { color: #2563EB; }
+.quote-toggle-btn.quote-in-cart { background: #2563EB; color: #fff; }
+.quote-toggle-btn.quote-in-cart:hover { background: #DC2626; color: #fff; }
+.quote-toggle-btn.quote-done { background: #F97316; color: #fff; }
+.quote-toggle-btn.quote-done:hover { background: #DC2626; color: #fff; }
+
+/* Ô nhập liệu */
+input.form-input, textarea.form-input { transition: border-color .2s ease, box-shadow .2s ease; }
+input.form-input:focus, textarea.form-input:focus {
+  outline: none;
+  border-color: #2563EB;
+  box-shadow: 0 0 0 3px rgba(37,99,235,.15);
+}
+
+/* Đèn nhấp nháy cho số 404 */
+@keyframes flicker {
+  0%, 100% { opacity: 1; }
+  92% { opacity: 1; }
+  93% { opacity: .4; }
+  94% { opacity: 1; }
+  96% { opacity: .6; }
+  97% { opacity: 1; }
+}
+.flicker { animation: flicker 4s ease-in-out infinite; }
+
+
+/* ============ 3. HIỆU ỨNG & TRẠNG THÁI TẢI ============ */
+
+/* Mờ dần hiện ra khi cuộn tới */
+.reveal { opacity: 0; transform: translateY(24px); transition: opacity .6s ease, transform .6s ease; }
+.reveal.reveal-visible { opacity: 1; transform: translateY(0); }
+
+/* Khung xám nhấp nháy khi đang tải dữ liệu */
+@keyframes skeleton-shimmer { 0% { background-position: 200% 0; } 100% { background-position: -200% 0; } }
+.skeleton {
+  background: linear-gradient(90deg, #e2e8f0 25%, #eef1f6 37%, #e2e8f0 63%);
+  background-size: 400% 100%;
+  animation: skeleton-shimmer 1.4s ease infinite;
+}
+
+/* Thẻ sản phẩm xuất hiện lần lượt khi tải xong */
+@keyframes card-in { from { opacity: 0; transform: translateY(16px); } to { opacity: 1; transform: translateY(0); } }
+.card-enter { animation: card-in .45s ease-out both; }
+
+.spinner {
+  border: 2.5px solid rgba(255,255,255,.35);
+  border-top-color: #fff;
+  border-radius: 9999px;
+  width: 1rem; height: 1rem;
+  animation: spin .7s linear infinite;
+}
+@keyframes spin { to { transform: rotate(360deg); } }
+
+@keyframes toast-in { from { opacity: 0; transform: translateX(24px) scale(.96); } to { opacity: 1; transform: translateX(0) scale(1); } }
+@keyframes toast-out { from { opacity: 1; transform: translateX(0) scale(1); } to { opacity: 0; transform: translateX(24px) scale(.96); } }
+.toast { animation: toast-in .25s ease-out; box-shadow: 0 12px 28px -12px rgba(15,27,51,.35); }
+.toast.toast-leaving { animation: toast-out .25s ease-in forwards; }
+
+@media (prefers-reduced-motion: no-preference) {
+  .hover-lift { transition: transform .25s ease, box-shadow .25s ease; }
+  .hover-lift:hover { transform: translateY(-4px); box-shadow: 0 16px 30px -12px rgba(15,27,51,0.35); }
+}
+
+/* Tôn trọng người dùng đã tắt hiệu ứng chuyển động trong cài đặt hệ thống */
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: .01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: .01ms !important;
+    scroll-behavior: auto !important;
+  }
+  .reveal { opacity: 1; transform: none; }
+}
+
+/* Ảnh sản phẩm bị lỗi/không tải được → js/shared.js gắn class này để làm mờ ảnh thay thế */
+img.img-fallback { object-fit: contain !important; padding: 12%; opacity: .55; }
+
+
+/* ============ 4. BỘ KHUNG DO js/shared.js CHÈN VÀO ============ */
+
+/* Hàng menu chữ nhỏ trên mobile được thay bằng nút ☰. Ẩn ngay từ đầu khi có JS
+   (class .js do đoạn script nhỏ trong <head> gắn) để không bị nháy. */
+html.js [data-mobile-nav] { display: none !important; }
+
+/* Link "Bỏ qua tới nội dung chính" — chỉ hiện khi bấm Tab, dành cho người dùng bàn phím */
+.skip-link {
+  position: fixed;
+  top: 0; left: 50%;
+  transform: translate(-50%, -120%);
+  z-index: 200;
+  background: #F97316;
+  color: #fff;
+  font-weight: 700;
+  padding: .65rem 1.25rem;
+  border-radius: 0 0 .75rem .75rem;
+  transition: transform .2s ease;
+}
+.skip-link:focus { transform: translate(-50%, 0); }
+
+/* Ngăn cuộn nền khi đang mở ngăn menu mobile */
+body.drawer-open { overflow: hidden; }
+
+/* Ngăn menu trượt từ phải sang */
+#site-drawer-panel {
+  transform: translateX(100%);
+  transition: transform .28s cubic-bezier(.4,0,.2,1);
+}
+#site-drawer.drawer-visible #site-drawer-panel { transform: translateX(0); }
+
+#site-drawer-backdrop { opacity: 0; transition: opacity .28s ease; }
+#site-drawer.drawer-visible #site-drawer-backdrop { opacity: 1; }
+
+/* Nút lên đầu trang — ẩn cho tới khi người dùng cuộn xuống đủ xa */
+#back-to-top {
+  opacity: 0;
+  visibility: hidden;
+  transform: translateY(12px);
+  transition: opacity .25s ease, transform .25s ease, visibility .25s;
+}
+#back-to-top.btt-visible { opacity: 1; visibility: visible; transform: translateY(0); }
+
+
+/* ============ 5. CHẾ ĐỘ TỐI ============ */
+/* Thay vì thêm hàng trăm class `dark:` vào từng trang HTML, ta ghi đè thẳng các
+   lớp tiện ích Tailwind đang dùng. Bộ chọn `html.dark .x` có độ ưu tiên cao hơn
+   `.x` nên chỉ cần khai báo một lần ở đây là toàn site đổi màu. */
+
+html.dark body { background-color: #080E1A; }
+
+/* Nền & bề mặt */
+html.dark .bg-slate-150 { background-color: #080E1A; }
+html.dark .bg-white     { background-color: #131F38; }
+html.dark .bg-slate-100 { background-color: #1B2A47; }
+html.dark .bg-slate-50  { background-color: #1B2A47; }
+
+/* Thanh điều hướng dính trên cùng — nhấc sáng hơn nền một chút cho tách lớp */
+html.dark .bg-navy-950\/95 { background-color: rgba(19,31,56,.92); }
+
+/* Chữ */
+html.dark .text-navy-950     { color: #E9EEF8; }
+html.dark .text-navy-900     { color: #DDE5F3; }
+html.dark .text-navy-900\/70 { color: rgba(221,229,243,.78); }
+html.dark .text-navy-900\/60 { color: rgba(221,229,243,.68); }
+html.dark .text-navy-900\/50 { color: rgba(221,229,243,.58); }
+html.dark .text-navy-900\/40 { color: rgba(221,229,243,.46); }
+html.dark .text-navy-900\/30 { color: rgba(221,229,243,.36); }
+html.dark .hover\:text-navy-900:hover     { color: #DDE5F3; }
+html.dark .hover\:text-navy-900\/70:hover { color: rgba(221,229,243,.78); }
+
+/* Viền */
+html.dark .border-slate-200 { border-color: rgba(255,255,255,.11); }
+html.dark .border-slate-100 { border-color: rgba(255,255,255,.07); }
+
+/* Nền khi rê chuột */
+html.dark .hover\:bg-slate-150:hover { background-color: #1B2A47; }
+html.dark .hover\:bg-slate-100:hover { background-color: #1B2A47; }
+
+/* Nút viền đậm "Xem tất cả sản phẩm" / "Gọi ngay" — nền tối thì đảo màu lại */
+html.dark .border-navy-950 { border-color: #E9EEF8; }
+html.dark .hover\:bg-navy-950:hover { background-color: #E9EEF8; }
+html.dark .hover\:text-white:hover { color: #0B1220; }
+
+/* Hộp báo lỗi trong form */
+html.dark .bg-red-50     { background-color: rgba(220,38,38,.14); }
+html.dark .border-red-200 { border-color: rgba(248,113,113,.35); }
+html.dark .text-red-600   { color: #FCA5A5; }
+
+/* Thành phần có màu nền cứng trong CSS ở trên */
+html.dark .skeleton {
+  background: linear-gradient(90deg, #1B2A47 25%, #26375A 37%, #1B2A47 63%);
+  background-size: 400% 100%;
+}
+html.dark .info-card {
+  background: linear-gradient(180deg, #16233D 0%, #131F38 100%);
+  box-shadow: 0 10px 22px -14px rgba(0,0,0,.6);
+}
+html.dark .info-card:hover {
+  box-shadow: 0 20px 34px -16px rgba(37,99,235,.45);
+}
+html.dark .quote-toggle-btn { background: #1B2A47; color: rgba(221,229,243,.6); }
+html.dark .quote-toggle-btn:hover { color: #5B8DFF; }
+html.dark .quote-toggle-btn.quote-in-cart { background: #2563EB; color: #fff; }
+html.dark .quote-toggle-btn.quote-done { background: #F97316; color: #fff; }
+
+/* Ô nhập liệu: mặc định trình duyệt vẫn cho nền trắng, phải tự đặt lại */
+html.dark input.form-input,
+html.dark textarea.form-input,
+html.dark input[type="search"] {
+  background-color: #0E1930;
+  color: #E9EEF8;
+}
+html.dark ::placeholder { color: rgba(221,229,243,.35); }
+
+/* Nhãn "Mẫu mới" trên thẻ sản phẩm dùng nền trắng cứng */
+html.dark .bg-white.text-ember { background-color: #1B2A47; }

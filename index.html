@@ -3,6 +3,20 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+<!-- Đặt giao diện sáng/tối TRƯỚC khi trang vẽ ra, tránh nháy trắng khi đang ở chế độ tối.
+     Phải để inline ngay đây (không tách ra file) thì mới chạy kịp. -->
+<script>
+  (function () {
+    try {
+      var saved = localStorage.getItem('kl_theme');
+      var dark = saved ? saved === 'dark' : window.matchMedia('(prefers-color-scheme: dark)').matches;
+      if (dark) document.documentElement.classList.add('dark');
+    } catch (e) {}
+    document.documentElement.classList.add('js');
+  })();
+</script>
+
 <meta name="google-site-verification" content="mJ4IxhJEd4gcSKBRmSVWmERmsEC_m8oGLjXHDMh1vx0" />
 <title>Cửa Hàng Kim Long - Đồ Điện Gia Dụng Chính Hãng</title>
 <meta name="description" content="Đồ điện gia dụng chính hãng giá tốt tại Cửa Hàng Kim Long: nồi cơm điện, quạt điện, bóng đèn LED và nhiều thiết bị khác. Bảo hành rõ ràng, giao hàng nhanh toàn quốc.">
@@ -21,82 +35,15 @@
 <meta name="twitter:description" content="Đồ điện gia dụng chính hãng giá tốt: nồi cơm điện, quạt điện, bóng đèn LED và nhiều thiết bị khác.">
 <meta name="twitter:image" content="https://huynhphucap.github.io/kimlongtn/icon-512.png">
 
+<meta name="theme-color" content="#2563eb">
+
 <script src="https://cdn.tailwindcss.com"></script>
-<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="js/tailwind-config.js"></script>
+<link rel="stylesheet" href="css/site.css">
+
 <link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Sora:wght@400;600;700;800&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet">
-
-<script>
-  tailwind.config = {
-    theme: {
-      extend: {
-        colors: {
-          navy: { 950: '#0B1220', 900: '#0F1B33', 800: '#152A4D' },
-          brand: { DEFAULT: '#2563EB', light: '#5B8DFF' },
-          ember: { DEFAULT: '#F97316', dark: '#C2540A' },
-          slate: { 150: '#EEF1F6' }
-        },
-        fontFamily: {
-          display: ['Sora', 'sans-serif'],
-          body: ['Inter', 'sans-serif'],
-          mono: ['JetBrains Mono', 'monospace']
-        }
-      }
-    }
-  }
-</script>
-
-<style>
-  body { font-family: 'Inter', sans-serif; }
-
-  /* Mượt khi chuyển qua lại giữa các trang (hỗ trợ trên Chrome/Edge mới) */
-  @view-transition { navigation: auto; }
-
-  /* Fallback: trang mờ dần hiện ra khi tải, tạo cảm giác chuyển mượt trên mọi trình duyệt */
-  @keyframes page-in { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: translateY(0); } }
-  body { animation: page-in .35s ease-out; }
-
-  /* Dot texture — subtle circuit-board feel for an electronics store */
-  .keypad-texture {
-    background-image: radial-gradient(circle, rgba(255,255,255,0.09) 1.6px, transparent 1.6px);
-    background-size: 22px 22px;
-  }
-
-  /* Digital LED-style price display, echoing an appliance's power/display screen */
-  .led-price {
-    font-family: 'JetBrains Mono', monospace;
-    background: #0B1220;
-    color: #5CF2A0;
-    text-shadow: 0 0 6px rgba(92, 242, 160, 0.55);
-    letter-spacing: 0.02em;
-  }
-
-  .focus-ring:focus-visible {
-    outline: 2px solid #F97316;
-    outline-offset: 2px;
-  }
-
-  @media (prefers-reduced-motion: no-preference) {
-    .hover-lift { transition: transform .25s ease, box-shadow .25s ease; }
-    .hover-lift:hover { transform: translateY(-4px); box-shadow: 0 16px 30px -12px rgba(15,27,51,0.35); }
-  }
-
-  /* Hiệu ứng mờ dần hiện ra khi cuộn tới */
-  .reveal { opacity: 0; transform: translateY(24px); transition: opacity .6s ease, transform .6s ease; }
-  .reveal.reveal-visible { opacity: 1; transform: translateY(0); }
-
-  /* Khung xám nhấp nháy khi đang tải dữ liệu */
-  @keyframes skeleton-shimmer { 0% { background-position: 200% 0; } 100% { background-position: -200% 0; } }
-  .skeleton {
-    background: linear-gradient(90deg, #e2e8f0 25%, #eef1f6 37%, #e2e8f0 63%);
-    background-size: 400% 100%;
-    animation: skeleton-shimmer 1.4s ease infinite;
-  }
-
-  /* Thẻ sản phẩm xuất hiện lần lượt khi tải xong */
-  @keyframes card-in { from { opacity: 0; transform: translateY(16px); } to { opacity: 1; transform: translateY(0); } }
-  .card-enter { animation: card-in .45s ease-out both; }
-</style>
 </head>
 
 <body class="bg-slate-150 text-navy-950">
@@ -106,7 +53,7 @@
     <nav class="max-w-6xl mx-auto flex items-center justify-between px-5 py-4">
 
       <!-- Logo -->
-      <a href="#" class="flex items-center gap-2 shrink-0">
+      <a href="index.html" class="flex items-center gap-2 shrink-0">
         <span class="w-9 h-9 rounded-lg bg-gradient-to-br from-brand to-brand-light flex items-center justify-center shrink-0 shadow-[0_4px_10px_-3px_rgba(37,99,235,.6)]"><svg viewBox="0 0 100 100" width="24" height="24" xmlns="http://www.w3.org/2000/svg">
                 <g stroke-linecap="round" stroke-linejoin="round" fill="none">
                   <g stroke="#FFFFFF" stroke-width="12">
@@ -130,8 +77,9 @@
         <li><a href="lien-he.html" class="hover:text-brand-light transition-colors focus-ring rounded">Liên Hệ</a></li>
       </ul>
 
-      <!-- Mobile: compact menu row -->
-      <ul class="flex sm:hidden items-center gap-4 font-body text-xs font-medium text-white/70">
+      <!-- Mobile: hàng menu chữ nhỏ — chỉ dùng khi trình duyệt tắt JS.
+           Có JS thì js/shared.js sẽ ẩn hàng này đi và thay bằng nút ☰ + ngăn menu trượt. -->
+      <ul data-mobile-nav class="flex sm:hidden items-center gap-4 font-body text-xs font-medium text-white/70">
         <li><a href="san-pham.html" class="focus-ring rounded">Sản Phẩm</a></li>
         <li><a href="khuyen-mai.html" class="focus-ring rounded">Khuyến Mãi</a></li>
         <li><a href="lien-he.html" class="focus-ring rounded">Liên Hệ</a></li>
@@ -241,6 +189,64 @@
     </div>
   </main>
 
+  <!-- ============ KHÁCH HÀNG NÓI GÌ ============ -->
+  <section class="max-w-6xl mx-auto px-5 pb-14 sm:pb-20">
+    <div class="reveal text-center mb-10">
+      <h2 class="font-display font-800 text-2xl sm:text-3xl text-navy-950">Khách Hàng Nói Gì</h2>
+      <p class="font-body text-navy-900/60 text-sm sm:text-base mt-2">Cảm nhận thật từ khách đã mua tại Kim Long</p>
+    </div>
+
+    <div class="grid grid-cols-1 sm:grid-cols-3 gap-5 sm:gap-6">
+      <figure class="reveal hover-lift bg-white border border-slate-200 rounded-2xl p-6 flex flex-col gap-4" style="transition-delay:0ms">
+        <div class="flex gap-0.5 text-ember" aria-label="Đánh giá 5 trên 5 sao">
+          <span aria-hidden="true">★★★★★</span>
+        </div>
+        <blockquote class="font-body text-sm text-navy-900/70 leading-relaxed flex-1">
+          “Mua nồi cơm điện ở đây, anh chủ tư vấn kỹ, giao tận nhà trong ngày. Dùng nửa năm rồi vẫn ngon lành.”
+        </blockquote>
+        <figcaption class="flex items-center gap-3 pt-1 border-t border-slate-100">
+          <span class="w-9 h-9 rounded-full bg-brand/10 text-brand font-display font-800 flex items-center justify-center shrink-0">H</span>
+          <span class="font-body text-sm">
+            <span class="font-display font-700 text-navy-950 block">Chị Hoa</span>
+            <span class="text-navy-900/50 text-xs">Khách mua Nồi Cơm Điện</span>
+          </span>
+        </figcaption>
+      </figure>
+
+      <figure class="reveal hover-lift bg-white border border-slate-200 rounded-2xl p-6 flex flex-col gap-4" style="transition-delay:100ms">
+        <div class="flex gap-0.5 text-ember" aria-label="Đánh giá 5 trên 5 sao">
+          <span aria-hidden="true">★★★★★</span>
+        </div>
+        <blockquote class="font-body text-sm text-navy-900/70 leading-relaxed flex-1">
+          “Bóng đèn LED giá rẻ hơn ngoài tiệm mà sáng đẹp. Lần sau thay cả nhà chắc cũng qua đây mua tiếp.”
+        </blockquote>
+        <figcaption class="flex items-center gap-3 pt-1 border-t border-slate-100">
+          <span class="w-9 h-9 rounded-full bg-brand/10 text-brand font-display font-800 flex items-center justify-center shrink-0">T</span>
+          <span class="font-body text-sm">
+            <span class="font-display font-700 text-navy-950 block">Anh Tuấn</span>
+            <span class="text-navy-900/50 text-xs">Khách mua Bóng Đèn LED</span>
+          </span>
+        </figcaption>
+      </figure>
+
+      <figure class="reveal hover-lift bg-white border border-slate-200 rounded-2xl p-6 flex flex-col gap-4" style="transition-delay:200ms">
+        <div class="flex gap-0.5 text-ember" aria-label="Đánh giá 5 trên 5 sao">
+          <span aria-hidden="true">★★★★★</span>
+        </div>
+        <blockquote class="font-body text-sm text-navy-900/70 leading-relaxed flex-1">
+          “Quạt bị lỗi sau 2 tuần, nhắn Zalo là được đổi cái mới liền, không phải hỏi tới hỏi lui. Rất yên tâm.”
+        </blockquote>
+        <figcaption class="flex items-center gap-3 pt-1 border-t border-slate-100">
+          <span class="w-9 h-9 rounded-full bg-brand/10 text-brand font-display font-800 flex items-center justify-center shrink-0">M</span>
+          <span class="font-body text-sm">
+            <span class="font-display font-700 text-navy-950 block">Cô Mai</span>
+            <span class="text-navy-900/50 text-xs">Khách mua Quạt Điện</span>
+          </span>
+        </figcaption>
+      </figure>
+    </div>
+  </section>
+
   <!-- ============ BANNER KHUYẾN MÃI ============ -->
   <section class="reveal max-w-6xl mx-auto px-5 pb-14 sm:pb-20">
     <a href="khuyen-mai.html"
@@ -319,6 +325,9 @@
     </div>
   </footer>
 
+  <!-- Thư viện Supabase để ở cuối trang (không phải trong <head>) để trang hiện ra nhanh hơn:
+       nó chỉ cần có mặt trước js/shared.js, không cần chặn lúc trình duyệt đang dựng giao diện. -->
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script src="js/shared.js"></script>
   <script>
     // Dữ liệu dự phòng nếu chưa cấu hình Supabase hoặc mất mạng
@@ -353,7 +362,9 @@
       grid.innerHTML = products.map((p, i) => `
         <article class="card-enter hover-lift bg-white rounded-2xl border border-slate-200 overflow-hidden flex flex-col" style="animation-delay:${i * 100}ms">
           <div class="aspect-square bg-slate-100 overflow-hidden">
-            <img src="${escapeHtml(p.img)}" alt="${escapeHtml(p.name)}" class="w-full h-full object-cover">
+            <img src="${escapeHtml(p.img)}" alt="${escapeHtml(p.name)}"
+                 width="500" height="500" loading="lazy" decoding="async"
+                 class="w-full h-full object-cover">
           </div>
           <div class="p-5 flex flex-col gap-3 flex-1">
             <h3 class="font-display font-700 text-base text-navy-950 leading-snug">${escapeHtml(p.name)}</h3>
@@ -365,9 +376,42 @@
           </div>
         </article>
       `).join('');
+
+      injectFeaturedJsonLd(products);
     }
 
     initScrollReveal();
+
+    // ---------- Dữ liệu có cấu trúc cho Google ----------
+    // Khai báo cửa hàng (tên, hotline, giờ mở cửa) + ô tìm kiếm ngay trên kết quả tìm kiếm.
+    injectJsonLd('ld-store', storeJsonLd());
+    injectJsonLd('ld-website', {
+      '@context': 'https://schema.org',
+      '@type': 'WebSite',
+      name: STORE_NAME,
+      url: `${SITE_URL}/`,
+      inLanguage: 'vi-VN',
+      potentialAction: {
+        '@type': 'SearchAction',
+        target: { '@type': 'EntryPoint', urlTemplate: `${SITE_URL}/san-pham.html?q={search_term_string}` },
+        'query-input': 'required name=search_term_string'
+      }
+    });
+
+    // Danh sách sản phẩm nổi bật đang hiển thị trên trang chủ
+    function injectFeaturedJsonLd(products) {
+      injectJsonLd('ld-featured', {
+        '@context': 'https://schema.org',
+        '@type': 'ItemList',
+        name: 'Sản phẩm nổi bật',
+        itemListElement: products.map((p, i) => ({
+          '@type': 'ListItem',
+          position: i + 1,
+          name: p.name,
+          url: `${SITE_URL}/chi-tiet-san-pham.html?id=${encodeURIComponent(p.id)}`
+        }))
+      });
+    }
 
     async function loadFeatured() {
       renderFeaturedSkeletons();

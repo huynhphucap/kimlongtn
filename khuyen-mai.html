@@ -3,6 +3,19 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+<!-- Đặt giao diện sáng/tối TRƯỚC khi trang vẽ ra, tránh nháy trắng khi đang ở chế độ tối. -->
+<script>
+  (function () {
+    try {
+      var saved = localStorage.getItem('kl_theme');
+      var dark = saved ? saved === 'dark' : window.matchMedia('(prefers-color-scheme: dark)').matches;
+      if (dark) document.documentElement.classList.add('dark');
+    } catch (e) {}
+    document.documentElement.classList.add('js');
+  })();
+</script>
+
 <title>Cửa Hàng Kim Long - Khuyến Mãi Đặc Biệt</title>
 <meta name="description" content="Ưu đãi giảm giá sốc, mua kèm khuyến mãi, miễn phí giao lắp tại Cửa Hàng Kim Long. Số lượng có hạn, nhanh tay đặt mua đồ điện gia dụng chính hãng.">
 <link rel="canonical" href="https://huynhphucap.github.io/kimlongtn/khuyen-mai.html">
@@ -29,102 +42,12 @@
 <meta name="apple-mobile-web-app-title" content="Kim Long">
 
 <script src="https://cdn.tailwindcss.com"></script>
+<script src="js/tailwind-config.js"></script>
+<link rel="stylesheet" href="css/site.css">
+
 <link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Sora:wght@400;600;700;800&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet">
-
-<script>
-  tailwind.config = {
-    theme: {
-      extend: {
-        colors: {
-          navy: { 950: '#0B1220', 900: '#0F1B33', 800: '#152A4D' },
-          brand: { DEFAULT: '#2563EB', light: '#5B8DFF' },
-          ember: { DEFAULT: '#F97316', dark: '#C2540A' },
-          slate: { 150: '#EEF1F6' }
-        },
-        fontFamily: {
-          display: ['Sora', 'sans-serif'],
-          body: ['Inter', 'sans-serif'],
-          mono: ['JetBrains Mono', 'monospace']
-        }
-      }
-    }
-  }
-</script>
-
-<style>
-  body { font-family: 'Inter', sans-serif; }
-
-  @view-transition { navigation: auto; }
-  @keyframes page-in { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: translateY(0); } }
-  body { animation: page-in .35s ease-out; }
-
-  .keypad-texture {
-    background-image: radial-gradient(circle, rgba(255,255,255,0.09) 1.6px, transparent 1.6px);
-    background-size: 22px 22px;
-  }
-
-  .promo-ribbon {
-    position: relative;
-    background: linear-gradient(180deg, #fb923c 0%, #f97316 55%, #c2540a 100%);
-    box-shadow:
-      inset 0 1px 0 rgba(255,255,255,.45),
-      inset 0 -3px 4px rgba(0,0,0,.25),
-      0 3px 6px rgba(194,84,10,.45);
-    text-shadow: 0 1px 1px rgba(0,0,0,.35);
-    letter-spacing: .02em;
-  }
-  .promo-ribbon::after{
-    content:"";
-    position:absolute; left:0; bottom:-6px;
-    border-style: solid;
-    border-width: 0 6px 6px 0;
-    border-color: transparent #7c2d12 transparent transparent;
-    filter: brightness(.7);
-  }
-  .promo-badge-3d {
-    position: relative;
-    background: linear-gradient(180deg, #ffe37a 0%, #fbbf24 55%, #f59e0b 100%);
-    box-shadow:
-      inset 0 1px 0 rgba(255,255,255,.6),
-      inset 0 -3px 4px rgba(0,0,0,.25),
-      0 3px 6px rgba(180,83,9,.5);
-    text-shadow: 0 1px 0 rgba(255,255,255,.35);
-  }
-  .promo-badge-3d::before{
-    content:"";
-    position:absolute; inset:0;
-    border-radius: inherit;
-    background: linear-gradient(120deg, rgba(255,255,255,.55) 0%, rgba(255,255,255,0) 40%);
-    pointer-events: none;
-  }
-
-  /* Thẻ khuyến mãi dạng poster — bấm cả thẻ, không cần rê chuột mới thấy chi tiết */
-  .promo-tile {
-    transition: transform .3s cubic-bezier(.2,.8,.2,1), box-shadow .3s ease;
-  }
-  .promo-tile:hover {
-    transform: translateY(-6px);
-    box-shadow: 0 24px 40px -18px rgba(15,27,51,.45);
-  }
-
-  .focus-ring:focus-visible {
-    outline: 2px solid #F97316;
-    outline-offset: 2px;
-  }
-
-  /* Hiệu ứng mờ dần hiện ra khi cuộn tới */
-  .reveal { opacity: 0; transform: translateY(24px); transition: opacity .6s ease, transform .6s ease; }
-  .reveal.reveal-visible { opacity: 1; transform: translateY(0); }
-
-  /* Đồng hồ đếm ngược flash sale */
-  .countdown-chip {
-    font-family: 'JetBrains Mono', monospace;
-    background: #0B1220;
-    color: #5CF2A0;
-    text-shadow: 0 0 6px rgba(92, 242, 160, 0.55);
-  }
-</style>
 </head>
 
 <body class="bg-slate-150 text-navy-950">
@@ -162,7 +85,7 @@
         </a>
       </div>
 
-      <div class="flex sm:hidden items-center gap-3">
+      <div data-mobile-nav class="flex sm:hidden items-center gap-3">
         <ul class="flex items-center gap-4 font-body text-xs font-medium text-white/70">
           <li><a href="san-pham.html" class="focus-ring rounded">Sản Phẩm</a></li>
           <li><a href="khuyen-mai.html" class="text-ember focus-ring rounded">Khuyến Mãi</a></li>
@@ -340,6 +263,11 @@
       document.getElementById('cd-s').textContent = String(s).padStart(2, '0');
     }
     initScrollReveal();
+
+    injectJsonLd('ld-breadcrumb', breadcrumbJsonLd([
+      { name: 'Trang Chủ', file: 'index.html' },
+      { name: 'Khuyến Mãi', file: 'khuyen-mai.html' }
+    ]));
 
     updateCountdown();
     setInterval(updateCountdown, 1000);
