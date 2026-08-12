@@ -4001,6 +4001,18 @@
       return Array.from(byPeriod.entries()).sort((a, b) => b[0].localeCompare(a[0]));
     }
 
+    // Tỷ lệ phân bổ GTGT/TNCN trong từng mức thuế khoán chuẩn (Thông tư
+    // 40/2021/TT-BTC) — khớp với các lựa chọn ở dropdown "loại hình hộ kinh
+    // doanh" trong phần cài đặt thuế suất. Dùng để tách dòng "Thuế phải nộp
+    // ước tính" thành thuế GTGT ước tính + thuế TNCN ước tính. Nếu thuế suất
+    // đang áp dụng là mức tự nhập ("Khác") thì không tách được, chỉ hiện tổng.
+    const TAX_RATE_SPLIT = {
+      1.5: { vat: 1, pit: 0.5 },
+      7: { vat: 5, pit: 2 },
+      4.5: { vat: 3, pit: 1.5 },
+      3: { vat: 2, pit: 1 },
+    };
+
     function renderMonthlyReport() {
       const body = document.getElementById('acc-report-body');
       const empty = document.getElementById('acc-report-empty');
@@ -4013,6 +4025,9 @@
       // có thể dùng thuế suất cũ nếu thuế suất chung đã đổi sau đó).
       const revenueInRange = filtered.reduce((s, o) => s + (Number(o.subtotal) || 0), 0);
       const taxCalc = revenueInRange * accTaxRate / 100;
+      const split = TAX_RATE_SPLIT[accTaxRate];
+      const vatCalc = split ? revenueInRange * split.vat / 100 : 0;
+      const pitCalc = split ? revenueInRange * split.pit / 100 : 0;
       document.getElementById('acc-tax-calc-summary').innerHTML = filtered.length ? `
         <span class="font-body text-navy-900/60">Thuế phải nộp (kỳ đang lọc)</span>
         <span class="font-display font-700 text-navy-950">${formatVnd(revenueInRange)}</span>
@@ -4020,7 +4035,16 @@
         <span class="font-display font-700 text-navy-950">${accTaxRate}%</span>
         <span class="text-navy-900/30">=</span>
         <span class="font-display font-800 text-brand text-base">${formatVnd(taxCalc)}</span>
-        <span class="text-[11px] text-navy-900/35 w-full mt-0.5">Tính theo thuế suất đang áp dụng hiện tại (${accTaxRate}%) trên tổng doanh thu của các đơn trong khoảng thời gian đã lọc — có thể khác tổng cột "Thuế đã ghi nhận" nếu thuế suất từng thay đổi.</span>
+        ${split ? `
+        <span class="w-full flex flex-wrap items-center gap-x-2 gap-y-1 mt-1.5 pt-1.5 border-t border-slate-100">
+          <span class="text-navy-900/50">Trong đó, thuế GTGT ước tính (${split.vat}%)</span>
+          <span class="font-display font-700 text-navy-950">${formatVnd(vatCalc)}</span>
+          <span class="text-navy-900/30">·</span>
+          <span class="text-navy-900/50">thuế TNCN ước tính (${split.pit}%)</span>
+          <span class="font-display font-700 text-navy-950">${formatVnd(pitCalc)}</span>
+        </span>
+        ` : ''}
+        <span class="text-[11px] text-navy-900/35 w-full mt-0.5">Tính theo thuế suất đang áp dụng hiện tại (${accTaxRate}%) trên tổng doanh thu của các đơn trong khoảng thời gian đã lọc — có thể khác tổng cột "Thuế đã ghi nhận" nếu thuế suất từng thay đổi.${split ? '' : ' Không tách được GTGT/TNCN vì thuế suất hiện tại là mức tự nhập.'}</span>
       ` : '';
 
       if (rows.length === 0) {
