@@ -270,9 +270,10 @@
 
     const refreshCartUI = initQuoteCartUI(updateQuoteButton);
 
-    function toggleCartItem(product) {
+    async function toggleCartItem(product) {
       if (isQuoteSent(product.id)) {
-        if (!confirm(`Bỏ yêu cầu báo giá đã gửi cho "${product.name}"? Bạn có thể thêm lại vào giỏ và gửi yêu cầu mới.`)) return;
+        const ok = await askConfirm('Bỏ yêu cầu báo giá?', `Bỏ yêu cầu báo giá đã gửi cho "${product.name}"? Bạn có thể thêm lại vào giỏ và gửi yêu cầu mới.`, 'Bỏ yêu cầu');
+        if (!ok) return;
         unmarkQuoteSent(product.id);
         showToast(`Đã bỏ yêu cầu báo giá cho "${product.name}".`, 'info');
         updateQuoteButton();

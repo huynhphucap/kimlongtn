@@ -148,6 +148,45 @@ function bumpCartFab() {
   }
 }
 
+// ---------- Modal xác nhận dùng chung (thay cho confirm() mặc định của trình duyệt) ----------
+// Tự chèn HTML vào trang khi cần (giống initQuoteCartUI), chỉ 1 lần cho mỗi trang.
+let confirmModalResolver = null;
+function ensureConfirmModal() {
+  if (document.getElementById('confirm-modal')) return;
+  document.body.insertAdjacentHTML('beforeend', `
+    <div id="confirm-modal" class="hidden fixed inset-0 z-[130] flex items-center justify-center p-4">
+      <div class="absolute inset-0 bg-navy-950/60 backdrop-blur-sm" data-close-confirm></div>
+      <div class="relative bg-white rounded-2xl border border-slate-200 shadow-[0_24px_48px_-20px_rgba(0,0,0,.4)] w-full max-w-sm p-6">
+        <div class="w-11 h-11 rounded-full bg-ember/10 border border-ember/20 flex items-center justify-center mb-4">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#F97316" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M12 8v4M12 16h.01"/></svg>
+        </div>
+        <h3 id="confirm-title" class="font-display font-700 text-base text-navy-950 mb-1"></h3>
+        <p id="confirm-message" class="font-body text-sm text-navy-900/60 mb-5"></p>
+        <div class="flex items-center justify-end gap-2">
+          <button type="button" id="confirm-cancel-btn" class="focus-ring text-sm font-body font-medium text-navy-900/60 border border-slate-200 rounded-xl px-4 py-2 hover:bg-slate-150 transition-colors">Hủy</button>
+          <button type="button" id="confirm-ok-btn" class="focus-ring text-sm font-display font-700 text-white bg-ember hover:bg-ember-dark rounded-xl px-4 py-2 transition-colors">Đồng ý</button>
+        </div>
+      </div>
+    </div>
+  `);
+  const modal = document.getElementById('confirm-modal');
+  function close(result) {
+    modal.classList.add('hidden');
+    if (confirmModalResolver) { confirmModalResolver(result); confirmModalResolver = null; }
+  }
+  document.getElementById('confirm-ok-btn').addEventListener('click', () => close(true));
+  document.getElementById('confirm-cancel-btn').addEventListener('click', () => close(false));
+  modal.querySelector('[data-close-confirm]').addEventListener('click', () => close(false));
+}
+function askConfirm(title, message, okLabel = 'Đồng ý') {
+  ensureConfirmModal();
+  document.getElementById('confirm-title').textContent = title;
+  document.getElementById('confirm-message').textContent = message;
+  document.getElementById('confirm-ok-btn').textContent = okLabel;
+  document.getElementById('confirm-modal').classList.remove('hidden');
+  return new Promise(resolve => { confirmModalResolver = resolve; });
+}
+
 // ---------- Giỏ báo giá: UI dùng chung (nút giỏ nổi + khay giỏ + modal nhập thông tin) ----------
 // Cả san-pham.html và chi-tiet-san-pham.html trước đây tự vẽ modal "nhập thông tin liên hệ"
 // giống nhau. Giờ initQuoteCartUI() tự chèn toàn bộ UI này vào trang (chỉ 1 lần) — trang gọi
