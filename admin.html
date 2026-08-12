@@ -3000,7 +3000,7 @@
       document.getElementById('acc-order-note').value = '';
       document.getElementById('acc-order-date').value = new Date().toISOString().slice(0, 10);
       document.getElementById('acc-order-error').classList.add('hidden');
-      setActiveTaxRate(accTaxRate);
+      setActiveTaxRate(0); // Mặc định không tính thuế cho đơn mới — khách lẻ, không xuất hoá đơn GTGT.
     }
 
     function cancelEditOrder() {
