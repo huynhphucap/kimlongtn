@@ -897,12 +897,19 @@
         <span class="font-display font-700 text-sm text-navy-950">Thuế suất áp dụng:</span>
         <span id="acc-tax-rate-display" class="font-display font-800 text-brand text-lg">—</span>
       </div>
-      <div id="acc-tax-rate-edit" class="hidden flex items-center gap-2">
+      <div id="acc-tax-rate-edit" class="hidden flex items-center gap-2 flex-wrap">
+        <select id="acc-tax-rate-preset" class="focus-ring form-input border border-slate-200 rounded-lg px-2 py-1.5 text-sm">
+          <option value="1.5">Phân phối, cung cấp hàng hóa (bán lẻ) — 1.5%</option>
+          <option value="7">Dịch vụ, xây dựng không bao thầu nguyên vật liệu — 7%</option>
+          <option value="4.5">Sản xuất, vận tải, dịch vụ gắn với hàng hóa, xây dựng có bao thầu NVL — 4.5%</option>
+          <option value="3">Hoạt động kinh doanh khác — 3%</option>
+          <option value="custom">Khác (nhập tay)</option>
+        </select>
         <input type="number" id="acc-tax-rate-input" min="0" max="100" step="0.1" class="form-input border border-slate-200 rounded-lg px-3 py-1.5 text-sm w-24">
         <span class="text-sm text-navy-900/50">%</span>
         <button type="button" id="acc-btn-save-tax-rate" class="focus-ring text-xs font-display font-700 text-white bg-brand hover:bg-ember rounded-lg px-3 py-1.5 transition-colors">Lưu</button>
       </div>
-      <p class="text-xs text-navy-900/40 font-body">Áp dụng cho đơn hàng mới tạo — đơn đã tạo giữ nguyên thuế suất lúc đó.</p>
+      <p class="text-xs text-navy-900/40 font-body">Hộ kinh doanh bán lẻ (phân phối, cung cấp hàng hóa) chịu thuế suất 1.5% (1% GTGT + 0.5% TNCN) theo Thông tư 40/2021/TT-BTC. Áp dụng cho đơn hàng mới tạo — đơn đã tạo giữ nguyên thuế suất lúc đó.</p>
     </div>
 
     <!-- Thông tin hộ kinh doanh — in vào phần đầu Sổ S1-HKD khi xuất Excel -->
@@ -2790,13 +2797,36 @@
         accHkdAddress = data.hkd_address || '';
       }
       document.getElementById('acc-tax-rate-display').textContent = accTaxRate + '%';
-      document.getElementById('acc-tax-rate-input').value = accTaxRate;
+      syncTaxRatePresetUI(accTaxRate);
       document.getElementById('acc-tax-rate-edit').classList.toggle('hidden', currentUserRole !== 'admin');
       document.getElementById('acc-hkd-name').value = accHkdName;
       document.getElementById('acc-hkd-address').value = accHkdAddress;
       document.getElementById('acc-hkd-info').classList.toggle('hidden', currentUserRole !== 'admin');
       if (!accEditingOrderId) setActiveTaxRate(accTaxRate);
     }
+
+    // Đồng bộ dropdown "loại hình hộ kinh doanh" với ô nhập % thuế suất:
+    // nếu tax_rate hiện tại khớp 1 mức khoán chuẩn (Thông tư 40/2021/TT-BTC)
+    // thì chọn sẵn mức đó, ngược lại rơi về "Khác (nhập tay)".
+    function syncTaxRatePresetUI(rate) {
+      const select = document.getElementById('acc-tax-rate-preset');
+      const input = document.getElementById('acc-tax-rate-input');
+      const preset = [...select.options].find(o => o.value !== 'custom' && Number(o.value) === Number(rate));
+      select.value = preset ? preset.value : 'custom';
+      input.value = rate;
+      input.readOnly = !!preset;
+    }
+
+    document.getElementById('acc-tax-rate-preset').addEventListener('change', (e) => {
+      const input = document.getElementById('acc-tax-rate-input');
+      if (e.target.value === 'custom') {
+        input.readOnly = false;
+        input.focus();
+      } else {
+        input.readOnly = true;
+        input.value = e.target.value;
+      }
+    });
 
     document.getElementById('acc-btn-save-hkd-info').addEventListener('click', async () => {
       const name = document.getElementById('acc-hkd-name').value.trim();
@@ -2818,6 +2848,7 @@
       if (error) { showToast('Lưu thất bại: ' + error.message, 'error'); return; }
       accTaxRate = val;
       document.getElementById('acc-tax-rate-display').textContent = accTaxRate + '%';
+      syncTaxRatePresetUI(accTaxRate);
       showToast('Đã cập nhật thuế suất!');
       if (!accEditingOrderId) setActiveTaxRate(accTaxRate);
     });
