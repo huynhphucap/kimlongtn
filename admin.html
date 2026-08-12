@@ -4145,6 +4145,7 @@
       const thin = { style: 'thin' };
       const allBorder = { top: thin, left: thin, bottom: thin, right: thin };
       const cols = ['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H'];
+      const baseFont = { name: 'Times New Roman', size: 12 };
 
       Array.from(byPeriod.keys()).sort().forEach(periodKey => {
         const orders = byPeriod.get(periodKey);
@@ -4241,6 +4242,15 @@
         [`A${signRow}`, `E${signRow}`].forEach(addr => { ws.getCell(addr).font = { bold: true }; });
         [`A${signRow}`, `E${signRow}`, `A${signRow + 1}`, `E${signRow + 1}`].forEach(addr => {
           ws.getCell(addr).alignment = { horizontal: 'center' };
+        });
+
+        // Áp phông Times New Roman cho toàn bộ ô đã có nội dung/định dạng —
+        // giữ lại bold/italic/size riêng của từng ô (nếu có), chỉ thêm tên
+        // phông cho đồng bộ, thay vì để mặc định Calibri của Excel.
+        ws.eachRow({ includeEmpty: false }, row => {
+          row.eachCell({ includeEmpty: false }, cell => {
+            cell.font = { ...baseFont, ...cell.font };
+          });
         });
       });
 
