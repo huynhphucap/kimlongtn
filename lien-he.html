@@ -259,12 +259,16 @@
 
     initScrollReveal();
 
-    // Khai báo cửa hàng (hotline, email, giờ mở cửa) để Google hiện đúng thông tin liên hệ
-    injectJsonLd('ld-store', storeJsonLd());
-    injectJsonLd('ld-breadcrumb', breadcrumbJsonLd([
-      { name: 'Trang Chủ', file: 'index.html' },
-      { name: 'Liên Hệ', file: 'lien-he.html' }
-    ]));
+    // Khai báo cửa hàng (hotline, email, giờ mở cửa) để Google hiện đúng thông tin liên hệ.
+    // Là phần phụ — lỗi thì bỏ qua, không được chặn form liên hệ bên dưới hoạt động
+    // (ví dụ khi trình duyệt còn giữ js/shared.js bản cũ trong bộ nhớ đệm).
+    try {
+      injectJsonLd('ld-store', storeJsonLd());
+      injectJsonLd('ld-breadcrumb', breadcrumbJsonLd([
+        { name: 'Trang Chủ', file: 'index.html' },
+        { name: 'Liên Hệ', file: 'lien-he.html' }
+      ]));
+    } catch (e) { console.warn('Bỏ qua dữ liệu SEO:', e); }
 
     registerServiceWorker();
   </script>

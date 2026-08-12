@@ -264,10 +264,14 @@
     }
     initScrollReveal();
 
-    injectJsonLd('ld-breadcrumb', breadcrumbJsonLd([
-      { name: 'Trang Chủ', file: 'index.html' },
-      { name: 'Khuyến Mãi', file: 'khuyen-mai.html' }
-    ]));
+    // Dữ liệu SEO là phần phụ — lỗi thì bỏ qua, không được chặn phần còn lại của trang
+    // (ví dụ khi trình duyệt còn giữ js/shared.js bản cũ trong bộ nhớ đệm).
+    try {
+      injectJsonLd('ld-breadcrumb', breadcrumbJsonLd([
+        { name: 'Trang Chủ', file: 'index.html' },
+        { name: 'Khuyến Mãi', file: 'khuyen-mai.html' }
+      ]));
+    } catch (e) { console.warn('Bỏ qua dữ liệu SEO:', e); }
 
     updateCountdown();
     setInterval(updateCountdown, 1000);
