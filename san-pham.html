@@ -121,7 +121,21 @@
     </div>
 
     <!-- Bộ lọc danh mục -->
-    <div id="category-filters" class="flex flex-wrap gap-2 mb-6"></div>
+    <div id="category-filters" class="flex flex-wrap gap-2 mb-3"></div>
+
+    <!-- Lọc theo mức giá + sắp xếp -->
+    <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mb-4">
+      <div id="price-filters" class="flex flex-wrap gap-2"></div>
+
+      <label class="flex items-center gap-2 shrink-0">
+        <span class="font-body text-xs text-navy-900/50 whitespace-nowrap">Sắp xếp</span>
+        <select id="sort-select"
+                class="focus-ring border border-slate-200 rounded-lg bg-white px-3 py-2 text-sm font-body text-navy-950 cursor-pointer transition-colors focus:outline-none focus:border-brand"></select>
+      </label>
+    </div>
+
+    <!-- Số sản phẩm tìm được -->
+    <p id="result-count" class="font-body text-xs text-navy-900/50 mb-4"></p>
 
     <div id="product-grid" class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-4"></div>
 
@@ -172,6 +186,97 @@
 
     // Tìm kiếm theo tên
     let searchQuery = "";
+
+    // ---------- Sắp xếp & lọc theo mức giá ----------
+    // LƯU Ý QUAN TRỌNG: giá đang lưu trong cơ sở dữ liệu dưới dạng CHỮ ("590.000 đ"),
+    // không phải số. Nên không thể nhờ cơ sở dữ liệu sắp xếp/lọc theo giá được — nó sẽ
+    // so sánh theo bảng chữ cái và cho kết quả sai ("1.200.000 đ" đứng trước "590.000 đ").
+    // Vì vậy khi khách chọn sắp xếp hoặc lọc giá, ta tải danh sách về rồi tự xử lý.
+    const SORT_OPTIONS = [
+      { key: 'default',    label: 'Mặc định' },
+      { key: 'price-asc',  label: 'Giá thấp → cao' },
+      { key: 'price-desc', label: 'Giá cao → thấp' },
+      { key: 'name-asc',   label: 'Tên A → Z' }
+    ];
+
+    const PRICE_RANGES = [
+      { key: 'all',      label: 'Tất cả giá',            min: 0,       max: Infinity },
+      { key: 'lt100',    label: 'Dưới 100 nghìn',        min: 0,       max: 100000 },
+      { key: '100-500',  label: '100 – 500 nghìn',       min: 100000,  max: 500000 },
+      { key: '500-1m',   label: '500 nghìn – 1 triệu',   min: 500000,  max: 1000000 },
+      { key: 'gte1m',    label: 'Từ 1 triệu trở lên',    min: 1000000, max: Infinity }
+    ];
+
+    let currentSort = 'default';
+    let currentPriceKey = 'all';
+
+    // Số dòng tối đa tải về khi cần tự sắp xếp/lọc trong trình duyệt
+    const MAX_CLIENT_ROWS = 1000;
+
+    function priceRangeOf(key) {
+      return PRICE_RANGES.find(r => r.key === key) || PRICE_RANGES[0];
+    }
+
+    // "590.000 đ" -> 590000. Cố ý khai báo riêng ở đây (dù js/shared.js có hàm tương tự)
+    // để trang vẫn chạy đúng nếu trình duyệt còn giữ js/shared.js bản cũ trong bộ nhớ đệm.
+    function priceValue(str) {
+      const digits = String(str ?? '').replace(/[^\d]/g, '');
+      return digits ? Number(digits) : null;
+    }
+
+    function applyPriceAndSort(list) {
+      let out = list;
+
+      if (currentPriceKey !== 'all') {
+        const range = priceRangeOf(currentPriceKey);
+        out = out.filter(p => {
+          const v = priceValue(p.new_price);
+          return v !== null && v >= range.min && v < range.max;
+        });
+      }
+
+      if (currentSort === 'price-asc' || currentSort === 'price-desc') {
+        const dir = currentSort === 'price-asc' ? 1 : -1;
+        out = [...out].sort((a, b) => {
+          const va = priceValue(a.new_price);
+          const vb = priceValue(b.new_price);
+          // Sản phẩm chưa điền giá luôn xếp cuối, dù sắp xếp tăng hay giảm
+          if (va === null && vb === null) return 0;
+          if (va === null) return 1;
+          if (vb === null) return -1;
+          return (va - vb) * dir;
+        });
+      } else if (currentSort === 'name-asc') {
+        // 'vi' để sắp xếp đúng thứ tự chữ cái tiếng Việt (à, ă, â...)
+        out = [...out].sort((a, b) => (a.name || '').localeCompare(b.name || '', 'vi'));
+      }
+
+      return out;
+    }
+
+    // Ghi lựa chọn hiện tại lên thanh địa chỉ để khách gửi đúng link kết quả cho người khác
+    function syncUrl() {
+      const params = new URLSearchParams();
+      if (currentCategory !== 'Tất Cả') params.set('category', currentCategory);
+      if (searchQuery.trim()) params.set('q', searchQuery.trim());
+      if (currentPriceKey !== 'all') params.set('price', currentPriceKey);
+      if (currentSort !== 'default') params.set('sort', currentSort);
+      const qs = params.toString();
+      history.replaceState(null, '', qs ? `${location.pathname}?${qs}` : location.pathname);
+    }
+
+    function clearAllFilters() {
+      currentCategory = 'Tất Cả';
+      currentPriceKey = 'all';
+      currentSort = 'default';
+      searchQuery = '';
+      const input = document.getElementById('search-input');
+      input.value = '';
+      document.getElementById('search-clear').classList.add('hidden');
+      document.getElementById('sort-select').value = 'default';
+      syncUrl();
+      loadProducts(1);
+    }
 
     // Dữ liệu dự phòng: hiển thị tạm nếu chưa cấu hình Supabase hoặc mất mạng
     const FALLBACK_PRODUCTS = [
@@ -306,9 +411,27 @@
       const grid = document.getElementById('product-grid');
 
       if (!products || products.length === 0) {
-        grid.innerHTML = searchQuery
-          ? `<div class="col-span-full text-center py-10 font-body text-navy-900/50">Không tìm thấy sản phẩm nào khớp với "${escapeHtml(searchQuery)}".</div>`
-          : `<div class="col-span-full text-center py-10 font-body text-navy-900/50">Không có sản phẩm nào ở trang này.</div>`;
+        // Nói rõ đang lọc theo cái gì, kèm nút xoá hết bộ lọc — tránh để khách bí không
+        // biết vì sao trang trống rồi thoát ra luôn.
+        const dieuKien = [];
+        if (searchQuery.trim()) dieuKien.push(`từ khoá "${escapeHtml(searchQuery.trim())}"`);
+        if (currentCategory !== 'Tất Cả') dieuKien.push(`danh mục "${escapeHtml(currentCategory)}"`);
+        if (currentPriceKey !== 'all') dieuKien.push(`mức giá "${escapeHtml(priceRangeOf(currentPriceKey).label)}"`);
+
+        grid.innerHTML = `
+          <div class="col-span-full text-center py-12 font-body flex flex-col items-center gap-4">
+            <p class="text-navy-900/60 max-w-md">
+              Không tìm thấy sản phẩm nào${dieuKien.length ? ` khớp với ${dieuKien.join(' · ')}` : ''}.
+            </p>
+            ${dieuKien.length ? `
+              <button type="button" id="btn-clear-filters"
+                class="focus-ring inline-flex items-center gap-2 border-2 border-navy-950 text-navy-950 hover:bg-navy-950 hover:text-white font-display font-700 text-sm px-5 py-2.5 rounded-xl transition-colors">
+                Xoá bộ lọc
+              </button>` : ''}
+          </div>`;
+
+        const clearBtn = document.getElementById('btn-clear-filters');
+        if (clearBtn) clearBtn.addEventListener('click', clearAllFilters);
         return;
       }
 
@@ -381,6 +504,7 @@
     }
 
     function renderPagination(totalItems, page) {
+      renderResultCount(totalItems);
       const container = document.getElementById('pagination');
       const totalPages = Math.max(1, Math.ceil(totalItems / PAGE_SIZE));
 
@@ -440,19 +564,71 @@
         btn.addEventListener('click', () => {
           if (btn.dataset.cat === currentCategory) return;
           currentCategory = btn.dataset.cat;
+          syncUrl();
           loadProducts(1);
         });
       });
+    }
+
+    // Nút lọc giá cố ý làm nhỏ và nhạt hơn nút danh mục, để danh mục vẫn là bộ lọc chính
+    function renderPriceFilters() {
+      const container = document.getElementById('price-filters');
+      container.innerHTML = PRICE_RANGES.map(r => {
+        const active = r.key === currentPriceKey;
+        return `
+          <button data-price="${r.key}"
+            class="focus-ring price-btn px-3 py-1.5 rounded-lg text-xs font-body font-medium transition-colors
+              ${active
+                ? 'bg-navy-950 text-white'
+                : 'border border-slate-200 text-navy-900/60 hover:border-brand hover:text-brand'}">
+            ${r.label}
+          </button>`;
+      }).join('');
+
+      container.querySelectorAll('.price-btn').forEach(btn => {
+        btn.addEventListener('click', () => {
+          if (btn.dataset.price === currentPriceKey) return;
+          currentPriceKey = btn.dataset.price;
+          syncUrl();
+          loadProducts(1);
+        });
+      });
+    }
+
+    function initSortSelect() {
+      const sel = document.getElementById('sort-select');
+      sel.innerHTML = SORT_OPTIONS.map(o => `<option value="${o.key}">${o.label}</option>`).join('');
+      sel.value = currentSort;
+      sel.addEventListener('change', () => {
+        currentSort = sel.value;
+        syncUrl();
+        loadProducts(1);
+      });
+    }
+
+    function renderResultCount(total) {
+      const el = document.getElementById('result-count');
+      const filtering = currentCategory !== 'Tất Cả' || currentPriceKey !== 'all' || searchQuery.trim();
+      el.textContent = total > 0
+        ? `${filtering ? 'Tìm thấy' : 'Có tất cả'} ${total} sản phẩm`
+        : '';
     }
 
     async function loadProducts(page = 1) {
       currentPage = page;
       renderSkeletons(PAGE_SIZE);
       renderCategoryFilters();
+      renderPriceFilters();
+
       const from = (page - 1) * PAGE_SIZE;
       const to = from + PAGE_SIZE - 1;
       const filterActive = currentCategory !== 'Tất Cả';
       const searchActive = searchQuery.trim().length > 0;
+
+      // Sắp xếp/lọc theo giá phải làm trong trình duyệt (xem ghi chú ở phần khai báo
+      // SORT_OPTIONS). Khi khách để mặc định thì vẫn phân trang phía máy chủ như cũ
+      // cho nhẹ, chỉ khi thật sự cần mới tải nhiều dòng về.
+      const needsClientSide = currentSort !== 'default' || currentPriceKey !== 'all';
 
       function applyLocalFilters(list) {
         let out = filterActive ? list.filter(p => p.category === currentCategory) : list;
@@ -460,14 +636,17 @@
           const q = searchQuery.trim().toLowerCase();
           out = out.filter(p => (p.name || '').toLowerCase().includes(q));
         }
-        return out;
+        return applyPriceAndSort(out);
+      }
+
+      function showList(list) {
+        renderProducts(list.slice(from, to + 1));
+        renderPagination(list.length, page);
       }
 
       if (!isConfigured) {
         console.warn('Chưa cấu hình Supabase — đang hiển thị dữ liệu mẫu. Xem huong-dan-supabase.md để kết nối dữ liệu sống.');
-        const filtered = applyLocalFilters(FALLBACK_PRODUCTS);
-        renderProducts(filtered.slice(from, to + 1));
-        renderPagination(filtered.length, page);
+        showList(applyLocalFilters(FALLBACK_PRODUCTS));
         return;
       }
 
@@ -475,20 +654,21 @@
         let query = sb.from('products').select('*', { count: 'exact' }).order('id');
         if (filterActive) query = query.eq('category', currentCategory);
         if (searchActive) query = query.ilike('name', `%${searchQuery.trim()}%`);
-        const { data, error, count } = await query.range(from, to);
-        if (error) throw error;
-        if (!data || data.length === 0) {
-          renderProducts([]);
-          renderPagination(0, page);
+
+        if (needsClientSide) {
+          const { data, error } = await query.range(0, MAX_CLIENT_ROWS - 1);
+          if (error) throw error;
+          showList(applyPriceAndSort(data || []));
           return;
         }
-        renderProducts(data);
-        renderPagination(count ?? data.length, page);
+
+        const { data, error, count } = await query.range(from, to);
+        if (error) throw error;
+        renderProducts(data || []);
+        renderPagination(count ?? (data || []).length, page);
       } catch (err) {
         console.error('Lỗi tải dữ liệu từ Supabase, dùng dữ liệu dự phòng:', err);
-        const filtered = applyLocalFilters(FALLBACK_PRODUCTS);
-        renderProducts(filtered.slice(from, to + 1));
-        renderPagination(filtered.length, page);
+        showList(applyLocalFilters(FALLBACK_PRODUCTS));
       }
     }
 
@@ -503,6 +683,13 @@
     const urlSearchParam = (urlParams.get('q') || '').trim();
     if (urlSearchParam) searchQuery = urlSearchParam;
 
+    // ?price= và ?sort= — để khách gửi được đúng link kết quả đã lọc/sắp xếp cho người khác
+    const urlPriceParam = urlParams.get('price');
+    if (urlPriceParam && PRICE_RANGES.some(r => r.key === urlPriceParam)) currentPriceKey = urlPriceParam;
+
+    const urlSortParam = urlParams.get('sort');
+    if (urlSortParam && SORT_OPTIONS.some(o => o.key === urlSortParam)) currentSort = urlSortParam;
+
     const searchInput = document.getElementById('search-input');
     const searchClear = document.getElementById('search-clear');
     let searchDebounceTimer = null;
@@ -512,6 +699,7 @@
       clearTimeout(searchDebounceTimer);
       searchDebounceTimer = setTimeout(() => {
         searchQuery = searchInput.value;
+        syncUrl();
         loadProducts(1);
       }, 350);
     });
@@ -520,6 +708,7 @@
       searchQuery = '';
       searchClear.classList.add('hidden');
       searchInput.focus();
+      syncUrl();
       loadProducts(1);
     });
 
@@ -527,6 +716,8 @@
       searchInput.value = searchQuery;
       searchClear.classList.remove('hidden');
     }
+
+    initSortSelect();
 
     trySeo(() => injectJsonLd('ld-breadcrumb', breadcrumbJsonLd([
       { name: 'Trang Chủ', file: 'index.html' },
