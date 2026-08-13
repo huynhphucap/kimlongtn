@@ -621,6 +621,32 @@ if (document.readyState === 'loading') {
   initSiteChrome();
 }
 
+// ---------- Chia sẻ sản phẩm ----------
+// Trên điện thoại, navigator.share mở bảng chia sẻ sẵn có của hệ điều hành — trong đó
+// đã có Zalo, Messenger, SMS... nên không cần tự làm nút cho từng ứng dụng. Máy tính
+// để bàn thường không hỗ trợ, khi đó rơi về sao chép đường dẫn.
+async function sharePage(title, url) {
+  if (navigator.share) {
+    try {
+      await navigator.share({ title, url });
+      return;
+    } catch (err) {
+      // Người dùng bấm hủy — không phải lỗi, đừng làm phiền họ thêm
+      if (err && err.name === 'AbortError') return;
+    }
+  }
+  copyLink(url);
+}
+
+async function copyLink(url) {
+  try {
+    await navigator.clipboard.writeText(url);
+    showToast('Đã sao chép đường dẫn, bạn có thể dán để gửi cho người khác!');
+  } catch {
+    showToast('Không sao chép được. Bạn hãy copy đường dẫn trên thanh địa chỉ.', 'error');
+  }
+}
+
 // ====================================================================
 // ====== Dữ liệu có cấu trúc JSON-LD (giúp Google hiểu nội dung) ======
 // ====================================================================
