@@ -1,6 +1,6 @@
 // Tăng số này mỗi khi sửa js/shared.js, css/site.css hoặc các file tĩnh khác —
 // đổi tên cache là cách buộc trình duyệt bỏ bản cũ và tải lại bản mới.
-const CACHE_NAME = "techonline-cache-v23";
+const CACHE_NAME = "techonline-cache-v24";
 
 self.addEventListener("install", () => {
   self.skipWaiting();
