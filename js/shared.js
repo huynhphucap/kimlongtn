@@ -498,6 +498,9 @@ function initSkipLink() {
   if (!target) return;
   if (!target.id) target.id = 'noi-dung-chinh';
   target.setAttribute('tabindex', '-1');
+  // Link này ẩn/hiện hoàn toàn bằng css/site.css (không đặt style thẳng vào thẻ, vì
+  // style gắn tại thẻ sẽ đè mất quy tắc :focus và link không bao giờ hiện ra được).
+  // Trang nào không nạp css/site.css thì phải đánh dấu data-no-site-chrome ở thẻ body.
   document.body.insertAdjacentHTML('afterbegin',
     `<a href="#${target.id}" class="skip-link font-display">Bỏ qua tới nội dung chính</a>`);
 }
@@ -609,7 +612,16 @@ function initBackToTop() {
 
 // Gọi 1 lần cho mọi trang — không cần trang nào phải tự gọi.
 function initSiteChrome() {
+  // Ảnh dự phòng thì trang nào cũng nên có, kể cả trang quản trị.
   initImageFallback();
+
+  // Phần còn lại là bộ khung của TRANG BÁN HÀNG (menu ☰ với các mục Sản Phẩm /
+  // Khuyến Mãi / Liên Hệ, nút sáng-tối, nút lên đầu trang, link bỏ qua nội dung).
+  // Trang quản trị có thanh tiêu đề riêng và không nạp css/site.css, nên phải bỏ qua —
+  // nếu không sẽ lòi ra link "Bỏ qua tới nội dung chính" nằm chình ình trên đầu trang
+  // (vì thiếu CSS để ẩn nó đi) và một nút menu không dùng được.
+  if (document.body && document.body.hasAttribute('data-no-site-chrome')) return;
+
   initSkipLink();
   initHeaderControls();
   initBackToTop();
