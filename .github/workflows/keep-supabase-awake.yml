@@ -1,0 +1,99 @@
+# Giữ cho cơ sở dữ liệu Supabase không bị tự động tạm dừng.
+#
+# VÌ SAO CẦN: gói miễn phí của Supabase tự tạm dừng project sau 7 ngày không có
+# hoạt động nào. Project bị dừng thì website mất toàn bộ dữ liệu sản phẩm thật,
+# trang quản trị không đăng nhập được, form liên hệ và giỏ báo giá gửi đi cũng hỏng.
+#
+# CÁCH LÀM: mỗi ngày gửi một truy vấn rất nhỏ (đọc đúng 1 dòng của bảng products)
+# để project luôn được tính là đang hoạt động. Chạy mỗi ngày thay vì mỗi 7 ngày để
+# còn dư dả: lịch chạy của GitHub có thể bị trễ vài tiếng khi máy chủ bận.
+#
+# LỢI ÍCH KÈM THEO: nếu cơ sở dữ liệu gặp sự cố, công việc này sẽ báo lỗi và
+# GitHub tự gửi email cho chủ repo — biết sớm thay vì đợi khách phàn nàn.
+#
+# BẤM CHẠY THỬ NGAY: vào tab Actions -> "Giữ Supabase luôn hoạt động" -> Run workflow.
+#
+# LƯU Ý: GitHub tự tắt các workflow chạy theo lịch nếu repo không có hoạt động gì
+# trong 60 ngày (sẽ có email báo trước). Khi đó vào tab Actions bật lại là xong.
+
+name: Giữ Supabase luôn hoạt động
+
+on:
+  schedule:
+    # 02:17 UTC hằng ngày (khoảng 9h17 sáng giờ Việt Nam).
+    # Cố ý đặt lệch phút thay vì đúng đầu giờ, vì đầu giờ rất đông việc xếp hàng nên hay bị trễ.
+    - cron: "17 2 * * *"
+  workflow_dispatch:
+
+# Chỉ cần đọc mã nguồn, không cần quyền ghi gì cả
+permissions:
+  contents: read
+
+jobs:
+  ping:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Lấy mã nguồn
+        uses: actions/checkout@v4
+
+      - name: Đọc thông tin kết nối từ js/shared.js
+        id: cfg
+        run: |
+          set -euo pipefail
+
+          # Đọc thẳng từ js/shared.js để chỉ có MỘT nơi khai báo. Sau này đổi khoá
+          # hay đổi project thì sửa js/shared.js là workflow tự chạy theo, không phải
+          # nhớ sửa thêm chỗ nào nữa.
+          URL=$(grep -oP 'const SUPABASE_URL\s*=\s*"\K[^"]+' js/shared.js || true)
+          KEY=$(grep -oP 'const SUPABASE_ANON_KEY\s*=\s*"\K[^"]+' js/shared.js || true)
+
+          if [ -z "$URL" ] || [ -z "$KEY" ]; then
+            echo "::error::Không đọc được SUPABASE_URL / SUPABASE_ANON_KEY trong js/shared.js."
+            echo "Có thể hai dòng khai báo ở đầu file đã bị đổi tên hoặc đổi cách viết."
+            exit 1
+          fi
+
+          # Che khoá trong nhật ký chạy. Khoá anon vốn đã công khai (trình duyệt của
+          # mọi khách đều tải về), nhưng không có lý do gì để in nó ra thêm lần nữa.
+          echo "::add-mask::$KEY"
+
+          echo "url=$URL" >> "$GITHUB_OUTPUT"
+          echo "key=$KEY" >> "$GITHUB_OUTPUT"
+          echo "Sẽ gọi tới: $URL"
+
+      - name: Gọi một truy vấn nhỏ để đánh thức cơ sở dữ liệu
+        env:
+          URL: ${{ steps.cfg.outputs.url }}
+          KEY: ${{ steps.cfg.outputs.key }}
+        run: |
+          set -uo pipefail
+
+          # Thử tối đa 3 lần, giãn dần 10s rồi 30s. Mạng trục trặc nhất thời thì thôi,
+          # đừng vội báo lỗi làm chủ cửa hàng hoảng.
+          for lan in 1 2 3; do
+            CODE=$(curl -sS -m 30 -o /tmp/ketqua.txt -w '%{http_code}' \
+              -H "apikey: $KEY" \
+              -H "Authorization: Bearer $KEY" \
+              "$URL/rest/v1/products?select=id&limit=1") || CODE="000"
+
+            echo "Lần $lan: mã trả về HTTP $CODE"
+
+            if [ "$CODE" = "200" ]; then
+              echo "Cơ sở dữ liệu đang hoạt động bình thường."
+              exit 0
+            fi
+
+            if [ "$lan" -lt 3 ]; then
+              CHO=$([ "$lan" = "1" ] && echo 10 || echo 30)
+              echo "Chưa được, đợi ${CHO}s rồi thử lại..."
+              sleep "$CHO"
+            fi
+          done
+
+          echo "::error::Không gọi được cơ sở dữ liệu Supabase sau 3 lần thử (mã cuối: $CODE)."
+          echo "Nội dung phản hồi:"
+          head -c 500 /tmp/ketqua.txt || true
+          echo ""
+          echo "Việc cần làm: mở https://supabase.com/dashboard, chọn project kim-long-shop"
+          echo "và kiểm tra xem project có đang bị tạm dừng (paused) hay không."
+          exit 1
