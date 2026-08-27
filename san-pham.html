@@ -278,69 +278,24 @@
       loadProducts(1);
     }
 
-    // Dữ liệu dự phòng: hiển thị tạm nếu chưa cấu hình Supabase hoặc mất mạng
-    const FALLBACK_PRODUCTS = [
-      { id: 1, badge: "Mẫu mới", discount: "-21%", name: "Nồi Cơm Điện Kim Long 1.8L", category: "Nhà Bếp",
-        old_price: "750.000 đ", new_price: "590.000 đ",
-        tags: ["Chống Dính", "1.8L", "Giữ Ấm 24h"],
-        img: "https://images.unsplash.com/photo-1599182345361-9542815e73f6?w=300&h=300&fit=crop" },
-      { id: 2, badge: null, discount: "-24%", name: "Quạt Điện Đứng Kim Long 3 Tốc Độ", category: "Quạt & Làm Mát",
-        old_price: "590.000 đ", new_price: "450.000 đ",
-        tags: ["3 Tốc Độ", "Cánh 40cm", "Tuốc Xoay"],
-        img: "https://images.unsplash.com/photo-1601084195907-44baaa49dabd?w=300&h=300&fit=crop" },
-      { id: 3, badge: "Mẫu mới", discount: "-26%", name: "Quạt Trần Kim Long Cánh Gỗ Có Đèn", category: "Quạt & Làm Mát",
-        old_price: "1.200.000 đ", new_price: "890.000 đ",
-        tags: ["3 Cánh Gỗ", "Có Đèn", "Remote"],
-        img: "https://images.unsplash.com/photo-1620348578890-740dd10e1fe5?w=300&h=300&fit=crop" },
-      { id: 4, badge: null, discount: "-36%", name: "Bóng Đèn LED Kim Long Tiết Kiệm Điện", category: "Chiếu Sáng",
-        old_price: "55.000 đ", new_price: "35.000 đ",
-        tags: ["Ánh Sáng Trắng", "Đui E27", "Tiết Kiệm Điện"],
-        img: "https://images.unsplash.com/photo-1604322415766-3eccf7b56a0a?w=300&h=300&fit=crop" },
-      { id: 5, badge: null, discount: "-22%", name: "Bếp Điện Từ Kim Long Đơn", category: "Nhà Bếp",
-        old_price: "890.000 đ", new_price: "690.000 đ",
-        tags: ["Mâm Từ Đơn", "Hẹn Giờ", "Cảm Ứng"],
-        img: "https://images.unsplash.com/photo-1556819132-52350b2a7836?w=300&h=300&fit=crop" },
-      { id: 6, badge: "Mẫu mới", discount: "-23%", name: "Nồi Chiên Không Dầu Kim Long 5L", category: "Nhà Bếp",
-        old_price: "1.100.000 đ", new_price: "850.000 đ",
-        tags: ["Dung Tích 5L", "Không Dầu Mỡ", "Hẹn Giờ"],
-        img: "https://images.unsplash.com/photo-1599182345361-9542815e73f6?w=300&h=300&fit=crop" },
-      { id: 7, badge: null, discount: "-26%", name: "Máy Xay Sinh Tố Kim Long Đa Năng", category: "Nhà Bếp",
-        old_price: "650.000 đ", new_price: "480.000 đ",
-        tags: ["Cối 1.5L", "2 Tốc Độ", "Lưỡi Inox"],
-        img: "https://images.unsplash.com/photo-1725656470947-6c655ba024d0?w=300&h=300&fit=crop" },
-      { id: 8, badge: null, discount: "-28%", name: "Ấm Đun Siêu Tốc Kim Long 1.8L", category: "Nhà Bếp",
-        old_price: "320.000 đ", new_price: "230.000 đ",
-        tags: ["1.8L", "Tự Ngắt", "Chống Cạn Nước"],
-        img: "https://images.unsplash.com/photo-1561336739-ad95e6db39e5?w=300&h=300&fit=crop" },
-      { id: 9, badge: "Mẫu mới", discount: "-27%", name: "Bàn Ủi Hơi Nước Kim Long", category: "Gia Dụng Khác",
-        old_price: "480.000 đ", new_price: "350.000 đ",
-        tags: ["Hơi Nước", "Đế Chống Dính", "1.5m Dây"],
-        img: "https://images.unsplash.com/photo-1540544093-b0880061e1a5?w=300&h=300&fit=crop" },
-      { id: 10, badge: null, discount: "-34%", name: "Ổ Cắm Điện Đa Năng Kim Long", category: "Gia Dụng Khác",
-        old_price: "150.000 đ", new_price: "99.000 đ",
-        tags: ["6 Ổ Cắm", "Chống Giật", "Dây 3m"],
-        img: "https://images.unsplash.com/photo-1650501386688-41f6d0251875?w=300&h=300&fit=crop" },
-      { id: 11, badge: "Mẫu mới", discount: "-22%", name: "Lò Vi Sóng Kim Long 20L", category: "Nhà Bếp",
-        old_price: "1.850.000 đ", new_price: "1.450.000 đ",
-        tags: ["20L", "Rã Đông", "Hẹn Giờ"],
-        img: "https://images.unsplash.com/photo-1630699144310-980c8ed310e3?w=300&h=300&fit=crop" },
-      { id: 12, badge: null, discount: "-29%", name: "Quạt Hộp Kim Long Mini", category: "Quạt & Làm Mát",
-        old_price: "280.000 đ", new_price: "199.000 đ",
-        tags: ["Gọn Nhẹ", "3 Tốc Độ", "Tiết Kiệm Điện"],
-        img: "https://images.unsplash.com/photo-1601084195907-44baaa49dabd?w=300&h=300&fit=crop" },
-      { id: 13, badge: null, discount: "-25%", name: "Quạt Trần Kim Long 3 Cánh Nhựa", category: "Quạt & Làm Mát",
-        old_price: "790.000 đ", new_price: "590.000 đ",
-        tags: ["3 Cánh Nhựa", "Vận Hành Êm", "Remote"],
-        img: "https://images.unsplash.com/photo-1620348578890-740dd10e1fe5?w=300&h=300&fit=crop" },
-      { id: 14, badge: null, discount: "-37%", name: "Đui Đèn Kim Long Chống Nước E27", category: "Chiếu Sáng",
-        old_price: "35.000 đ", new_price: "22.000 đ",
-        tags: ["Chống Nước", "Đui E27", "Chịu Nhiệt"],
-        img: "https://images.unsplash.com/photo-1604322415766-3eccf7b56a0a?w=300&h=300&fit=crop" },
-      { id: 15, badge: null, discount: "-25%", name: "Bếp Hồng Ngoại Đơn Kim Long", category: "Nhà Bếp",
-        old_price: "650.000 đ", new_price: "490.000 đ",
-        tags: ["Mâm Hồng Ngoại", "Hẹn Giờ", "Cảm Ứng"],
-        img: "https://images.unsplash.com/photo-1556819132-52350b2a7836?w=300&h=300&fit=crop" }
-    ];
+    // Khi không lấy được dữ liệu thật thì báo rõ "Đang cập nhật dữ liệu".
+    //
+    // Trước đây chỗ này có sẵn 15 sản phẩm mẫu, mất kết nối là tự động hiện ra thay cho
+    // hàng thật. Khách không hề biết nên có thể hỏi mua món không tồn tại, hoặc đòi đúng
+    // cái giá đang hiện trên màn hình. Thà không hiện gì còn hơn hiện sai.
+    function renderDataUnavailable() {
+      document.getElementById('product-grid').innerHTML = `
+        <div class="col-span-full flex flex-col items-center text-center gap-3 py-16 font-body">
+          <span class="w-12 h-12 rounded-full bg-slate-100 text-navy-900/40 flex items-center justify-center">
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12a9 9 0 0 1 15-6.7L21 8"/><path d="M21 3v5h-5"/><path d="M21 12a9 9 0 0 1-15 6.7L3 16"/><path d="M3 21v-5h5"/></svg>
+          </span>
+          <p class="font-display font-700 text-lg text-navy-950">Đang cập nhật dữ liệu</p>
+          <p class="text-sm text-navy-900/50">Vui lòng quay lại sau ít phút.</p>
+        </div>`;
+      // Dọn luôn phân trang và dòng đếm, không thì còn sót "Có tất cả 15 sản phẩm"
+      document.getElementById('pagination').innerHTML = '';
+      document.getElementById('result-count').textContent = '';
+    }
 
     // ---------- Nút "Thêm vào giỏ báo giá" trên mỗi thẻ sản phẩm ----------
     // Nhiều sản phẩm được gộp vào 1 giỏ, sau đó gửi 1 yêu cầu báo giá duy nhất cho toàn
@@ -630,23 +585,14 @@
       // cho nhẹ, chỉ khi thật sự cần mới tải nhiều dòng về.
       const needsClientSide = currentSort !== 'default' || currentPriceKey !== 'all';
 
-      function applyLocalFilters(list) {
-        let out = filterActive ? list.filter(p => p.category === currentCategory) : list;
-        if (searchActive) {
-          const q = searchQuery.trim().toLowerCase();
-          out = out.filter(p => (p.name || '').toLowerCase().includes(q));
-        }
-        return applyPriceAndSort(out);
-      }
-
       function showList(list) {
         renderProducts(list.slice(from, to + 1));
         renderPagination(list.length, page);
       }
 
       if (!isConfigured) {
-        console.warn('Chưa cấu hình Supabase — đang hiển thị dữ liệu mẫu. Xem huong-dan-supabase.md để kết nối dữ liệu sống.');
-        showList(applyLocalFilters(FALLBACK_PRODUCTS));
+        console.warn('Chưa cấu hình Supabase — không có dữ liệu sản phẩm để hiển thị.');
+        renderDataUnavailable();
         return;
       }
 
@@ -667,8 +613,8 @@
         renderProducts(data || []);
         renderPagination(count ?? (data || []).length, page);
       } catch (err) {
-        console.error('Lỗi tải dữ liệu từ Supabase, dùng dữ liệu dự phòng:', err);
-        showList(applyLocalFilters(FALLBACK_PRODUCTS));
+        console.error('Không tải được dữ liệu sản phẩm từ Supabase:', err);
+        renderDataUnavailable();
       }
     }
 
